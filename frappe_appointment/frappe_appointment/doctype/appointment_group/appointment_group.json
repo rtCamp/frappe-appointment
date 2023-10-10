@@ -1,0 +1,83 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "field:group_name",
+ "creation": "2023-10-10 17:07:07.605016",
+ "default_view": "List",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "group_name",
+  "members",
+  "duration_for_event",
+  "day_after",
+  "webhook",
+  "publish_on_website"
+ ],
+ "fields": [
+  {
+   "fieldname": "members",
+   "fieldtype": "Table MultiSelect",
+   "label": "Members",
+   "options": "Members",
+   "reqd": 1
+  },
+  {
+   "fieldname": "duration_for_event",
+   "fieldtype": "Duration",
+   "in_list_view": 1,
+   "label": "Duration For Event",
+   "reqd": 1
+  },
+  {
+   "fieldname": "webhook",
+   "fieldtype": "Data",
+   "label": "Webhook"
+  },
+  {
+   "default": "0",
+   "fieldname": "publish_on_website",
+   "fieldtype": "Check",
+   "label": "Publish On Website"
+  },
+  {
+   "fieldname": "group_name",
+   "fieldtype": "Data",
+   "label": "Group Name",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "day_after",
+   "fieldtype": "Int",
+   "label": "Day After"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2023-10-10 17:32:46.173555",
+ "modified_by": "Administrator",
+ "module": "Frappe Appointment",
+ "name": "Appointment Group",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}
