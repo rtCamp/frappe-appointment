@@ -4,8 +4,12 @@
 import frappe
 from frappe.model.document import Document
 from frappe_appointment.constants import APPOINTMENT_GROUP, APPOINTMENT_TIME_SLOT
+from frappe_appointment.frappe_appointment.doctype.appointment_time_slot.appointment_time_slot import (
+	get_all_unavailable_google_calendar_slots_for_day,
+)
 from frappe.utils import getdate, get_time_str, format_time
 import datetime
+
 
 weekdays = [
 	"Monday",
@@ -23,7 +27,7 @@ class AppointmentGroup(Document):
 
 
 @frappe.whitelist(allow_guest=True)
-def get_time_slots_for_day(appointment_group_id: str, date: str):
+def get_time_slots_for_day(appointment_group_id: str, date: str) -> object:
 	if not appointment_group_id:
 		return {"result": []}
 
@@ -41,15 +45,24 @@ def get_time_slots_for_day(appointment_group_id: str, date: str):
 		appointmen_time_slots = frappe.db.get_all(
 			APPOINTMENT_TIME_SLOT, filters={"parent": member.user, "day": weekday}, fields="*"
 		)
-		print(appointmen_time_slots)
+  
+		print({"parent": member.user, "day": weekday})
 
 		max_start_time, min_end_time = get_max_min_time_slot(
 			appointmen_time_slots, max_start_time, min_end_time
 		)
 
 		member_time_slots[member.user] = appointmen_time_slots
-  
-	return min_end_time
+
+	all_slots = get_all_unavailable_google_calendar_slots_for_day(
+		member_time_slots, max_start_time, min_end_time, date
+	)
+
+	return {
+		"all_slots_for_data": all_slots,
+		"date": date,
+		"appointment_group_id": appointment_group_id,
+	}
 
 
 def get_max_min_time_slot(
