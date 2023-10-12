@@ -18,7 +18,7 @@
  "fields": [
   {
    "fieldname": "members",
-   "fieldtype": "Table MultiSelect",
+   "fieldtype": "Table",
    "label": "Members",
    "options": "Members",
    "reqd": 1
@@ -58,7 +58,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2023-10-12 15:38:44.746029",
+ "modified": "2023-10-12 16:55:34.133573",
  "modified_by": "Administrator",
  "module": "Frappe Appointment",
  "name": "Appointment Group",

@@ -45,6 +45,9 @@ def get_time_slots_for_day(appointment_group_id: str, date: str) -> object:
 	max_start_time, min_end_time = "00:00:00", "24:00:00"
 
 	for member in members:
+		if not member.is_mandatory:
+			continue
+
 		appointmen_time_slots = frappe.db.get_all(
 			APPOINTMENT_TIME_SLOT, filters={"parent": member.user, "day": weekday}, fields="*"
 		)
@@ -62,7 +65,7 @@ def get_time_slots_for_day(appointment_group_id: str, date: str) -> object:
 		member_time_slots, starttime, endtime, date
 	)
 
-	avaiable_time_slot_for_day = get_group_time_slot_for_day(
+	avaiable_time_slot_for_day = get_avaiable_time_slot_for_day(
 		all_slots, starttime, endtime, appointment_group.duration_for_event
 	)
 
@@ -77,7 +80,7 @@ def get_time_slots_for_day(appointment_group_id: str, date: str) -> object:
 	}
 
 
-def get_group_time_slot_for_day(
+def get_avaiable_time_slot_for_day(
 	all_slots: list, starttime: datetime, endtime: datetime, duration_for_event: str
 ) -> list:
 	available_slots = []
