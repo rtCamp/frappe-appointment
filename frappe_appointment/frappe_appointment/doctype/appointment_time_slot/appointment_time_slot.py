@@ -29,14 +29,11 @@ class AppointmentTimeSlot(Document):
 
 
 def get_all_unavailable_google_calendar_slots_for_day(
-	member_time_slots: object, starttime: str, endtime: str, date: datetime
+	member_time_slots: object, starttime: datetime, endtime: datetime, date: datetime
 ) -> list:
 
-	slots = []
 	cal_slots = []
 
-	starttime = get_utc_datatime_with_time(date, starttime)
-	endtime = get_utc_datatime_with_time(date, endtime)
 
 	for member in member_time_slots:
 		cal_slots = cal_slots + get_google_calendar_slots_member(member, starttime, endtime, date)
@@ -49,7 +46,7 @@ def get_all_unavailable_google_calendar_slots_for_day(
 		)
 	)
  
-	return slots
+	return cal_slots
 
 
 def get_google_calendar_slots_member(
