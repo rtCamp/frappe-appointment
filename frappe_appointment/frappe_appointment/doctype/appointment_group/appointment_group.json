@@ -18,14 +18,14 @@
  "fields": [
   {
    "fieldname": "members",
-   "fieldtype": "Table MultiSelect",
+   "fieldtype": "Table",
    "label": "Members",
    "options": "Members",
    "reqd": 1
   },
   {
    "fieldname": "duration_for_event",
-   "fieldtype": "Duration",
+   "fieldtype": "Time",
    "in_list_view": 1,
    "label": "Duration For Event",
    "reqd": 1
@@ -44,6 +44,7 @@
   {
    "fieldname": "group_name",
    "fieldtype": "Data",
+   "in_list_view": 1,
    "label": "Group Name",
    "reqd": 1,
    "unique": 1
@@ -57,7 +58,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2023-10-10 17:32:46.173555",
+ "modified": "2023-10-12 16:55:34.133573",
  "modified_by": "Administrator",
  "module": "Frappe Appointment",
  "name": "Appointment Group",
