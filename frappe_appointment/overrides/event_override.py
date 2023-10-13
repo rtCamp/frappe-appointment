@@ -1,5 +1,7 @@
 import frappe
 from frappe import _
+import datetime
+import pytz
 from frappe.desk.doctype.event.event import Event
 from frappe.integrations.doctype.google_calendar.google_calendar import (
 	get_google_calendar_object,
@@ -17,6 +19,8 @@ from frappe.utils import (
 	get_system_timezone,
 	get_weekdays,
 	now_datetime,
+	convert_utc_to_system_timezone,
+	get_datetime_str,
 )
 from frappe_appointment.constants import (
 	APPOINTMENT_GROUP,
@@ -128,3 +132,56 @@ def update_attendees(attendees: list) -> list:
 	for user in attendees:
 		user["responseStatus"] = "accepted"
 	return attendees
+
+
+@frappe.whitelist(allow_guest=True)
+def create_event_for_appointment_group(
+	appointment_group_id, subject, date, start_time, end_time, event_participants, **args
+):
+	event_info = args
+
+	appointment_group = frappe.get_doc(APPOINTMENT_GROUP, appointment_group_id)
+
+	members = appointment_group.members
+
+	if len(members) <= 0:
+		return frappe.throw(_("No Member found"))
+
+	google_calendar = frappe.get_last_doc(
+		doctype="Google Calendar", filters={"user": members[0].user}
+	)
+
+	google_calendar_api_obj, account = get_google_calendar_object(google_calendar)
+
+	calendar_event = {
+		"doctype": "Event",
+		"subject": subject,
+		"description": event_info.get("description"),
+		"starts_on": get_datetime_str(
+			convert_utc_to_system_timezone(
+				datetime.datetime.fromisoformat(start_time).replace(tzinfo=None)
+			)
+		),
+		"ends_on": get_datetime_str(
+			convert_utc_to_system_timezone(
+				datetime.datetime.fromisoformat(end_time).replace(tzinfo=None)
+			)
+		),
+		"sync_with_google_calendar": 1,
+		"google_calendar": account.name,
+		"google_calendar_id": account.google_calendar_id,
+		"pulled_from_google_calendar": 1,
+		"event_participants": event_participants,
+		"custom_doctype_link_with_event": event_info.get(
+			"custom_doctype_link_with_event", []
+		),
+		"event_type": event_info.get("event_type", "Public"),
+	}
+
+	print(calendar_event)
+
+	print(frappe.get_doc(calendar_event).insert(ignore_permissions=True))
+
+	frappe.db.commit()
+
+	return "HI SIR"
