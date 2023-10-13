@@ -60,6 +60,7 @@ def get_google_calendar_slots_member(
 		doctype="Google Calendar", filters={"user": memebr}
 	)
 	google_calendar_api_obj, account = get_google_calendar_object(google_calendar)
+ 
 
 	events = []
 
