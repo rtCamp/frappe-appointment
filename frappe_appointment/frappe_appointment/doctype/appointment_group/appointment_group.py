@@ -10,7 +10,15 @@ from frappe_appointment.frappe_appointment.doctype.appointment_time_slot.appoint
 	convert_timezone_to_utc,
 )
 from dateutil import parser
-from frappe.utils import getdate, get_time_str, format_time, add_to_date
+from frappe.utils import (
+	getdate,
+	get_time_str,
+	format_time,
+	add_to_date,
+	now_datetime,
+	add_days,
+	get_datetime,
+)
 import datetime
 
 
@@ -26,9 +34,7 @@ weekdays = [
 
 
 class AppointmentGroup(WebsiteGenerator):
-	website = frappe._dict(
-		page_title_field="group_name"
-	)
+	website = frappe._dict(page_title_field="group_name")
 
 	def validate(self):
 		if not self.route:
@@ -40,8 +46,7 @@ class AppointmentGroup(WebsiteGenerator):
 
 def get_list_context(context):
 	return frappe.redirect("/")
- 
- 
+
 
 @frappe.whitelist(allow_guest=True)
 def get_time_slots_for_day(appointment_group_id: str, date: str) -> object:
@@ -50,7 +55,20 @@ def get_time_slots_for_day(appointment_group_id: str, date: str) -> object:
 
 	appointment_group = frappe.get_doc(APPOINTMENT_GROUP, appointment_group_id)
 
-	date = getdate(date)
+	datetime = get_datetime(date)
+	date = datetime.date()
+
+	if not vaild_date(datetime, appointment_group):
+		return {
+			"all_avaiable_slots_for_data": [],
+			"date": date,
+			"duration": appointment_group.duration_for_event,
+			"appointment_group_id": appointment_group_id,
+			"starttime": "",
+			"endtime": "",
+			"total_slots_for_day": 0,
+		}
+
 	weekday = weekdays[date.weekday()]
 
 	members = appointment_group.members
@@ -92,6 +110,23 @@ def get_time_slots_for_day(appointment_group_id: str, date: str) -> object:
 		"endtime": endtime,
 		"total_slots_for_day": len(avaiable_time_slot_for_day),
 	}
+
+
+def vaild_date(date: datetime, appointment_group: object) -> bool:
+	current_date = get_datetime(now_datetime().date())
+
+	start_date = add_days(current_date, int(appointment_group.days_after_show_slots))
+	end_date = add_days(start_date, int(appointment_group.days_till_show_slots))
+
+	if int(appointment_group.days_after_show_slots) > 0 and start_date > date:
+		print(appointment_group.days_after_show_slots, start_date, "zzz1")
+		return False
+
+	if int(appointment_group.days_till_show_slots) > 0 and end_date < date:
+		print(appointment_group.days_till_show_slots, end_date)
+		return False
+
+	return True
 
 
 def get_avaiable_time_slot_for_day(

@@ -59,6 +59,7 @@
    "label": "Days After Show Slots"
   },
   {
+   "default": "0",
    "fieldname": "days_till_show_slots",
    "fieldtype": "Data",
    "label": "Days Till Show Slots"
@@ -74,7 +75,7 @@
  "has_web_view": 1,
  "is_published_field": "publish_on_website",
  "links": [],
- "modified": "2023-10-16 07:04:53.674932",
+ "modified": "2023-10-16 09:04:26.968824",
  "modified_by": "Administrator",
  "module": "Frappe Appointment",
  "name": "Appointment Group",

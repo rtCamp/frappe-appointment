@@ -26,6 +26,9 @@ from frappe_appointment.constants import (
 	APPOINTMENT_GROUP,
 	USER_APPOINTMENT_AVAILABILITY,
 )
+from frappe_appointment.frappe_appointment.doctype.appointment_group.appointment_group import (
+	vaild_date,
+)
 import requests
 import json
 
@@ -166,6 +169,9 @@ def create_event_for_appointment_group(
 	event_info = args
 
 	appointment_group = frappe.get_doc(APPOINTMENT_GROUP, appointment_group_id)
+
+	if not vaild_date(get_datetime(date), appointment_group):
+		return frappe.throw(_("Invalid Date"))
 
 	members = appointment_group.members
 
