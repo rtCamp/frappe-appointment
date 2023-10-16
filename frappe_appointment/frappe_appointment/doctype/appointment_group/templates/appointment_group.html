@@ -1,0 +1,59 @@
+{% extends "templates/web.html" %} 
+{% block page_content %} 
+
+<link rel="stylesheet" href="assets/frappe_appointment/css/calendar.css">
+
+<div class="main-container">
+	<div class="column">
+		<h3>User Details</h3>
+	</div>
+	<div class="middle-column">
+		<div class="calendar-container">
+			<header class="calendar-header">
+				<p class="calendar-current-date"></p>
+				<div class="calendar-navigation">
+					<span id="calendar-prev" class="material-symbols-rounded">
+						<i class="fa fa-chevron-left"></i>
+					</span>
+					<span id="calendar-next" class="material-symbols-rounded">
+						<i class="fa fa-chevron-right"></i>
+					</span>
+				</div>
+			</header>
+
+			<div class="calendar-body">
+				<ul class="calendar-weekdays">
+					<li>SUN</li>
+					<li>MON</li>
+					<li>TUE</li>
+					<li>WED</li>
+					<li>THU</li>
+					<li>FRI</li>
+					<li>SAT</li>
+				</ul>
+				<ul class="calendar-dates"></ul>
+			</div>
+		</div>
+	</div>
+	<div class="column">
+		<div class="right-container">
+			<div class="timeslot-container">
+				<div class="timeslot">f</div>
+				<div class="timeslot">f</div>
+				<div class="timeslot">time slot</div>
+				<div class="timeslot">time slot</div>
+				<div class="timeslot">time slot</div>
+				<div class="timeslot">time slot</div>
+				<div class="timeslot">time slot</div>
+				<div class="timeslot">time slot</div>
+			</div>
+			<div class="calendar-action">
+				<button class="primary">Submit</button>
+				<button>Cancel</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<script src="assets/frappe_appointment/js/calendar.js"></script>
+{% endblock %}

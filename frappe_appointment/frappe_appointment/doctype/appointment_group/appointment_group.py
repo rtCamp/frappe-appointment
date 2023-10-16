@@ -2,7 +2,7 @@
 # For license information, please see license.txt
 
 import frappe
-from frappe.model.document import Document
+from frappe.website.website_generator import WebsiteGenerator
 from frappe_appointment.constants import APPOINTMENT_GROUP, APPOINTMENT_TIME_SLOT
 from frappe_appointment.frappe_appointment.doctype.appointment_time_slot.appointment_time_slot import (
 	get_all_unavailable_google_calendar_slots_for_day,
@@ -25,9 +25,24 @@ weekdays = [
 ]
 
 
-class AppointmentGroup(Document):
-	pass
+class AppointmentGroup(WebsiteGenerator):
+	website = frappe._dict(
+		page_title_field="group_name"
+	)
 
+	def validate(self):
+		if not self.route:
+			self.route = frappe.scrub(self.group_name).replace("_", "-")
+
+	def get_context(self, context):
+		print('calll......................')
+		pass
+
+
+def get_list_context(context):
+	return frappe.redirect("/")
+ 
+ 
 
 @frappe.whitelist(allow_guest=True)
 def get_time_slots_for_day(appointment_group_id: str, date: str) -> object:
@@ -51,7 +66,7 @@ def get_time_slots_for_day(appointment_group_id: str, date: str) -> object:
 		appointmen_time_slots = frappe.db.get_all(
 			APPOINTMENT_TIME_SLOT, filters={"parent": member.user, "day": weekday}, fields="*"
 		)
-  
+
 		max_start_time, min_end_time = get_max_min_time_slot(
 			appointmen_time_slots, max_start_time, min_end_time
 		)
