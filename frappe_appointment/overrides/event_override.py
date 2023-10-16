@@ -26,6 +26,8 @@ from frappe_appointment.constants import (
 	APPOINTMENT_GROUP,
 	USER_APPOINTMENT_AVAILABILITY,
 )
+import requests
+import json
 
 
 class EventOverride(Event):
@@ -57,6 +59,29 @@ class EventOverride(Event):
 				self.event_participants.append(user)
 			except Exception as e:
 				pass
+
+	def handle_webhook(self, body):
+		def datetime_serializer(obj):
+			if isinstance(obj, datetime.datetime):
+				return obj.isoformat()
+
+		appointment_group = frappe.get_doc(APPOINTMENT_GROUP, self.custom_appointment_group)
+
+		if not appointment_group.webhook:
+			return False
+
+		try:
+			api_res = requests.post(
+				appointment_group.webhook, data=json.dumps(body, default=datetime_serializer)
+			).json()
+
+			if not api_res:
+				raise False
+			return True
+
+		except Exception as e:
+			print(e)
+			return False
 
 
 def insert_event_in_google_calendar_attendees(doc, method=None):
@@ -176,12 +201,29 @@ def create_event_for_appointment_group(
 			"custom_doctype_link_with_event", []
 		),
 		"event_type": event_info.get("event_type", "Public"),
+		"custom_appointment_group": appointment_group.name,
 	}
 
-	print(calendar_event)
+	event = frappe.get_doc(calendar_event)
 
-	print(frappe.get_doc(calendar_event).insert(ignore_permissions=True))
+	if not event.handle_webhook(
+		{
+			"event": event.as_dict(),
+			"appointment_group": appointment_group.as_dict(),
+			"metadata": event_info,
+		}
+	):
+		return frappe.throw(_("Unable to create an event"))
+
+	event.insert(ignore_permissions=True)
 
 	frappe.db.commit()
 
-	return "HI SIR"
+	return _("Event has been created")
+
+
+@frappe.whitelist(allow_guest=True)
+def demo_call(**args):
+	request_data = frappe.request.get_data()
+	print(request_data)
+	return "zeel"

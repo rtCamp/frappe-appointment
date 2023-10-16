@@ -35,7 +35,6 @@ class AppointmentGroup(WebsiteGenerator):
 			self.route = frappe.scrub(self.group_name).replace("_", "-")
 
 	def get_context(self, context):
-		print('calll......................')
 		pass
 
 
