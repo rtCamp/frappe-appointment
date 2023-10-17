@@ -18,6 +18,7 @@ from frappe.utils import (
 	now_datetime,
 	add_days,
 	get_datetime,
+	get_date_str,
 )
 import datetime
 
@@ -34,7 +35,11 @@ weekdays = [
 
 
 class AppointmentGroup(WebsiteGenerator):
-	website = frappe._dict(page_title_field="group_name")
+	website = frappe._dict(
+		page_title_field="group_name",
+		no_cache=1,
+		no_breadcrumbs=1,
+	)
 
 	def validate(self):
 		if not self.route:
@@ -53,20 +58,22 @@ def get_time_slots_for_day(appointment_group_id: str, date: str) -> object:
 	if not appointment_group_id:
 		return {"result": []}
 
-	appointment_group = frappe.get_doc(APPOINTMENT_GROUP, appointment_group_id)
+	appointment_group = frappe.get_last_doc(
+		APPOINTMENT_GROUP, filters={"route": appointment_group_id}
+	)
 
 	datetime = get_datetime(date)
 	date = datetime.date()
 
-	if not vaild_date(datetime, appointment_group):
+	date_validation_obj = vaild_date(datetime, appointment_group)
+
+	if not date_validation_obj["is_valid"]:
 		return {
-			"all_avaiable_slots_for_data": [],
-			"date": date,
-			"duration": appointment_group.duration_for_event,
 			"appointment_group_id": appointment_group_id,
-			"starttime": "",
-			"endtime": "",
+			"valid_start_date": date_validation_obj["valid_start_date"],
+			"valid_end_date": date_validation_obj["valid_end_date"],
 			"total_slots_for_day": 0,
+			"is_invalid_date": True,
 		}
 
 	weekday = weekdays[date.weekday()]
@@ -109,6 +116,8 @@ def get_time_slots_for_day(appointment_group_id: str, date: str) -> object:
 		"starttime": starttime,
 		"endtime": endtime,
 		"total_slots_for_day": len(avaiable_time_slot_for_day),
+		"valid_start_date": date_validation_obj["valid_start_date"],
+		"valid_end_date": date_validation_obj["valid_end_date"],
 	}
 
 
@@ -118,15 +127,18 @@ def vaild_date(date: datetime, appointment_group: object) -> bool:
 	start_date = add_days(current_date, int(appointment_group.days_after_show_slots))
 	end_date = add_days(start_date, int(appointment_group.days_till_show_slots))
 
-	if int(appointment_group.days_after_show_slots) > 0 and start_date > date:
-		print(appointment_group.days_after_show_slots, start_date, "zzz1")
-		return False
+	print(start_date, end_date, date)
+
+	if start_date > date:
+		return {"is_valid": False, "valid_start_date": start_date, "valid_end_date": end_date}
 
 	if int(appointment_group.days_till_show_slots) > 0 and end_date < date:
-		print(appointment_group.days_till_show_slots, end_date)
-		return False
+		return {"is_valid": False, "valid_start_date": start_date, "valid_end_date": end_date}
 
-	return True
+	if int(appointment_group.days_till_show_slots) <= 0:
+		end_date = ""
+
+	return {"is_valid": True, "valid_start_date": start_date, "valid_end_date": end_date}
 
 
 def get_avaiable_time_slot_for_day(
@@ -135,7 +147,7 @@ def get_avaiable_time_slot_for_day(
 	available_slots = []
 
 	index = 0
-	current_start_time = starttime
+	current_start_time = get_next_round_value(starttime)
 
 	minute, second = divmod(duration_for_event.seconds, 60)
 	hour, minute = divmod(minute, 60)
@@ -150,7 +162,7 @@ def get_avaiable_time_slot_for_day(
 			available_slots.append(
 				{"start_time": current_start_time, "end_time": current_end_time}
 			)
-			current_start_time = current_end_time
+			current_start_time = get_next_round_value(current_end_time)
 			current_end_time = add_to_date(
 				current_start_time, hours=hour, minutes=minute, seconds=second
 			)
@@ -170,9 +182,9 @@ def get_avaiable_time_slot_for_day(
 			available_slots.append(
 				{"start_time": current_start_time, "end_time": current_end_time}
 			)
-			current_start_time = current_end_time
+			current_start_time = get_next_round_value(current_end_time)
 		else:
-			current_start_time = currernt_slot_end_time
+			current_start_time = get_next_round_value(currernt_slot_end_time)
 			index += 1
 
 		current_end_time = add_to_date(
@@ -180,6 +192,14 @@ def get_avaiable_time_slot_for_day(
 		)
 
 	return available_slots
+
+
+def get_next_round_value(datetimeobj: datetime):
+	if datetimeobj.minute == 0:
+		return datetimeobj
+	
+	next_datetimeobj = add_to_date(datetimeobj, hours=1)
+	return next_datetimeobj.replace(minute=0, second=0)
 
 
 def get_max_min_time_slot(

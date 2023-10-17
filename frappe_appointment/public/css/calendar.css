@@ -78,8 +78,24 @@ button {
   border: 1px solid rgba(0, 0, 0, 0.12);
   min-height: 60px;
   padding: 10px;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
+.timeslot:hover, .timeslot-active{
+  border: 1.5px solid #5d8797;
+}
+
+.submit-inactive{
+  opacity: 0.95;
+  pointer-events: none;
+}
+
+.inactive-month{
+  pointer-events: none;
+}
 header .calendar-navigation {
   display: flex;
 }
@@ -153,6 +169,7 @@ header .calendar-current-date {
 
 .calendar-dates li.inactive {
   color: #aaa;
+  pointer-events: none;
 }
 
 .calendar-dates li.active {

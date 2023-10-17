@@ -21,6 +21,7 @@ from frappe.utils import (
 	now_datetime,
 	convert_utc_to_system_timezone,
 	get_datetime_str,
+	now,
 )
 from frappe_appointment.constants import (
 	APPOINTMENT_GROUP,
@@ -40,6 +41,8 @@ class EventOverride(Event):
 	def update_attendees_for_appointment_group(self):
 		if not self.custom_appointment_group:
 			return
+
+		self.push_to_google_calendar = False
 
 		appointment_group = frappe.get_doc(APPOINTMENT_GROUP, self.custom_appointment_group)
 
@@ -124,7 +127,7 @@ def insert_event_in_google_calendar_attendees(doc, method=None):
 		conference_data_version = 1
 
 	try:
-
+		print(event)
 		event = (
 			google_calendar.events()
 			.insert(
@@ -159,18 +162,36 @@ def insert_event_in_google_calendar_attendees(doc, method=None):
 def update_attendees(attendees: list) -> list:
 	for user in attendees:
 		user["responseStatus"] = "accepted"
+		try:
+			user["id"] = frappe.get_last_doc(
+				doctype="Google Calendar", filters={"user": user["email"]}
+			).google_calendar_id
+
+		except Exception as e:
+			pass
+		print(user)
 	return attendees
 
 
 @frappe.whitelist(allow_guest=True)
 def create_event_for_appointment_group(
-	appointment_group_id, subject, date, start_time, end_time, event_participants, **args
+	appointment_group_id: str,
+	date: str,
+	start_time: str,
+	end_time: str,
+	event_participants: str,
+	**args
 ):
 	event_info = args
 
-	appointment_group = frappe.get_doc(APPOINTMENT_GROUP, appointment_group_id)
+	appointment_group = frappe.get_last_doc(
+		APPOINTMENT_GROUP, filters={"route": appointment_group_id}
+	)
 
-	if not vaild_date(get_datetime(date), appointment_group):
+	if not event_info.get("subject"):
+		event_info["subject"] = appointment_group.name + " " + now()
+
+	if not vaild_date(get_datetime(date), appointment_group)["is_valid"]:
 		return frappe.throw(_("Invalid Date"))
 
 	members = appointment_group.members
@@ -186,7 +207,7 @@ def create_event_for_appointment_group(
 
 	calendar_event = {
 		"doctype": "Event",
-		"subject": subject,
+		"subject": event_info.get("subject"),
 		"description": event_info.get("description"),
 		"starts_on": get_datetime_str(
 			convert_utc_to_system_timezone(
@@ -202,13 +223,16 @@ def create_event_for_appointment_group(
 		"google_calendar": account.name,
 		"google_calendar_id": account.google_calendar_id,
 		"pulled_from_google_calendar": 1,
-		"event_participants": event_participants,
-		"custom_doctype_link_with_event": event_info.get(
-			"custom_doctype_link_with_event", []
+		"custom_sync_participants_google_calendars": 1,
+		"event_participants": json.loads(event_participants),
+		"custom_doctype_link_with_event": json.loads(
+			event_info.get("custom_doctype_link_with_event", "[]")
 		),
 		"event_type": event_info.get("event_type", "Public"),
 		"custom_appointment_group": appointment_group.name,
 	}
+
+	print(calendar_event)
 
 	event = frappe.get_doc(calendar_event)
 

@@ -1,7 +1,11 @@
-{% extends "templates/web.html" %} 
-{% block page_content %} 
+<link
+	rel="stylesheet"
+	href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css"
+/>
 
-<link rel="stylesheet" href="assets/frappe_appointment/css/calendar.css">
+{% extends "templates/web.html" %} {% block page_content %}
+
+<link rel="stylesheet" href="assets/frappe_appointment/css/calendar.css" />
 
 <div class="main-container">
 	<div class="column">
@@ -37,19 +41,10 @@
 	</div>
 	<div class="column">
 		<div class="right-container">
-			<div class="timeslot-container">
-				<div class="timeslot">f</div>
-				<div class="timeslot">f</div>
-				<div class="timeslot">time slot</div>
-				<div class="timeslot">time slot</div>
-				<div class="timeslot">time slot</div>
-				<div class="timeslot">time slot</div>
-				<div class="timeslot">time slot</div>
-				<div class="timeslot">time slot</div>
-			</div>
+			<div class="timeslot-container"></div>
 			<div class="calendar-action">
-				<button class="primary">Submit</button>
-				<button>Cancel</button>
+				<button class="primary submit submit-inactive">Submit</button>
+				<button class="cancel">Cancel</button>
 			</div>
 		</div>
 	</div>
