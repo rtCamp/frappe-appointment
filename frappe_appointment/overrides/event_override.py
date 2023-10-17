@@ -83,10 +83,10 @@ class EventOverride(Event):
 
 			if not api_res:
 				raise False
+
 			return True
 
 		except Exception as e:
-			print(e)
 			return False
 
 
@@ -127,7 +127,6 @@ def insert_event_in_google_calendar_attendees(doc, method=None):
 		conference_data_version = 1
 
 	try:
-		print(event)
 		event = (
 			google_calendar.events()
 			.insert(
@@ -169,7 +168,6 @@ def update_attendees(attendees: list) -> list:
 
 		except Exception as e:
 			pass
-		print(user)
 	return attendees
 
 
@@ -179,8 +177,8 @@ def create_event_for_appointment_group(
 	date: str,
 	start_time: str,
 	end_time: str,
-	event_participants: str,
-	**args
+	event_participants,
+	**args,
 ):
 	event_info = args
 
@@ -232,8 +230,6 @@ def create_event_for_appointment_group(
 		"custom_appointment_group": appointment_group.name,
 	}
 
-	print(calendar_event)
-
 	event = frappe.get_doc(calendar_event)
 
 	if not event.handle_webhook(
@@ -250,10 +246,3 @@ def create_event_for_appointment_group(
 	frappe.db.commit()
 
 	return _("Event has been created")
-
-
-@frappe.whitelist(allow_guest=True)
-def demo_call(**args):
-	request_data = frappe.request.get_data()
-	print(request_data)
-	return "zeel"

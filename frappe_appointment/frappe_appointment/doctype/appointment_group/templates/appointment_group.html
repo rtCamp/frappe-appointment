@@ -7,9 +7,9 @@
 
 <link rel="stylesheet" href="assets/frappe_appointment/css/calendar.css" />
 
-<div class="main-container">
+<div class="cal-main-container main-container">
 	<div class="column">
-		<h3>User Details</h3>
+		<h3>{{name}}</h3>
 	</div>
 	<div class="middle-column">
 		<div class="calendar-container">
@@ -41,13 +41,20 @@
 	</div>
 	<div class="column">
 		<div class="right-container">
-			<div class="timeslot-container"></div>
+			<div class="today-day">Day</div>
+			<div class="timeslot-container">
+				<div class="timeslot-empty">No open time slots</div>
+			</div>
 			<div class="calendar-action">
 				<button class="primary submit submit-inactive">Submit</button>
 				<button class="cancel">Cancel</button>
 			</div>
 		</div>
 	</div>
+</div>
+
+<div class="loading-container">
+	<div class="loading"></div>
 </div>
 
 <script src="assets/frappe_appointment/js/calendar.js"></script>

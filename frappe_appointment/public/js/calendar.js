@@ -7,6 +7,8 @@ const currdate = document.querySelector(".calendar-current-date");
 const prenexIcons = document.querySelectorAll(".calendar-navigation span");
 const submit_button = document.querySelector(".submit");
 const cancel_button = document.querySelector(".cancel");
+const loading_container = document.querySelector(".loading-container");
+const today_day = document.querySelector(".today-day");
 
 // Array of month names
 const months = [
@@ -24,6 +26,7 @@ const months = [
 	"December",
 ];
 
+let days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 let todaySlotsData = {};
 
 // HTML Updates
@@ -49,48 +52,6 @@ const manipulate = () => {
 	currdate.innerText = `${months[month]} ${year}`;
 	day.innerHTML = lit;
 };
-
-prenexIcons.forEach((icon) => {
-	function change_month_active_state(value) {
-		const vaild_start_date = new Date(todaySlotsData.valid_start_date);
-		const valid_end_date = todaySlotsData.valid_end_date
-			? new Date(todaySlotsData.valid_end_date)
-			: "";
-		if (icon.id === "calendar-prev") {
-			const last_date = new Date(year, month - value, 0);
-
-			console.log(last_date, value, vaild_start_date);
-
-			if (last_date < vaild_start_date) {
-				icon.classList.add("inactive-month");
-			} else {
-				icon.classList.remove("inactive-month");
-			}
-		} else {
-			const next_date = new Date(year, month + value, 1);
-
-			if (valid_end_date != "" && valid_end_date < next_date) {
-				icon.classList.add("inactive-month");
-			} else {
-				icon.classList.remove("inactive-month");
-			}
-		}
-	}
-
-	change_month_active_state(1);
-
-	icon.addEventListener("click", () => {
-		change_month_active_state(2);
-
-		month = icon.id === "calendar-prev" ? month - 1 : month + 1;
-
-		date = new Date(year, month, 1);
-		year = date.getFullYear();
-		month = date.getMonth();
-		setURLSearchParam("date", get_date_str(date));
-		update_calander();
-	});
-});
 
 const get_date_on_click = () => {
 	const vaild_start_date = new Date(todaySlotsData.valid_start_date);
@@ -178,6 +139,10 @@ function update_time_slots_html() {
 
 		timeslot_container.append(div);
 	}
+
+	if (all_avaiable_slots_for_data.length == 0) {
+		timeslot_container.innerHTML = `<div class="timeslot-empty">No open time slots</div>`;
+	}
 }
 
 function update_calander() {
@@ -185,10 +150,15 @@ function update_calander() {
 	update_active_date();
 	get_date_on_click();
 	update_time_slots_html();
+	set_month_arrow_state();
+
+	const date = new Date(todaySlotsData.date);
+	today_day.innerHTML = `${days[date.getDay()]} ${date.getDate()}`;
 }
 
 // API Calls
 function get_time_slots() {
+	show_loader();
 	frappe
 		.call(
 			"frappe_appointment.frappe_appointment.doctype.appointment_group.appointment_group.get_time_slots_for_day",
@@ -198,7 +168,6 @@ function get_time_slots() {
 			}
 		)
 		.then((r) => {
-			console.log(r.message);
 			if (r.message.is_invalid_date) {
 				date = new Date(r.message.valid_start_date);
 				setURLSearchParam("date", get_date_str(date));
@@ -210,28 +179,67 @@ function get_time_slots() {
 			}
 			todaySlotsData = r.message;
 			update_calander();
+			hide_loader();
 		});
 }
 
 function add_event_slots(time_slots) {
+	show_loader();
 	frappe
 		.call("frappe_appointment.overrides.event_override.create_event_for_appointment_group", {
 			appointment_group_id: get_appointment_group(),
 			start_time: time_slots.start_time,
 			end_time: time_slots.end_time,
 			subject: getURLSearchParam("subject"),
-			event_participants: [],
 			date: getURLSearchParam("date"),
+			...get_all_query_param(),
+			event_participants: !getURLSearchParam("event_participants")
+				? []
+				: getURLSearchParam("event_participants").replaceAll("\\", ""),
+			custom_doctype_link_with_event: !getURLSearchParam("custom_doctype_link_with_event")
+				? []
+				: getURLSearchParam("custom_doctype_link_with_event").replaceAll("\\", ""),
 		})
 		.then((r) => {
-			frappe.show_alert("Successfully selected the slots. Thank you!", 10);
+			frappe.show_alert("Successfully selected the slots. Thank you!", 5);
 			setTimeout(() => {
-				window.location.reload();
-			}, 5000);
+				hide_loader();
+				window.location.href = "/";
+			}, 3000);
+		})
+		.catch((e) => {
+			cancel_button.click();
+			hide_loader();
 		});
 }
 
 // Helpers
+
+function change_month_active_state(value, icon) {
+	const vaild_start_date = new Date(todaySlotsData.valid_start_date);
+	const valid_end_date = todaySlotsData.valid_end_date
+		? new Date(todaySlotsData.valid_end_date)
+		: "";
+
+	if (icon.id === "calendar-prev") {
+		const last_date = new Date(year, month, 0);
+
+		if (last_date < vaild_start_date) {
+			icon.classList.add("inactive-month");
+		} else {
+			icon.classList.remove("inactive-month");
+		}
+	} else {
+		const next_date = new Date(year, month + value, 1);
+
+		if (valid_end_date != "" && valid_end_date < next_date) {
+			icon.classList.add("inactive-month");
+		} else {
+			icon.classList.remove("inactive-month");
+		}
+	}
+}
+
 function set_date() {
 	if (!getURLSearchParam("date")) {
 		setURLSearchParam("date", get_today_str());
@@ -276,6 +284,33 @@ function format_am_pm(date) {
 	return hours + ":" + minutes + " " + ampm;
 }
 
+function get_all_query_param() {
+	const url = new URL(window.location.href);
+	query = {};
+
+	for (const param of url.searchParams) {
+		query[param[0]] = param[1];
+	}
+
+	return query;
+}
+
+function show_loader() {
+	loading_container.classList.add("loading-container-active");
+	document.body.classList.add("disable-body");
+}
+
+function hide_loader() {
+	loading_container.classList.remove("loading-container-active");
+	document.body.classList.remove("disable-body");
+}
+
+function set_month_arrow_state() {
+	prenexIcons.forEach((icon) => {
+		change_month_active_state(1, icon);
+	});
+}
+
 // Events
 document.addEventListener("DOMContentLoaded", function () {
 	set_date();
@@ -304,4 +339,17 @@ cancel_button.addEventListener("click", function () {
 		all_time_slots[index].classList.remove("timeslot-active");
 	}
 	submit_button.classList.add("submit-inactive");
+});
+
+prenexIcons.forEach((icon) => {
+	icon.addEventListener("click", () => {
+		month = icon.id === "calendar-prev" ? month - 1 : month + 1;
+		date =
+			icon.id === "calendar-prev" ? new Date(year, month + 1, 0) : new Date(year, month, 1);
+		year = date.getFullYear();
+		month = date.getMonth();
+		setURLSearchParam("date", get_date_str(date));
+		get_time_slots();
+		cancel_button.click();
+	});
 });

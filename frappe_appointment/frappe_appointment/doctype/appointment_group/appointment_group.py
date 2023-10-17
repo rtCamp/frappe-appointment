@@ -46,7 +46,7 @@ class AppointmentGroup(WebsiteGenerator):
 			self.route = frappe.scrub(self.group_name).replace("_", "-")
 
 	def get_context(self, context):
-		pass
+		return context
 
 
 def get_list_context(context):
@@ -126,8 +126,6 @@ def vaild_date(date: datetime, appointment_group: object) -> bool:
 
 	start_date = add_days(current_date, int(appointment_group.days_after_show_slots))
 	end_date = add_days(start_date, int(appointment_group.days_till_show_slots))
-
-	print(start_date, end_date, date)
 
 	if start_date > date:
 		return {"is_valid": False, "valid_start_date": start_date, "valid_end_date": end_date}

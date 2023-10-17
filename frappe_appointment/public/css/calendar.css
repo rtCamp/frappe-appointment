@@ -1,16 +1,17 @@
 * {
   margin: 0;
   padding: 0;
-  font-family: "Poppins", sans-serif;
 }
 
 .web-footer {
   margin-top: 0px;
 }
-h3 {
+
+.cal-main-container h3 {
   margin: 0;
 }
-ul {
+
+.cal-main-container ul {
   margin-bottom: 0;
 }
 .main-container {
@@ -20,14 +21,14 @@ ul {
   /* max-width: 1024px; */
   justify-content: space-between;
 }
-.column {
+.cal-main-container .column {
   flex: 1;
   display: flex;
 }
-.middle-column {
+.cal-main-container .middle-column {
   flex: 1.5;
 }
-.calendar-container {
+.cal-main-container .calendar-container {
   background: #fff;
   border-radius: 10px;
   min-width: 330px;
@@ -43,36 +44,42 @@ ul {
   padding-left: 10px;
   justify-content: space-between;
 }
-.right-container {
+.cal-main-container .right-container {
   display: flex;
   width: 100%;
   flex-direction: column;
-  gap:40px
 }
-.timeslot-container {
+.cal-main-container .today-day{
+  margin-left: 0.2rem;
+  font-weight: 500;
+  font-size: 1.45rem;
+  margin-bottom: 0.3rem;
+}
+.cal-main-container .timeslot-container {
   overflow: scroll;
-  height: 18em;
   width: 100%;
   gap: 10px;
   flex-direction: column;
   display: flex;
+  flex: 2;
+  margin: 2rem 0;
 }
-.calendar-action {
+.cal-main-container .calendar-action {
   flex: 1;
   display: flex;
   gap: 40px;
 }
-button {
+.cal-main-container button {
   height: 50px;
   flex: 1;
   border-radius: 10px;
   border: 0px;
 }
-.primary {
+.cal-main-container .primary {
   color: #fff;
   background-color: #007bff;
 }
-.timeslot {
+.cal-main-container .timeslot {
   background: #fff;
   border-radius: 10px;
   border: 1px solid rgba(0, 0, 0, 0.12);
@@ -84,16 +91,23 @@ button {
   align-items: center;
 }
 
-.timeslot:hover, .timeslot-active{
+.timeslot-empty{
+  display: flex;
+  height: 100%;
+  align-items: center;
+  justify-content: center;
+}
+
+.cal-main-container .timeslot:hover, .cal-main-container .timeslot-active{
   border: 1.5px solid #5d8797;
 }
 
-.submit-inactive{
+.cal-main-container .submit-inactive{
   opacity: 0.95;
   pointer-events: none;
 }
 
-.inactive-month{
+.cal-main-container .inactive-month{
   pointer-events: none;
 }
 header .calendar-navigation {
@@ -201,7 +215,7 @@ header .calendar-current-date {
 }
 
 @media screen and (max-width: 425px) {
-  .column {
+  .cal-main-container .column {
     width: 100%;
   }
 
@@ -217,7 +231,7 @@ header .calendar-current-date {
   .calendar-container {
     margin: 0;
   }
-  .column {
+  .cal-main-container .column {
     width: 5em;
   }
 }
@@ -226,7 +240,7 @@ header .calendar-current-date {
   .calendar-body li {
     height: 53px;
   }
-  .column {
+  .cal-main-container .column {
     width: 6em;
   }
 
@@ -237,5 +251,44 @@ header .calendar-current-date {
 @media screen and (min-width: 1025px) {
   .calendar-body li {
     height: 72px;
+  }
+}
+
+
+.loading-container{
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: white;
+  z-index: 10;
+  opacity: 0.6;
+  pointer-events: none;
+  display: none;
+}
+.disable-body{
+  pointer-events: none;
+}
+.loading-container-active{
+display: block;
+}
+.loading {
+  height: 0;
+  width: 0;
+  padding: 15px;
+  border: 6px solid #007bff;
+  border-right-color: #888;
+  border-radius: 22px;
+  -webkit-animation: rotate 1s infinite linear;
+  /* left, top and position just for the demo! */
+  position: absolute;
+  left: 50%;
+  top: 50%;
+}
+
+@-webkit-keyframes rotate {
+  100% {
+    -webkit-transform: rotate(360deg);
   }
 }
