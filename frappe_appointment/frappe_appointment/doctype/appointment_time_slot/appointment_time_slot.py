@@ -34,18 +34,18 @@ def get_all_unavailable_google_calendar_slots_for_day(
 
 	cal_slots = []
 
-
 	for member in member_time_slots:
-		cal_slots = cal_slots + get_google_calendar_slots_member(member, starttime, endtime, date)
-
+		cal_slots = cal_slots + get_google_calendar_slots_member(
+			member, starttime, endtime, date
+		)
 
 	cal_slots = sorted(
 		cal_slots,
 		key=lambda slot: get_datetime_str(
 			convert_timezone_to_utc(slot["start"]["dateTime"], slot["start"]["timeZone"])
-		)
+		),
 	)
- 
+
 	return cal_slots
 
 
@@ -60,29 +60,27 @@ def get_google_calendar_slots_member(
 		doctype="Google Calendar", filters={"user": memebr}
 	)
 	google_calendar_api_obj, account = get_google_calendar_object(google_calendar)
- 
 
 	events = []
 
 	try:
-		sync_token = (
-			google_calendar.get_password(fieldname="next_sync_token", raise_exception=False)
-			or None
-		)
 		time_max, time_min = get_today_min_max_time(date)
+		print(account.google_calendar_id)
 		events = (
 			google_calendar_api_obj.events()
 			.list(
-				calendarId=google_calendar.google_calendar_id,
+				calendarId=account.google_calendar_id,
 				maxResults=2000,
 				singleEvents=True,
 				timeMax=time_max,
 				timeMin=time_min,
-				orderBy="startTime",
+				orderBy="startTime"
 			)
 			.execute()
 		)
-	except HttpError as err:
+		print(events)
+	except Exception as err:
+		print(err)
 		frappe.throw(
 			_(
 				"Google Calendar - Could not fetch event from Google Calendar, error code {0}."

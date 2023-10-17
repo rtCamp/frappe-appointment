@@ -111,6 +111,7 @@ app_license = "MIT"
 
 override_doctype_class = {
 	"Event": "frappe_appointment.overrides.event_override.EventOverride",
+	"Google Calendar": "frappe_appointment.overrides.google_calendar_override.GoogleCalendarOverride",
 }
 
 # Document Events
