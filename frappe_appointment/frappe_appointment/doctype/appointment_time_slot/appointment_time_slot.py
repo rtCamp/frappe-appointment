@@ -65,7 +65,6 @@ def get_google_calendar_slots_member(
 
 	try:
 		time_max, time_min = get_today_min_max_time(date)
-		print(account.google_calendar_id)
 		events = (
 			google_calendar_api_obj.events()
 			.list(
@@ -78,9 +77,7 @@ def get_google_calendar_slots_member(
 			)
 			.execute()
 		)
-		print(events)
 	except Exception as err:
-		print(err)
 		frappe.throw(
 			_(
 				"Google Calendar - Could not fetch event from Google Calendar, error code {0}."
