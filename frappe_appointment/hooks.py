@@ -119,9 +119,7 @@ override_doctype_class = {
 
 doc_events = {
 	"Event": {
-		"after_insert": "frappe_appointment.overrides.event_override.insert_event_in_google_calendar_attendees",  
-		# "on_update": "frappe_appointment.overrides.event_override.on_update",
-		# "on_trash": "frappe_appointment.overrides.event_override.on_trash",
+		"after_insert": "frappe_appointment.overrides.event_override.insert_event_in_google_calendar_attendees"
 	}
 }
 

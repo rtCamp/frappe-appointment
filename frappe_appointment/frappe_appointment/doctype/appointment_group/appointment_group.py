@@ -2,7 +2,7 @@
 # For license information, please see license.txt
 
 import frappe
-from frappe.model.document import Document
+from frappe.website.website_generator import WebsiteGenerator
 from frappe_appointment.constants import APPOINTMENT_GROUP, APPOINTMENT_TIME_SLOT
 from frappe_appointment.frappe_appointment.doctype.appointment_time_slot.appointment_time_slot import (
 	get_all_unavailable_google_calendar_slots_for_day,
@@ -10,7 +10,16 @@ from frappe_appointment.frappe_appointment.doctype.appointment_time_slot.appoint
 	convert_timezone_to_utc,
 )
 from dateutil import parser
-from frappe.utils import getdate, get_time_str, format_time, add_to_date
+from frappe.utils import (
+	getdate,
+	get_time_str,
+	format_time,
+	add_to_date,
+	now_datetime,
+	add_days,
+	get_datetime,
+	get_date_str,
+)
 import datetime
 
 
@@ -25,8 +34,23 @@ weekdays = [
 ]
 
 
-class AppointmentGroup(Document):
-	pass
+class AppointmentGroup(WebsiteGenerator):
+	website = frappe._dict(
+		page_title_field="group_name",
+		no_cache=1,
+		no_breadcrumbs=1,
+	)
+
+	def validate(self):
+		if not self.route:
+			self.route = frappe.scrub(self.group_name).replace("_", "-")
+
+	def get_context(self, context):
+		return context
+
+
+def get_list_context(context):
+	return frappe.redirect("/")
 
 
 @frappe.whitelist(allow_guest=True)
@@ -34,9 +58,24 @@ def get_time_slots_for_day(appointment_group_id: str, date: str) -> object:
 	if not appointment_group_id:
 		return {"result": []}
 
-	appointment_group = frappe.get_doc(APPOINTMENT_GROUP, appointment_group_id)
+	appointment_group = frappe.get_last_doc(
+		APPOINTMENT_GROUP, filters={"route": appointment_group_id}
+	)
 
-	date = getdate(date)
+	datetime = get_datetime(date)
+	date = datetime.date()
+
+	date_validation_obj = vaild_date(datetime, appointment_group)
+
+	if not date_validation_obj["is_valid"]:
+		return {
+			"appointment_group_id": appointment_group_id,
+			"valid_start_date": date_validation_obj["valid_start_date"],
+			"valid_end_date": date_validation_obj["valid_end_date"],
+			"total_slots_for_day": 0,
+			"is_invalid_date": True,
+		}
+
 	weekday = weekdays[date.weekday()]
 
 	members = appointment_group.members
@@ -51,7 +90,7 @@ def get_time_slots_for_day(appointment_group_id: str, date: str) -> object:
 		appointmen_time_slots = frappe.db.get_all(
 			APPOINTMENT_TIME_SLOT, filters={"parent": member.user, "day": weekday}, fields="*"
 		)
-  
+
 		max_start_time, min_end_time = get_max_min_time_slot(
 			appointmen_time_slots, max_start_time, min_end_time
 		)
@@ -77,7 +116,27 @@ def get_time_slots_for_day(appointment_group_id: str, date: str) -> object:
 		"starttime": starttime,
 		"endtime": endtime,
 		"total_slots_for_day": len(avaiable_time_slot_for_day),
+		"valid_start_date": date_validation_obj["valid_start_date"],
+		"valid_end_date": date_validation_obj["valid_end_date"],
 	}
+
+
+def vaild_date(date: datetime, appointment_group: object) -> bool:
+	current_date = get_datetime(now_datetime().date())
+
+	start_date = add_days(current_date, int(appointment_group.days_after_show_slots))
+	end_date = add_days(start_date, int(appointment_group.days_till_show_slots))
+
+	if start_date > date:
+		return {"is_valid": False, "valid_start_date": start_date, "valid_end_date": end_date}
+
+	if int(appointment_group.days_till_show_slots) > 0 and end_date < date:
+		return {"is_valid": False, "valid_start_date": start_date, "valid_end_date": end_date}
+
+	if int(appointment_group.days_till_show_slots) <= 0:
+		end_date = ""
+
+	return {"is_valid": True, "valid_start_date": start_date, "valid_end_date": end_date}
 
 
 def get_avaiable_time_slot_for_day(
@@ -86,7 +145,7 @@ def get_avaiable_time_slot_for_day(
 	available_slots = []
 
 	index = 0
-	current_start_time = starttime
+	current_start_time = get_next_round_value(starttime)
 
 	minute, second = divmod(duration_for_event.seconds, 60)
 	hour, minute = divmod(minute, 60)
@@ -101,7 +160,7 @@ def get_avaiable_time_slot_for_day(
 			available_slots.append(
 				{"start_time": current_start_time, "end_time": current_end_time}
 			)
-			current_start_time = current_end_time
+			current_start_time = get_next_round_value(current_end_time)
 			current_end_time = add_to_date(
 				current_start_time, hours=hour, minutes=minute, seconds=second
 			)
@@ -121,9 +180,9 @@ def get_avaiable_time_slot_for_day(
 			available_slots.append(
 				{"start_time": current_start_time, "end_time": current_end_time}
 			)
-			current_start_time = current_end_time
+			current_start_time = get_next_round_value(current_end_time)
 		else:
-			current_start_time = currernt_slot_end_time
+			current_start_time = get_next_round_value(currernt_slot_end_time)
 			index += 1
 
 		current_end_time = add_to_date(
@@ -131,6 +190,14 @@ def get_avaiable_time_slot_for_day(
 		)
 
 	return available_slots
+
+
+def get_next_round_value(datetimeobj: datetime):
+	if datetimeobj.minute == 0:
+		return datetimeobj
+	
+	next_datetimeobj = add_to_date(datetimeobj, hours=1)
+	return next_datetimeobj.replace(minute=0, second=0)
 
 
 def get_max_min_time_slot(

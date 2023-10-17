@@ -1,5 +1,6 @@
 {
  "actions": [],
+ "allow_guest_to_view": 1,
  "allow_rename": 1,
  "autoname": "field:group_name",
  "creation": "2023-10-10 17:07:07.605016",
@@ -11,9 +12,11 @@
   "group_name",
   "members",
   "duration_for_event",
-  "day_after",
+  "days_after_show_slots",
+  "days_till_show_slots",
   "webhook",
-  "publish_on_website"
+  "publish_on_website",
+  "route"
  ],
  "fields": [
   {
@@ -51,14 +54,28 @@
   },
   {
    "default": "0",
-   "fieldname": "day_after",
+   "fieldname": "days_after_show_slots",
    "fieldtype": "Int",
-   "label": "Day After"
+   "label": "Days After Show Slots"
+  },
+  {
+   "default": "0",
+   "fieldname": "days_till_show_slots",
+   "fieldtype": "Data",
+   "label": "Days Till Show Slots"
+  },
+  {
+   "depends_on": "publish_on_website",
+   "fieldname": "route",
+   "fieldtype": "Data",
+   "label": "Route",
+   "unique": 1
   }
  ],
- "index_web_pages_for_search": 1,
+ "has_web_view": 1,
+ "is_published_field": "publish_on_website",
  "links": [],
- "modified": "2023-10-12 16:55:34.133573",
+ "modified": "2023-10-16 09:04:26.968824",
  "modified_by": "Administrator",
  "module": "Frappe Appointment",
  "name": "Appointment Group",
@@ -78,6 +95,7 @@
    "write": 1
   }
  ],
+ "route": "group",
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": []
