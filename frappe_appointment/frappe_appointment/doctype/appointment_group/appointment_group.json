@@ -12,8 +12,8 @@
   "group_name",
   "members",
   "duration_for_event",
-  "days_after_show_slots",
-  "days_till_show_slots",
+  "minimum_notice_before_event",
+  "event_availability_window",
   "webhook",
   "publish_on_website",
   "route"
@@ -53,29 +53,29 @@
    "unique": 1
   },
   {
-   "default": "0",
-   "fieldname": "days_after_show_slots",
-   "fieldtype": "Int",
-   "label": "Days After Show Slots"
-  },
-  {
-   "default": "0",
-   "fieldname": "days_till_show_slots",
-   "fieldtype": "Data",
-   "label": "Days Till Show Slots"
-  },
-  {
    "depends_on": "publish_on_website",
    "fieldname": "route",
    "fieldtype": "Data",
    "label": "Route",
    "unique": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "minimum_notice_before_event",
+   "fieldtype": "Int",
+   "label": "Minimum Notice Before Event"
+  },
+  {
+   "default": "0",
+   "fieldname": "event_availability_window",
+   "fieldtype": "Data",
+   "label": "Event Availability Window"
   }
  ],
  "has_web_view": 1,
  "is_published_field": "publish_on_website",
  "links": [],
- "modified": "2023-10-16 09:04:26.968824",
+ "modified": "2023-10-17 18:19:18.101890",
  "modified_by": "Administrator",
  "module": "Frappe Appointment",
  "name": "Appointment Group",

@@ -124,16 +124,16 @@ def get_time_slots_for_day(appointment_group_id: str, date: str) -> object:
 def vaild_date(date: datetime, appointment_group: object) -> bool:
 	current_date = get_datetime(now_datetime().date())
 
-	start_date = add_days(current_date, int(appointment_group.days_after_show_slots))
-	end_date = add_days(start_date, int(appointment_group.days_till_show_slots))
+	start_date = add_days(current_date, int(appointment_group.minimum_notice_before_event))
+	end_date = add_days(start_date, int(appointment_group.event_availability_window))
 
 	if start_date > date:
 		return {"is_valid": False, "valid_start_date": start_date, "valid_end_date": end_date}
 
-	if int(appointment_group.days_till_show_slots) > 0 and end_date < date:
+	if int(appointment_group.event_availability_window) > 0 and end_date < date:
 		return {"is_valid": False, "valid_start_date": start_date, "valid_end_date": end_date}
 
-	if int(appointment_group.days_till_show_slots) <= 0:
+	if int(appointment_group.event_availability_window) <= 0:
 		end_date = ""
 
 	return {"is_valid": True, "valid_start_date": start_date, "valid_end_date": end_date}

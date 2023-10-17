@@ -180,6 +180,8 @@ function get_time_slots() {
 			todaySlotsData = r.message;
 			update_calander();
 			hide_loader();
+		}).catch((e) => {
+			hide_loader();
 		});
 }
 
