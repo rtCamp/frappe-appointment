@@ -59,21 +59,23 @@ def get_google_calendar_slots_member(
 	google_calendar = frappe.get_last_doc(
 		doctype="Google Calendar", filters={"user": memebr}
 	)
-	google_calendar_api_obj, account = get_google_calendar_object(google_calendar)
+
+	google_calendar_api_obj, account = get_google_calendar_object(google_calendar.name)
 
 	events = []
 
 	try:
 		time_max, time_min = get_today_min_max_time(date)
+
 		events = (
 			google_calendar_api_obj.events()
 			.list(
-				calendarId=account.google_calendar_id,
+				calendarId=google_calendar.google_calendar_id,
 				maxResults=2000,
 				singleEvents=True,
 				timeMax=time_max,
 				timeMin=time_min,
-				orderBy="startTime"
+				orderBy="startTime",
 			)
 			.execute()
 		)

@@ -74,7 +74,7 @@ class EventOverride(Event):
 		appointment_group = frappe.get_doc(APPOINTMENT_GROUP, self.custom_appointment_group)
 
 		if not appointment_group.webhook:
-			return False
+			return True
 
 		try:
 			api_res = requests.post(
@@ -201,7 +201,7 @@ def create_event_for_appointment_group(
 		doctype="Google Calendar", filters={"user": members[0].user}
 	)
 
-	google_calendar_api_obj, account = get_google_calendar_object(google_calendar)
+	google_calendar_api_obj, account = get_google_calendar_object(google_calendar.name)
 
 	calendar_event = {
 		"doctype": "Event",
