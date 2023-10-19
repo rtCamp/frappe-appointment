@@ -99,7 +99,7 @@
 }
 
 .cal-main-container .timeslot:hover, .cal-main-container .timeslot-active{
-  border: 1.5px solid #5d8797;
+    border: 1.75px solid #49758f;
 }
 
 .cal-main-container .submit-inactive{
@@ -126,6 +126,14 @@ header .calendar-navigation span {
   color: #aeabab;
   font-size: 1.9rem;
   display: flex;
+}
+
+.calendar-navigation .material-symbols-rounded{
+  color: #211f1fb0;
+}
+
+.calendar-navigation .inactive-month{
+  color: #59535388;
 }
 
 .calendar-navigation span i {

@@ -55,70 +55,73 @@ def get_list_context(context):
 
 @frappe.whitelist(allow_guest=True)
 def get_time_slots_for_day(appointment_group_id: str, date: str) -> object:
-	if not appointment_group_id:
-		return {"result": []}
+	try:
+		if not appointment_group_id:
+			return {"result": []}
 
-	appointment_group = frappe.get_last_doc(
-		APPOINTMENT_GROUP, filters={"route": appointment_group_id}
-	)
+		appointment_group = frappe.get_last_doc(
+			APPOINTMENT_GROUP, filters={"route": appointment_group_id}
+		)
 
-	datetime = get_datetime(date)
-	date = datetime.date()
+		datetime = get_datetime(date)
+		date = datetime.date()
 
-	date_validation_obj = vaild_date(datetime, appointment_group)
+		date_validation_obj = vaild_date(datetime, appointment_group)
 
-	if not date_validation_obj["is_valid"]:
+		if not date_validation_obj["is_valid"]:
+			return {
+				"appointment_group_id": appointment_group_id,
+				"valid_start_date": date_validation_obj["valid_start_date"],
+				"valid_end_date": date_validation_obj["valid_end_date"],
+				"total_slots_for_day": 0,
+				"is_invalid_date": True,
+			}
+
+		weekday = weekdays[date.weekday()]
+
+		members = appointment_group.members
+
+		member_time_slots = {}
+		max_start_time, min_end_time = "00:00:00", "24:00:00"
+
+		for member in members:
+			if not member.is_mandatory:
+				continue
+
+			appointmen_time_slots = frappe.db.get_all(
+				APPOINTMENT_TIME_SLOT, filters={"parent": member.user, "day": weekday}, fields="*"
+			)
+
+			max_start_time, min_end_time = get_max_min_time_slot(
+				appointmen_time_slots, max_start_time, min_end_time
+			)
+
+			member_time_slots[member.user] = appointmen_time_slots
+
+		starttime = get_utc_datatime_with_time(date, max_start_time)
+		endtime = get_utc_datatime_with_time(date, min_end_time)
+
+		all_slots = get_all_unavailable_google_calendar_slots_for_day(
+			member_time_slots, starttime, endtime, date
+		)
+
+		avaiable_time_slot_for_day = get_avaiable_time_slot_for_day(
+			all_slots, starttime, endtime, appointment_group.duration_for_event
+		)
+
 		return {
+			"all_avaiable_slots_for_data": avaiable_time_slot_for_day,
+			"date": date,
+			"duration": appointment_group.duration_for_event,
 			"appointment_group_id": appointment_group_id,
+			"starttime": starttime,
+			"endtime": endtime,
+			"total_slots_for_day": len(avaiable_time_slot_for_day),
 			"valid_start_date": date_validation_obj["valid_start_date"],
 			"valid_end_date": date_validation_obj["valid_end_date"],
-			"total_slots_for_day": 0,
-			"is_invalid_date": True,
 		}
-
-	weekday = weekdays[date.weekday()]
-
-	members = appointment_group.members
-
-	member_time_slots = {}
-	max_start_time, min_end_time = "00:00:00", "24:00:00"
-
-	for member in members:
-		if not member.is_mandatory:
-			continue
-
-		appointmen_time_slots = frappe.db.get_all(
-			APPOINTMENT_TIME_SLOT, filters={"parent": member.user, "day": weekday}, fields="*"
-		)
-
-		max_start_time, min_end_time = get_max_min_time_slot(
-			appointmen_time_slots, max_start_time, min_end_time
-		)
-
-		member_time_slots[member.user] = appointmen_time_slots
-
-	starttime = get_utc_datatime_with_time(date, max_start_time)
-	endtime = get_utc_datatime_with_time(date, min_end_time)
-
-	all_slots = get_all_unavailable_google_calendar_slots_for_day(
-		member_time_slots, starttime, endtime, date
-	)
-
-	avaiable_time_slot_for_day = get_avaiable_time_slot_for_day(
-		all_slots, starttime, endtime, appointment_group.duration_for_event
-	)
-
-	return {
-		"all_avaiable_slots_for_data": avaiable_time_slot_for_day,
-		"date": date,
-		"duration": appointment_group.duration_for_event,
-		"appointment_group_id": appointment_group_id,
-		"starttime": starttime,
-		"endtime": endtime,
-		"total_slots_for_day": len(avaiable_time_slot_for_day),
-		"valid_start_date": date_validation_obj["valid_start_date"],
-		"valid_end_date": date_validation_obj["valid_end_date"],
-	}
+	except Exception as e:
+		return None
 
 
 def vaild_date(date: datetime, appointment_group: object) -> bool:
