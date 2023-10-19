@@ -145,7 +145,9 @@ def get_avaiable_time_slot_for_day(
 	available_slots = []
 
 	index = 0
+
 	current_start_time = get_next_round_value(starttime)
+
 
 	minute, second = divmod(duration_for_event.seconds, 60)
 	hour, minute = divmod(minute, 60)
@@ -174,9 +176,7 @@ def get_avaiable_time_slot_for_day(
 			currernt_slot["end"]["dateTime"], currernt_slot["end"]["timeZone"]
 		)
 
-		if current_end_time <= currernt_slot_start_time or (
-			index >= len(all_slots) and current_end_time <= endtime
-		):
+		if current_end_time <= currernt_slot_start_time:
 			available_slots.append(
 				{"start_time": current_start_time, "end_time": current_end_time}
 			)
@@ -195,7 +195,7 @@ def get_avaiable_time_slot_for_day(
 def get_next_round_value(datetimeobj: datetime):
 	if datetimeobj.minute == 0:
 		return datetimeobj
-	
+
 	next_datetimeobj = add_to_date(datetimeobj, hours=1)
 	return next_datetimeobj.replace(minute=0, second=0)
 

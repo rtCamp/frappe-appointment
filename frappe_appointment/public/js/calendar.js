@@ -180,7 +180,14 @@ function get_time_slots() {
 			todaySlotsData = r.message;
 			update_calander();
 			hide_loader();
-		}).catch((e) => {
+		})
+		.catch((e) => {
+			todaySlotsData = {
+				all_avaiable_slots_for_data: [],
+				appointment_group_id: get_appointment_group(),
+				date: getURLSearchParam("date"),
+			};
+			update_calander();
 			hide_loader();
 		});
 }
