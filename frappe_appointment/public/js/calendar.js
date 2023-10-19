@@ -39,7 +39,7 @@ const manipulate = () => {
 
 	let lit = "";
 	for (let i = dayone; i > 0; i--) {
-		lit += `<li class="inactive">${monthlastdate - i + 1}</li>`;
+		lit += `<li class="date past">${monthlastdate - i + 1}</li>`;
 	}
 
 	for (let i = 1; i <= lastdate; i++) {
@@ -47,7 +47,7 @@ const manipulate = () => {
 	}
 
 	for (let i = dayend; i < 6; i++) {
-		lit += `<li class="inactive">${i - dayend + 1}</li>`;
+		lit += `<li class="date next">${i - dayend + 1}</li>`;
 	}
 	currdate.innerText = `${months[month]} ${year}`;
 	day.innerHTML = lit;
@@ -62,7 +62,11 @@ const get_date_on_click = () => {
 	const dates = document.querySelectorAll(".date");
 
 	dates.forEach((date) => {
-		const selected_date = new Date(year, month, parseInt(date.innerHTML));
+		const selected_date = new Date(
+			year,
+			month + get_day_increment(date),
+			parseInt(date.innerHTML)
+		);
 
 		if (selected_date < vaild_start_date) {
 			date.classList.add("inactive");
@@ -82,6 +86,8 @@ const get_date_on_click = () => {
 			});
 
 			date.classList.add("active");
+			year = selected_date.getFullYear();
+			month = selected_date.getMonth();
 			setURLSearchParam("date", get_date_str(selected_date));
 			get_time_slots();
 		});
@@ -91,7 +97,9 @@ const get_date_on_click = () => {
 function update_active_date() {
 	const dates = document.querySelectorAll(".date");
 	dates.forEach((d) => {
-		const selected_date = get_date_str(new Date(year, month, parseInt(d.innerHTML)));
+		const selected_date = get_date_str(
+			new Date(year, month + get_day_increment(d), parseInt(d.innerHTML))
+		);
 
 		if (selected_date == getURLSearchParam("date")) {
 			d.classList.add("active");
@@ -168,6 +176,18 @@ function get_time_slots() {
 			}
 		)
 		.then((r) => {
+			if (!r?.message) {
+				let date = new Date();
+				year = date.getFullYear();
+				month = date.getMonth();
+				todaySlotsData = {
+					all_avaiable_slots_for_data: [],
+					appointment_group_id: get_appointment_group(),
+					date: setURLSearchParam("date", get_date_str(date)),
+				};
+				get_time_slots();
+				return;
+			}
 			if (r.message.is_invalid_date) {
 				date = new Date(r.message.valid_start_date);
 				setURLSearchParam("date", get_date_str(date));
@@ -178,15 +198,6 @@ function get_time_slots() {
 				return;
 			}
 			todaySlotsData = r.message;
-			update_calander();
-			hide_loader();
-		})
-		.catch((e) => {
-			todaySlotsData = {
-				all_avaiable_slots_for_data: [],
-				appointment_group_id: get_appointment_group(),
-				date: getURLSearchParam("date"),
-			};
 			update_calander();
 			hide_loader();
 		});
@@ -210,11 +221,10 @@ function add_event_slots(time_slots) {
 				: getURLSearchParam("custom_doctype_link_with_event").replaceAll("\\", ""),
 		})
 		.then((r) => {
-			frappe.show_alert("Successfully selected the slots. Thank you!", 5);
 			setTimeout(() => {
 				hide_loader();
 				window.location.href = "/";
-			}, 3000);
+			}, 2000);
 		})
 		.catch((e) => {
 			cancel_button.click();
@@ -223,6 +233,18 @@ function add_event_slots(time_slots) {
 }
 
 // Helpers
+
+function get_day_increment(date) {
+	let increment = 0;
+
+	if (date.classList.contains("next")) {
+		increment = 1;
+	} else if (date.classList.contains("past")) {
+		increment = -1;
+	}
+
+	return increment;
+}
 
 function change_month_active_state(value, icon) {
 	const vaild_start_date = new Date(todaySlotsData.valid_start_date);
