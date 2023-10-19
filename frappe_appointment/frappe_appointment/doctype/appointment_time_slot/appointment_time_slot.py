@@ -89,6 +89,7 @@ def get_google_calendar_slots_member(
 	events_items = events["items"]
 	range_events = []
 
+
 	for event in events_items:
 		if check_if_datetime_in_range(
 			convert_timezone_to_utc(event["start"]["dateTime"], event["start"]["timeZone"]),
@@ -130,4 +131,17 @@ def check_if_datetime_in_range(
 	lower_datetime: datetime,
 	upper_datetime: datetime,
 ):
-	return lower_datetime <= start_datetime and end_datetime <= upper_datetime
+
+	# if lower_datetime <= start_datetime and end_datetime <= upper_datetime:
+	# 	return True
+
+	# if end_datetime > lower_datetime and lower_datetime > start_datetime:
+	# 	return True
+
+	# if start_datetime < upper_datetime and upper_datetime < end_datetime:
+	# 	return True
+
+	if lower_datetime > end_datetime or upper_datetime < start_datetime:
+		return False
+
+	return True

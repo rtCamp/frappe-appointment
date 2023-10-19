@@ -80,13 +80,14 @@ class EventOverride(Event):
 			api_res = requests.post(
 				appointment_group.webhook, data=json.dumps(body, default=datetime_serializer)
 			).json()
-
+   
 			if not api_res:
 				raise False
 
 			return True
 
 		except Exception as e:
+			print(e)
 			return False
 
 
