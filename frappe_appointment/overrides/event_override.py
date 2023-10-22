@@ -9,6 +9,7 @@ from frappe.integrations.doctype.google_calendar.google_calendar import (
 	repeat_on_to_google_calendar_recurrence_rule,
 	get_attendees,
 	format_date_according_to_google_calendar,
+	update_event_in_google_calendar
 )
 from googleapiclient.errors import HttpError
 from frappe.utils import (
@@ -182,7 +183,7 @@ def create_event_for_appointment_group(
 	**args,
 ):
 	event_info = args
-
+	reschedule= event_info.get('reschedule',False)
 	appointment_group = frappe.get_last_doc(
 		APPOINTMENT_GROUP, filters={"route": appointment_group_id}
 	)
@@ -203,7 +204,36 @@ def create_event_for_appointment_group(
 	)
 
 	google_calendar_api_obj, account = get_google_calendar_object(google_calendar.name)
+	if reschedule:
+		job_appicant,job_opening = frappe.db.get_value('Interview',event_info.get('interview'),['job_applicant','job_opening'])
+		event_info['job_applicant'] = job_appicant
+		event_info['job_opening'] = job_opening
+		event = frappe.get_last_doc('Event',filters={'custom_appointment_group':appointment_group.name})
+		attendees = get_attendees(event)
+		event.starts_on = get_datetime_str(
+			convert_utc_to_system_timezone(
+				datetime.datetime.fromisoformat(start_time).replace(tzinfo=None)
+			)
+		)
+		event.ends_on =get_datetime_str(
+			convert_utc_to_system_timezone(
+				datetime.datetime.fromisoformat(end_time).replace(tzinfo=None)
+			)
+		)
+		if event.custom_sync_participants_google_calendars:
+			event.update({"attendees": update_attendees(attendees)})
+		event.save(ignore_permissions=True)
 
+		if not event.handle_webhook(
+			{
+				"event": event.as_dict(),
+				"appointment_group": appointment_group.as_dict(),
+				"metadata": event_info,
+			}
+		):
+			return frappe.throw(_("Unable to Update an event"))
+		update_event_in_google_calendar(event)
+		return frappe.msgprint("Interview has been Re-Scheduled.")
 	calendar_event = {
 		"doctype": "Event",
 		"subject": event_info.get("subject"),
