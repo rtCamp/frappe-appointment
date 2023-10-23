@@ -1,25 +1,13 @@
 import frappe
 from frappe import _
 import datetime
-import pytz
 from frappe.desk.doctype.event.event import Event
 from frappe.integrations.doctype.google_calendar.google_calendar import (
 	get_google_calendar_object,
-	get_conference_data,
-	repeat_on_to_google_calendar_recurrence_rule,
-	get_attendees,
-	format_date_according_to_google_calendar,
 	update_event_in_google_calendar
 )
-from googleapiclient.errors import HttpError
 from frappe.utils import (
-	add_days,
-	add_to_date,
 	get_datetime,
-	get_request_site_address,
-	get_system_timezone,
-	get_weekdays,
-	now_datetime,
 	convert_utc_to_system_timezone,
 	get_datetime_str,
 	now,
