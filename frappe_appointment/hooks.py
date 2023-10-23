@@ -118,12 +118,6 @@ override_doctype_class = {
 # ---------------
 # Hook on document methods and events
 
-doc_events = {
-	"Event": {
-		"after_insert": "frappe_appointment.overrides.event_override.insert_event_in_google_calendar_attendees"
-	}
-}
-
 # Scheduled Tasks
 # ---------------
 
