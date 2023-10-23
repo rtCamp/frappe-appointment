@@ -77,7 +77,7 @@ def get_time_slots_for_day(appointment_group_id: str, date: str) -> object:
 				"total_slots_for_day": 0,
 				"is_invalid_date": True,
 			}
-		if booking_frequency_reached(datetime,appointment_group):
+		if booking_frequency_reached(datetime, appointment_group):
 			return {
 				"all_avaiable_slots_for_data": [],
 				"date": date,
@@ -136,9 +136,7 @@ def get_time_slots_for_day(appointment_group_id: str, date: str) -> object:
 
 
 def booking_frequency_reached(datetime: datetime, appointment_group: object) -> bool:
-	if (
-		int(appointment_group.limit_booking_frequency) < 0
-	):
+	if int(appointment_group.limit_booking_frequency) < 0:
 		return False
 
 	start_datetime, end_datetime = get_datetime_str(datetime), get_datetime_str(
@@ -148,6 +146,7 @@ def booking_frequency_reached(datetime: datetime, appointment_group: object) -> 
 	all_events = frappe.get_all(
 		"Event",
 		filters=[
+			["custom_appointment_group", "=", appointment_group.name],
 			["starts_on", ">=", start_datetime],
 			["starts_on", "<", end_datetime],
 			["ends_on", ">=", start_datetime],
