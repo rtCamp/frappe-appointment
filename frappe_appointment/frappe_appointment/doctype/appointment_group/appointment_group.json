@@ -76,6 +76,7 @@
    "label": "Event Availability Window"
   },
   {
+   "default": "-1",
    "description": "Limit how many times this event can be booked in a day.",
    "fieldname": "limit_booking_frequency",
    "fieldtype": "Int",
@@ -102,7 +103,7 @@
  "has_web_view": 1,
  "is_published_field": "publish_on_website",
  "links": [],
- "modified": "2023-10-23 10:04:34.299066",
+ "modified": "2023-10-23 16:34:12.226557",
  "modified_by": "Administrator",
  "module": "Frappe Appointment",
  "name": "Appointment Group",

@@ -197,6 +197,7 @@ function get_time_slots() {
 				get_time_slots();
 				return;
 			}
+			
 			todaySlotsData = r.message;
 			update_calander();
 			hide_loader();
