@@ -24,6 +24,7 @@ from frappe.utils import (
 	get_datetime_str,
 	now,
 )
+from frappe_appointment.helpers.email import send_email_template_mail
 from frappe_appointment.constants import (
 	APPOINTMENT_GROUP,
 	USER_APPOINTMENT_AVAILABILITY,
@@ -37,17 +38,55 @@ import json
 
 class EventOverride(Event):
 	def before_insert(self):
-		self.update_attendees_for_appointment_group()
-
-	def update_attendees_for_appointment_group(self):
 		if not self.custom_appointment_group:
 			return
 
 		self.push_to_google_calendar = False
+		self.appointment_group = frappe.get_doc(
+			APPOINTMENT_GROUP, self.custom_appointment_group
+		)
+		self.send_meet_email()
+		self.update_attendees_for_appointment_group()
 
-		appointment_group = frappe.get_doc(APPOINTMENT_GROUP, self.custom_appointment_group)
+	def send_meet_email(self):
+		appointment_group = self.appointment_group
 
-		members = appointment_group.members
+		if (
+			appointment_group.meet_link
+			and appointment_group.email_template
+			and self.event_participants
+			and self.custom_doctype_link_with_event
+		):
+			args = dict(
+				appointment_group=self.appointment_group, event=self, metadata=self.event_info
+			)
+
+			send_doc_value = self.custom_doctype_link_with_event[0]
+			send_doc = frappe.get_doc(
+				send_doc_value.reference_doctype, send_doc_value.reference_docname
+			)
+
+			send_email_template_mail(
+				send_doc,
+				args,
+				self.appointment_group.email_template,
+				recipients=self.get_recipients_event(),
+			)
+
+	def get_recipients_event(self):
+		if not self.event_participants:
+			return []
+
+		recipients = []
+
+		for participant in self.event_participants:
+			if participant.reference_doctype != USER_APPOINTMENT_AVAILABILITY:
+				recipients.append(participant.email)
+
+		return recipients
+
+	def update_attendees_for_appointment_group(self):
+		members = self.appointment_group.members
 
 		for member in members:
 			try:
@@ -81,7 +120,7 @@ class EventOverride(Event):
 			api_res = requests.post(
 				appointment_group.webhook, data=json.dumps(body, default=datetime_serializer)
 			).json()
-   
+
 			if not api_res:
 				raise False
 
@@ -259,6 +298,7 @@ def create_event_for_appointment_group(
 		),
 		"event_type": event_info.get("event_type", "Public"),
 		"custom_appointment_group": appointment_group.name,
+		"event_info": event_info,
 	}
 
 	event = frappe.get_doc(calendar_event)

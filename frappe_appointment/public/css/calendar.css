@@ -99,7 +99,7 @@
 }
 
 .cal-main-container .timeslot:hover, .cal-main-container .timeslot-active{
-    border: 1.75px solid #49758f;
+  border: 2px solid #007bff;
 }
 
 .cal-main-container .submit-inactive{
