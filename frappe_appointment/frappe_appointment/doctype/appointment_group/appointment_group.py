@@ -19,6 +19,7 @@ from frappe.utils import (
 	add_days,
 	get_datetime,
 	get_date_str,
+	get_datetime_str,
 )
 import datetime
 
@@ -76,6 +77,16 @@ def get_time_slots_for_day(appointment_group_id: str, date: str) -> object:
 				"total_slots_for_day": 0,
 				"is_invalid_date": True,
 			}
+		if booking_frequency_reached(datetime,appointment_group):
+			return {
+				"all_avaiable_slots_for_data": [],
+				"date": date,
+				"duration": appointment_group.duration_for_event,
+				"appointment_group_id": appointment_group_id,
+				"total_slots_for_day": 0,
+				"valid_start_date": date_validation_obj["valid_start_date"],
+				"valid_end_date": date_validation_obj["valid_end_date"],
+			}
 
 		weekday = weekdays[date.weekday()]
 
@@ -124,6 +135,30 @@ def get_time_slots_for_day(appointment_group_id: str, date: str) -> object:
 		return None
 
 
+def booking_frequency_reached(datetime: datetime, appointment_group: object) -> bool:
+	if (
+		int(appointment_group.limit_booking_frequency) < 0
+	):
+		return False
+
+	start_datetime, end_datetime = get_datetime_str(datetime), get_datetime_str(
+		add_days(datetime, 1)
+	)
+
+	all_events = frappe.get_all(
+		"Event",
+		filters=[
+			["starts_on", ">=", start_datetime],
+			["starts_on", "<", end_datetime],
+			["ends_on", ">=", start_datetime],
+			["ends_on", "<", end_datetime],
+		],
+		fields=["starts_on", "ends_on"],
+	)
+
+	return len(all_events) >= int(appointment_group.limit_booking_frequency)
+
+
 def vaild_date(date: datetime, appointment_group: object) -> bool:
 	current_date = get_datetime(now_datetime().date())
 
@@ -150,7 +185,6 @@ def get_avaiable_time_slot_for_day(
 	index = 0
 
 	current_start_time = get_next_round_value(starttime)
-
 
 	minute, second = divmod(duration_for_event.seconds, 60)
 	hour, minute = divmod(minute, 60)
