@@ -12,8 +12,12 @@
   "group_name",
   "members",
   "duration_for_event",
+  "minimum_buffer_time",
   "minimum_notice_before_event",
   "event_availability_window",
+  "limit_booking_frequency",
+  "meet_link",
+  "email_template",
   "webhook",
   "publish_on_website",
   "route"
@@ -70,12 +74,35 @@
    "fieldname": "event_availability_window",
    "fieldtype": "Data",
    "label": "Event Availability Window"
+  },
+  {
+   "description": "Limit how many times this event can be booked in a day.",
+   "fieldname": "limit_booking_frequency",
+   "fieldtype": "Int",
+   "label": "Limit booking frequency"
+  },
+  {
+   "description": "Minimum buffer time between two events ",
+   "fieldname": "minimum_buffer_time",
+   "fieldtype": "Time",
+   "label": "Minimum Buffer Time"
+  },
+  {
+   "fieldname": "meet_link",
+   "fieldtype": "Data",
+   "label": "Meet Link"
+  },
+  {
+   "fieldname": "email_template",
+   "fieldtype": "Link",
+   "label": " Email Template",
+   "options": "Email Template"
   }
  ],
  "has_web_view": 1,
  "is_published_field": "publish_on_website",
  "links": [],
- "modified": "2023-10-17 18:19:18.101890",
+ "modified": "2023-10-23 10:04:34.299066",
  "modified_by": "Administrator",
  "module": "Frappe Appointment",
  "name": "Appointment Group",
