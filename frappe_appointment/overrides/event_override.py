@@ -26,11 +26,12 @@ import json
 
 class EventOverride(Event):
 	def before_insert(self):
-		self.appointment_group = frappe.get_doc(
-			APPOINTMENT_GROUP, self.custom_appointment_group
-		)
-		self.send_meet_email()
-		self.update_attendees_for_appointment_group()
+		if self.custom_appointment_group:
+			self.appointment_group = frappe.get_doc(
+				APPOINTMENT_GROUP, self.custom_appointment_group
+			)
+			self.send_meet_email()
+			self.update_attendees_for_appointment_group()
 
 	def send_meet_email(self):
 		appointment_group = self.appointment_group
