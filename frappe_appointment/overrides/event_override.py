@@ -244,11 +244,7 @@ def create_event_for_appointment_group(
 
 	google_calendar_api_obj, account = get_google_calendar_object(google_calendar.name)
 	if reschedule:
-		job_appicant,job_opening = frappe.db.get_value('Interview',event_info.get('interview'),['job_applicant','job_opening'])
-		event_info['job_applicant'] = job_appicant
-		event_info['job_opening'] = job_opening
 		event = frappe.get_last_doc('Event',filters={'custom_appointment_group':appointment_group.name})
-		attendees = get_attendees(event)
 		event.starts_on = get_datetime_str(
 			convert_utc_to_system_timezone(
 				datetime.datetime.fromisoformat(start_time).replace(tzinfo=None)
@@ -258,11 +254,9 @@ def create_event_for_appointment_group(
 			convert_utc_to_system_timezone(
 				datetime.datetime.fromisoformat(end_time).replace(tzinfo=None)
 			)
-		)
-		if event.custom_sync_participants_google_calendars:
-			event.update({"attendees": update_attendees(attendees)})
+		)		
 		event.save(ignore_permissions=True)
-
+		
 		if not event.handle_webhook(
 			{
 				"event": event.as_dict(),
