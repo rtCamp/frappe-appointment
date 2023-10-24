@@ -187,7 +187,7 @@ def create_event_for_appointment_group(
 		"sync_with_google_calendar": 1,
 		"google_calendar": account.name,
 		"google_calendar_id": account.google_calendar_id,
-		"pulled_from_google_calendar": 1,
+		"pulled_from_google_calendar": 0,
 		"custom_sync_participants_google_calendars": 1,
 		"event_participants": json.loads(event_participants),
 		"custom_doctype_link_with_event": json.loads(
