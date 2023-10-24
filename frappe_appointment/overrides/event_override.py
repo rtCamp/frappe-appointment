@@ -168,7 +168,6 @@ def create_event_for_appointment_group(
 			}
 		):
 			return frappe.throw(_("Unable to Update an event"))
-		update_event_in_google_calendar(event)
 		return frappe.msgprint("Interview has been Re-Scheduled.")
 	calendar_event = {
 		"doctype": "Event",
