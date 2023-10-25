@@ -9,11 +9,14 @@
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
-  "publish_on_website",
   "group_name",
   "members",
   "route",
-  "section_break_vtll",
+  "section_break_v4rw",
+  "publish_on_website",
+  "column_break_4pgb",
+  "enable_scheduling_on_weekends",
+  "section_break_3djy",
   "duration_for_event",
   "column_break_xzbw",
   "minimum_buffer_time",
@@ -71,7 +74,7 @@
   },
   {
    "default": "0",
-   "description": "Number of days from the current day to show the available dates ",
+   "description": "Number of days from the current day to show the available dates",
    "fieldname": "minimum_notice_before_event",
    "fieldtype": "Int",
    "label": "Minimum Notice Before Event"
@@ -114,10 +117,6 @@
    "fieldtype": "Column Break"
   },
   {
-   "fieldname": "section_break_vtll",
-   "fieldtype": "Section Break"
-  },
-  {
    "fieldname": "section_break_ovbf",
    "fieldtype": "Section Break"
   },
@@ -126,12 +125,30 @@
    "fieldtype": "Link",
    "label": "Response Email Template",
    "options": "Email Template"
+  },
+  {
+   "default": "0",
+   "fieldname": "enable_scheduling_on_weekends",
+   "fieldtype": "Check",
+   "label": "Enable Scheduling on Weekends"
+  },
+  {
+   "fieldname": "section_break_v4rw",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "column_break_4pgb",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "section_break_3djy",
+   "fieldtype": "Section Break"
   }
  ],
  "has_web_view": 1,
  "is_published_field": "publish_on_website",
  "links": [],
- "modified": "2023-10-25 15:23:25.098736",
+ "modified": "2023-10-25 15:41:22.507458",
  "modified_by": "Administrator",
  "module": "Frappe Appointment",
  "name": "Appointment Group",

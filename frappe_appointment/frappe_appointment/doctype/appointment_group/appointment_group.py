@@ -67,22 +67,25 @@ def get_time_slots_for_day(appointment_group_id: str, date: str) -> object:
 
 		datetime = get_datetime(date)
 		date = datetime.date()
+		weekday = weekdays[date.weekday()]
 
 		date_validation_obj = vaild_date(datetime, appointment_group)
 
-		if not date_validation_obj["is_valid"]:
+		if not date_validation_obj["is_valid"] or not check_weekend_avalability(
+			appointment_group.enable_scheduling_on_weekends, weekday
+		):
 			return {
 				"appointment_group_id": appointment_group_id,
 				"valid_start_date": date_validation_obj["valid_start_date"],
 				"valid_end_date": date_validation_obj["valid_end_date"],
 				"total_slots_for_day": 0,
 				"is_invalid_date": True,
+				"enable_scheduling_on_weekends": appointment_group.enable_scheduling_on_weekends,
 			}
 
 		booking_frequency_reached_obj = get_booking_frequency_reached(
 			datetime, appointment_group
 		)
-	
 
 		if not booking_frequency_reached_obj["is_slots_available"]:
 			return {
@@ -93,9 +96,8 @@ def get_time_slots_for_day(appointment_group_id: str, date: str) -> object:
 				"total_slots_for_day": 0,
 				"valid_start_date": date_validation_obj["valid_start_date"],
 				"valid_end_date": date_validation_obj["valid_end_date"],
+				"enable_scheduling_on_weekends": appointment_group.enable_scheduling_on_weekends,
 			}
-
-		weekday = weekdays[date.weekday()]
 
 		members = appointment_group.members
 
@@ -141,9 +143,17 @@ def get_time_slots_for_day(appointment_group_id: str, date: str) -> object:
 			"total_slots_for_day": len(avaiable_time_slot_for_day),
 			"valid_start_date": date_validation_obj["valid_start_date"],
 			"valid_end_date": date_validation_obj["valid_end_date"],
+			"enable_scheduling_on_weekends": appointment_group.enable_scheduling_on_weekends,
 		}
 	except Exception as e:
+		raise Exception(e)
 		return None
+
+
+def check_weekend_avalability(enable_scheduling_on_weekends: bool, weekday: str):
+	if enable_scheduling_on_weekends:
+		return True
+	return not (weekday == "Saturday" or weekday == "Sunday")
 
 
 def get_booking_frequency_reached(
