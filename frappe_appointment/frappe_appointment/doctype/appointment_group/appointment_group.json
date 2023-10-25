@@ -9,18 +9,23 @@
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
+  "publish_on_website",
   "group_name",
   "members",
+  "route",
+  "section_break_vtll",
   "duration_for_event",
+  "column_break_xzbw",
   "minimum_buffer_time",
+  "limits_for_event_section",
   "minimum_notice_before_event",
   "event_availability_window",
   "limit_booking_frequency",
+  "section_break_jbhn",
   "meet_link",
-  "email_template",
-  "webhook",
-  "publish_on_website",
-  "route"
+  "response_email_template",
+  "section_break_ovbf",
+  "webhook"
  ],
  "fields": [
   {
@@ -60,24 +65,27 @@
    "depends_on": "publish_on_website",
    "fieldname": "route",
    "fieldtype": "Data",
+   "hidden": 1,
    "label": "Route",
    "unique": 1
   },
   {
    "default": "0",
+   "description": "Number of days from the current day to show the available dates ",
    "fieldname": "minimum_notice_before_event",
    "fieldtype": "Int",
    "label": "Minimum Notice Before Event"
   },
   {
    "default": "0",
+   "description": "Number of days from the start day to show the available dates ",
    "fieldname": "event_availability_window",
    "fieldtype": "Data",
    "label": "Event Availability Window"
   },
   {
    "default": "-1",
-   "description": "Limit how many times this event can be booked in a day.",
+   "description": "Limit how many times this event can be booked in a day",
    "fieldname": "limit_booking_frequency",
    "fieldtype": "Int",
    "label": "Limit booking frequency"
@@ -94,16 +102,36 @@
    "label": "Meet Link"
   },
   {
-   "fieldname": "email_template",
+   "fieldname": "limits_for_event_section",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "section_break_jbhn",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_xzbw",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "section_break_vtll",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "section_break_ovbf",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "response_email_template",
    "fieldtype": "Link",
-   "label": " Email Template",
+   "label": "Response Email Template",
    "options": "Email Template"
   }
  ],
  "has_web_view": 1,
  "is_published_field": "publish_on_website",
  "links": [],
- "modified": "2023-10-23 16:34:12.226557",
+ "modified": "2023-10-25 15:23:25.098736",
  "modified_by": "Administrator",
  "module": "Frappe Appointment",
  "name": "Appointment Group",

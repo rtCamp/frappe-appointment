@@ -176,6 +176,7 @@ function get_time_slots() {
 			}
 		)
 		.then((r) => {
+			console.log(r)
 			if (!r?.message) {
 				let date = new Date();
 				year = date.getFullYear();

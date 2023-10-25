@@ -8,6 +8,7 @@ from frappe_appointment.frappe_appointment.doctype.appointment_time_slot.appoint
 	get_all_unavailable_google_calendar_slots_for_day,
 	get_utc_datatime_with_time,
 	convert_timezone_to_utc,
+	convert_datetime_to_utc,
 )
 from dateutil import parser
 from frappe.utils import (
@@ -77,7 +78,13 @@ def get_time_slots_for_day(appointment_group_id: str, date: str) -> object:
 				"total_slots_for_day": 0,
 				"is_invalid_date": True,
 			}
-		if booking_frequency_reached(datetime, appointment_group):
+
+		booking_frequency_reached_obj = get_booking_frequency_reached(
+			datetime, appointment_group
+		)
+	
+
+		if not booking_frequency_reached_obj["is_slots_available"]:
 			return {
 				"all_avaiable_slots_for_data": [],
 				"date": date,
@@ -116,8 +123,12 @@ def get_time_slots_for_day(appointment_group_id: str, date: str) -> object:
 			member_time_slots, starttime, endtime, date
 		)
 
+		all_slots = update_cal_slots_with_events(
+			all_slots, booking_frequency_reached_obj["events"]
+		)
+
 		avaiable_time_slot_for_day = get_avaiable_time_slot_for_day(
-			all_slots, starttime, endtime, appointment_group.duration_for_event
+			all_slots, starttime, endtime, appointment_group
 		)
 
 		return {
@@ -135,7 +146,9 @@ def get_time_slots_for_day(appointment_group_id: str, date: str) -> object:
 		return None
 
 
-def booking_frequency_reached(datetime: datetime, appointment_group: object) -> bool:
+def get_booking_frequency_reached(
+	datetime: datetime, appointment_group: object
+) -> bool:
 	if int(appointment_group.limit_booking_frequency) < 0:
 		return False
 
@@ -143,7 +156,7 @@ def booking_frequency_reached(datetime: datetime, appointment_group: object) -> 
 		add_days(datetime, 1)
 	)
 
-	all_events = frappe.get_all(
+	all_events = frappe.get_list(
 		"Event",
 		filters=[
 			["custom_appointment_group", "=", appointment_group.name],
@@ -153,9 +166,19 @@ def booking_frequency_reached(datetime: datetime, appointment_group: object) -> 
 			["ends_on", "<", end_datetime],
 		],
 		fields=["starts_on", "ends_on"],
+		order_by="starts_on asc",
 	)
 
-	return len(all_events) >= int(appointment_group.limit_booking_frequency)
+	all_events = sorted(
+		all_events,
+		key=lambda slot: get_datetime_str(slot["ends_on"]),
+	)
+
+	return {
+		"is_slots_available": len(all_events)
+		< int(appointment_group.limit_booking_frequency),
+		"events": all_events,
+	}
 
 
 def vaild_date(date: datetime, appointment_group: object) -> bool:
@@ -176,16 +199,41 @@ def vaild_date(date: datetime, appointment_group: object) -> bool:
 	return {"is_valid": True, "valid_start_date": start_date, "valid_end_date": end_date}
 
 
+def update_cal_slots_with_events(all_slots: list, all_events: list) -> list:
+	update_slots = []
+	for currernt_slot in all_slots:
+		updated_slot = {}
+		updated_slot["is_frappe_event"] = False
+		updated_slot["starts_on"] = convert_timezone_to_utc(
+			currernt_slot["start"]["dateTime"], currernt_slot["start"]["timeZone"]
+		)
+		updated_slot["ends_on"] = convert_timezone_to_utc(
+			currernt_slot["end"]["dateTime"], currernt_slot["end"]["timeZone"]
+		)
+		for event in all_events:
+
+			if convert_datetime_to_utc(event["starts_on"]) == updated_slot[
+				"starts_on"
+			] and updated_slot["ends_on"] == convert_datetime_to_utc(event["ends_on"]):
+				updated_slot["is_frappe_event"] = True
+				break
+
+		update_slots.append(updated_slot)
+
+	return update_slots
+
+
 def get_avaiable_time_slot_for_day(
-	all_slots: list, starttime: datetime, endtime: datetime, duration_for_event: str
+	all_slots: list, starttime: datetime, endtime: datetime, appointment_group: object
 ) -> list:
 	available_slots = []
 
 	index = 0
 
-	current_start_time = get_next_round_value(starttime)
+	minimum_buffer_time = appointment_group.minimum_buffer_time
+	current_start_time = get_next_round_value(minimum_buffer_time, starttime, False)
 
-	minute, second = divmod(duration_for_event.seconds, 60)
+	minute, second = divmod(appointment_group.duration_for_event.seconds, 60)
 	hour, minute = divmod(minute, 60)
 
 	current_end_time = add_to_date(
@@ -198,27 +246,30 @@ def get_avaiable_time_slot_for_day(
 			available_slots.append(
 				{"start_time": current_start_time, "end_time": current_end_time}
 			)
-			current_start_time = get_next_round_value(current_end_time)
+			current_start_time = get_next_round_value(minimum_buffer_time, current_end_time)
 			current_end_time = add_to_date(
 				current_start_time, hours=hour, minutes=minute, seconds=second
 			)
 			continue
 
 		currernt_slot = all_slots[index]
-		currernt_slot_start_time = convert_timezone_to_utc(
-			currernt_slot["start"]["dateTime"], currernt_slot["start"]["timeZone"]
-		)
-		currernt_slot_end_time = convert_timezone_to_utc(
-			currernt_slot["end"]["dateTime"], currernt_slot["end"]["timeZone"]
-		)
+		currernt_slot_start_time = currernt_slot["starts_on"]
+		currernt_slot_end_time = currernt_slot["ends_on"]
 
-		if current_end_time <= currernt_slot_start_time:
+		if current_end_time <= currernt_slot_start_time and is_valid_buffer_time(
+			minimum_buffer_time,
+			current_end_time,
+			currernt_slot_start_time,
+			currernt_slot["is_frappe_event"],
+		):
 			available_slots.append(
 				{"start_time": current_start_time, "end_time": current_end_time}
 			)
-			current_start_time = get_next_round_value(current_end_time)
+			current_start_time = get_next_round_value(minimum_buffer_time, current_end_time)
 		else:
-			current_start_time = get_next_round_value(currernt_slot_end_time)
+			current_start_time = get_next_round_value(
+				minimum_buffer_time, currernt_slot_end_time, currernt_slot["is_frappe_event"]
+			)
 			index += 1
 
 		current_end_time = add_to_date(
@@ -228,12 +279,34 @@ def get_avaiable_time_slot_for_day(
 	return available_slots
 
 
-def get_next_round_value(datetimeobj: datetime):
-	if datetimeobj.minute == 0:
-		return datetimeobj
+def is_valid_buffer_time(
+	minimum_buffer_time: datetime,
+	end: datetime,
+	next_start: datetime,
+	is_add_buffer_in_event: bool = True,
+):
+	if not minimum_buffer_time or not is_add_buffer_in_event:
+		return True
 
-	next_datetimeobj = add_to_date(datetimeobj, hours=1)
-	return next_datetimeobj.replace(minute=0, second=0)
+	return minimum_buffer_time.seconds <= (next_start - end).seconds
+
+
+def get_next_round_value(
+	minimum_buffer_time: datetime,
+	current_start_time: datetime,
+	is_add_buffer_in_event: bool = True,
+):
+	if not minimum_buffer_time or not is_add_buffer_in_event:
+		return current_start_time
+
+	minute, second = divmod(minimum_buffer_time.seconds, 60)
+	hour, minute = divmod(minute, 60)
+
+	min_start_time = add_to_date(
+		current_start_time, hours=hour, minutes=minute, seconds=second
+	)
+
+	return min_start_time
 
 
 def get_max_min_time_slot(

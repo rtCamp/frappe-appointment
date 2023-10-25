@@ -38,7 +38,7 @@ class EventOverride(Event):
 
 		if (
 			appointment_group.meet_link
-			and appointment_group.email_template
+			and appointment_group.response_email_template
 			and self.event_participants
 			and self.custom_doctype_link_with_event
 		):
@@ -54,7 +54,7 @@ class EventOverride(Event):
 			send_email_template_mail(
 				send_doc,
 				args,
-				self.appointment_group.email_template,
+				self.appointment_group.response_email_template,
 				recipients=self.get_recipients_event(),
 			)
 
@@ -112,7 +112,6 @@ class EventOverride(Event):
 			return True
 
 		except Exception as e:
-			print(e)
 			return False
 
 @frappe.whitelist(allow_guest=True)
