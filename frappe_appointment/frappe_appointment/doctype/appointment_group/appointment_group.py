@@ -71,6 +71,7 @@ def get_time_slots_for_day(appointment_group_id: str, date: str) -> object:
 
 		date_validation_obj = vaild_date(datetime, appointment_group)
 
+
 		if not date_validation_obj["is_valid"] or not check_weekend_avalability(
 			appointment_group.enable_scheduling_on_weekends, weekday
 		):
@@ -145,7 +146,8 @@ def get_time_slots_for_day(appointment_group_id: str, date: str) -> object:
 			"valid_end_date": date_validation_obj["valid_end_date"],
 			"enable_scheduling_on_weekends": appointment_group.enable_scheduling_on_weekends,
 		}
-	except Exception:
+	except Exception as e:
+		# raise Exception(e)
 		return None
 
 
@@ -159,7 +161,10 @@ def get_booking_frequency_reached(
 	datetime: datetime, appointment_group: object
 ) -> bool:
 	if int(appointment_group.limit_booking_frequency) < 0:
-		return False
+		return {
+			"is_slots_available": True,
+			"events": [],
+		}
 
 	start_datetime, end_datetime = get_datetime_str(datetime), get_datetime_str(
 		add_days(datetime, 1)
