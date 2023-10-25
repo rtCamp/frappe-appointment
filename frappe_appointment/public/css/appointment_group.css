@@ -300,3 +300,28 @@ display: block;
     -webkit-transform: rotate(360deg);
   }
 }
+.appointment-success{
+    display: flex;
+    justify-content: center;
+}
+.appointment-success-grid{
+    display: grid;
+}
+.appointment-success-grid h3{
+    margin:0;
+    justify-self:center;
+}
+.appointment-success-grid p{
+    margin:0;
+    font-size:1.2em;
+    justify-self:center;
+}
+.success-check{
+    color: #108e29;
+    font-size: 70px;
+    justify-self: center;
+}
+
+.success-card{
+    width:500px
+}

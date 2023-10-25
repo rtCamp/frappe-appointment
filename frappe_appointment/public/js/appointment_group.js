@@ -230,10 +230,16 @@ function add_event_slots(time_slots) {
 				: getURLSearchParam("custom_doctype_link_with_event").replaceAll("\\", ""),
 		})
 		.then((r) => {
-			setTimeout(() => {
-				hide_loader();
-				window.location.href = "/";
-			}, 2000);
+			let url = new URL(window.location.href);
+			params = get_all_query_param();
+			Object.keys(params).forEach(function (key) {
+				url.searchParams.delete(key);
+			});
+			const updatedURL = url.toString();
+			history.replaceState(null, null, updatedURL);
+			hide_loader();
+			$("#cal-main-container").remove();
+			$("#appointment-success").removeClass("hidden");
 		})
 		.catch((e) => {
 			cancel_button.click();
