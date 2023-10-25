@@ -46,7 +46,16 @@ def get_all_unavailable_google_calendar_slots_for_day(
 		),
 	)
 
-	return cal_slots
+	cal_slots = sorted(
+		cal_slots,
+		key=lambda slot: get_datetime_str(
+			convert_timezone_to_utc(slot["end"]["dateTime"], slot["end"]["timeZone"])
+		),
+	)
+
+	remove_same_slots = remove_duplicate_slots(cal_slots)
+
+	return remove_same_slots
 
 
 def get_google_calendar_slots_member(
@@ -89,7 +98,6 @@ def get_google_calendar_slots_member(
 	events_items = events["items"]
 	range_events = []
 
-
 	for event in events_items:
 		if check_if_datetime_in_range(
 			convert_timezone_to_utc(event["start"]["dateTime"], event["start"]["timeZone"]),
@@ -100,6 +108,42 @@ def get_google_calendar_slots_member(
 			range_events.append(event)
 
 	return range_events
+
+
+def remove_duplicate_slots(cal_slots: list):
+
+	if len(cal_slots) <= 1:
+		return cal_slots
+
+	current = 1
+	last = 0
+	remove_duplicate_time_slots = []
+
+	remove_duplicate_time_slots.append(cal_slots[last])
+
+	while current < len(cal_slots):
+		last_start = convert_timezone_to_utc(
+			cal_slots[last]["start"]["dateTime"], cal_slots[last]["start"]["timeZone"]
+		)
+		last_end = convert_timezone_to_utc(
+			cal_slots[last]["end"]["dateTime"], cal_slots[last]["end"]["timeZone"]
+		)
+		current_start = convert_timezone_to_utc(
+			cal_slots[current]["start"]["dateTime"], cal_slots[current]["start"]["timeZone"]
+		)
+		current_end = convert_timezone_to_utc(
+			cal_slots[current]["end"]["dateTime"], cal_slots[current]["end"]["timeZone"]
+		)
+
+		if current_start == last_start and current_end == last_end:
+			current += 1
+			continue
+
+		remove_duplicate_time_slots.append(cal_slots[current])
+		last = current
+		current += 1
+
+	return remove_duplicate_time_slots
 
 
 def get_today_min_max_time(date: datetime):
@@ -122,6 +166,12 @@ def get_utc_datatime_with_time(date: datetime, time: str) -> datetime:
 
 def convert_timezone_to_utc(date_time: str, time_zone: str) -> datetime:
 	local_datetime = parser.parse(date_time).astimezone(pytz.timezone(time_zone))
+	return local_datetime.astimezone(pytz.utc)
+
+
+def convert_datetime_to_utc(date_time: datetime) -> datetime:
+	system_timezone = pytz.timezone(get_system_timezone())
+	local_datetime = system_timezone.localize(date_time)
 	return local_datetime.astimezone(pytz.utc)
 
 

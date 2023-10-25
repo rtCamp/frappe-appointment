@@ -68,6 +68,14 @@ const get_date_on_click = () => {
 			parseInt(date.innerHTML)
 		);
 
+		if (
+			!todaySlotsData.enable_scheduling_on_weekends &&
+			(selected_date.getDay() == "0" || selected_date.getDay() == "6")
+		) {
+			date.classList.add("inactive");
+			return;
+		}
+
 		if (selected_date < vaild_start_date) {
 			date.classList.add("inactive");
 			return;
@@ -197,7 +205,7 @@ function get_time_slots() {
 				get_time_slots();
 				return;
 			}
-			
+
 			todaySlotsData = r.message;
 			update_calander();
 			hide_loader();
