@@ -3,8 +3,7 @@ from frappe import _
 import datetime
 from frappe.desk.doctype.event.event import Event
 from frappe.integrations.doctype.google_calendar.google_calendar import (
-	get_google_calendar_object,
-	update_event_in_google_calendar
+	get_google_calendar_object
 )
 from frappe.utils import (
 	get_datetime,
@@ -125,7 +124,12 @@ def create_event_for_appointment_group(
 	**args,
 ):
 	event_info = args
+	starts_on =utc_to_sys_time(start_time)
+	ends_on = utc_to_sys_time(end_time)
 	reschedule= event_info.get('reschedule',False)
+	if check_if_event_exists(data=event_info) and not reschedule:
+		return frappe.throw(_('Your appointment is already scheduled.'))
+		
 	appointment_group = frappe.get_last_doc(
 		APPOINTMENT_GROUP, filters={"route": appointment_group_id}
 	)
@@ -148,16 +152,8 @@ def create_event_for_appointment_group(
 	google_calendar_api_obj, account = get_google_calendar_object(google_calendar.name)
 	if reschedule:
 		event = frappe.get_last_doc('Event',filters={'custom_appointment_group':appointment_group.name})
-		event.starts_on = get_datetime_str(
-			convert_utc_to_system_timezone(
-				datetime.datetime.fromisoformat(start_time).replace(tzinfo=None)
-			)
-		)
-		event.ends_on =get_datetime_str(
-			convert_utc_to_system_timezone(
-				datetime.datetime.fromisoformat(end_time).replace(tzinfo=None)
-			)
-		)		
+		event.starts_on = starts_on
+		event.ends_on =ends_on	
 		event.save(ignore_permissions=True)
 		
 		if not event.handle_webhook(
@@ -173,16 +169,8 @@ def create_event_for_appointment_group(
 		"doctype": "Event",
 		"subject": event_info.get("subject"),
 		"description": event_info.get("description"),
-		"starts_on": get_datetime_str(
-			convert_utc_to_system_timezone(
-				datetime.datetime.fromisoformat(start_time).replace(tzinfo=None)
-			)
-		),
-		"ends_on": get_datetime_str(
-			convert_utc_to_system_timezone(
-				datetime.datetime.fromisoformat(end_time).replace(tzinfo=None)
-			)
-		),
+		"starts_on": starts_on,
+		"ends_on": ends_on,
 		"sync_with_google_calendar": 1,
 		"google_calendar": account.name,
 		"google_calendar_id": account.google_calendar_id,
@@ -213,3 +201,20 @@ def create_event_for_appointment_group(
 	frappe.db.commit()
 
 	return _("Event has been created")
+
+
+def check_if_event_exists(data:dict):
+	interview = data.get('interview')
+	interview = frappe.get_doc('Interview',data.get('interview'))
+	if interview.scheduled_on and interview.from_time and interview.to_time:
+		return True
+	return False
+
+
+
+def utc_to_sys_time(time:str):
+	return get_datetime_str(
+		convert_utc_to_system_timezone(
+			datetime.datetime.fromisoformat(time).replace(tzinfo=None)
+		)
+	)
