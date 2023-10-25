@@ -145,8 +145,7 @@ def get_time_slots_for_day(appointment_group_id: str, date: str) -> object:
 			"valid_end_date": date_validation_obj["valid_end_date"],
 			"enable_scheduling_on_weekends": appointment_group.enable_scheduling_on_weekends,
 		}
-	except Exception as e:
-		raise Exception(e)
+	except Exception:
 		return None
 
 

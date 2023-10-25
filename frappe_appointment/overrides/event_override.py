@@ -126,8 +126,6 @@ def create_event_for_appointment_group(
 	starts_on =utc_to_sys_time(start_time)
 	ends_on = utc_to_sys_time(end_time)
 	reschedule= event_info.get('reschedule',False)
-	if check_if_event_exists(data=event_info) and not reschedule:
-		return frappe.throw(_('Your appointment is already scheduled.'))
 		
 	appointment_group = frappe.get_last_doc(
 		APPOINTMENT_GROUP, filters={"route": appointment_group_id}
@@ -200,15 +198,6 @@ def create_event_for_appointment_group(
 	frappe.db.commit()
 
 	return _("Event has been created")
-
-
-def check_if_event_exists(data:dict):
-	interview = data.get('interview')
-	interview = frappe.get_doc('Interview',data.get('interview'))
-	if interview.scheduled_on and interview.from_time and interview.to_time:
-		return True
-	return False
-
 
 
 def utc_to_sys_time(time:str):
