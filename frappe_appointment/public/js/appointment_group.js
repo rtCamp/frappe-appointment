@@ -173,7 +173,7 @@ function update_calander() {
 }
 
 // API Calls
-function get_time_slots() {
+function get_time_slots(re_call = true) {
 	show_loader();
 	frappe
 		.call(
@@ -185,31 +185,39 @@ function get_time_slots() {
 		)
 		.then((r) => {
 			if (!r?.message) {
-				let date = new Date();
-				year = date.getFullYear();
-				month = date.getMonth();
-				todaySlotsData = {
-					all_avaiable_slots_for_data: [],
-					appointment_group_id: get_appointment_group(),
-					date: setURLSearchParam("date", get_date_str(date)),
-				};
-				get_time_slots();
-				return;
+				return setdaySlotsData();
 			}
+
 			if (r.message.is_invalid_date) {
 				date = new Date(r.message.valid_start_date);
 				setURLSearchParam("date", get_date_str(date));
 				year = date.getFullYear();
 				month = date.getMonth();
 				todaySlotsData = r.message;
-				get_time_slots();
+				if (re_call) {
+					console.log(todaySlotsData);
+					get_time_slots(false);
+				} else {
+					setdaySlotsData();
+				}
 				return;
 			}
 
-			todaySlotsData = r.message;
-			update_calander();
-			hide_loader();
+			setdaySlotsData(r.message);
 		});
+}
+
+function setdaySlotsData(daySlotsData = false) {
+	if (!daySlotsData) {
+		daySlotsData = {
+			all_avaiable_slots_for_data: [],
+			appointment_group_id: get_appointment_group(),
+			date: getURLSearchParam("date"),
+		};
+	}
+	todaySlotsData = daySlotsData;
+	update_calander();
+	hide_loader();
 }
 
 function add_event_slots(time_slots) {
