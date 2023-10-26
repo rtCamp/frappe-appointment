@@ -61,11 +61,9 @@ def get_time_slots_for_day(appointment_group_id: str, date: str) -> object:
 
 		date_validation_obj = vaild_date(datetime, appointment_group)
 
-
 		weekend_avalability = check_weekend_avalability(
 			appointment_group.enable_scheduling_on_weekends, weekday, date_validation_obj
 		)
-
 
 		if weekend_avalability["is_invalid_date"]:
 			return get_resonce_body(
@@ -197,11 +195,11 @@ def get_resonce_body(
 def get_booking_frequency_reached(
 	datetime: datetime, appointment_group: object
 ) -> bool:
-	if int(appointment_group.limit_booking_frequency) < 0:
-		return {
-			"is_slots_available": True,
-			"events": [],
-		}
+
+	res = {
+		"is_slots_available": int(appointment_group.limit_booking_frequency) < 0,
+		"events": [],
+	}
 
 	start_datetime, end_datetime = get_datetime_str(datetime), get_datetime_str(
 		add_days(datetime, 1)
@@ -225,11 +223,14 @@ def get_booking_frequency_reached(
 		key=lambda slot: get_datetime_str(slot["ends_on"]),
 	)
 
-	return {
-		"is_slots_available": len(all_events)
-		< int(appointment_group.limit_booking_frequency),
-		"events": all_events,
-	}
+	if int(appointment_group.limit_booking_frequency) >= 0:
+		res["is_slots_available"] = len(all_events) < int(
+			appointment_group.limit_booking_frequency
+		)
+
+	res["events"] = all_events
+
+	return res
 
 
 def vaild_date(date: datetime, appointment_group: object) -> object:
