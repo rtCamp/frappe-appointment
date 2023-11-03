@@ -22,6 +22,9 @@ class CareersOverrideCustomizeForm(CustomizeForm):
 		if prop == "read_only":
 			return True
 
+		if prop == "depends_on":
+			return True
+
 		if prop == "reqd":
 			return True
 
