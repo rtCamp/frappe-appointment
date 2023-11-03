@@ -3,7 +3,7 @@ from frappe import _
 import datetime
 from frappe.desk.doctype.event.event import Event
 from frappe.integrations.doctype.google_calendar.google_calendar import (
-	get_google_calendar_object
+	get_google_calendar_object,
 )
 from frappe.utils import (
 	get_datetime,
@@ -42,7 +42,9 @@ class EventOverride(Event):
 			and self.custom_doctype_link_with_event
 		):
 			args = dict(
-				appointment_group=self.appointment_group, event=self, metadata=self.event_info
+				appointment_group=self.appointment_group.as_dict(),
+				event=self.as_dict(),
+				metadata=self.event_info,
 			)
 
 			send_doc_value = self.custom_doctype_link_with_event[0]
@@ -113,6 +115,7 @@ class EventOverride(Event):
 		except Exception as e:
 			return False
 
+
 @frappe.whitelist(allow_guest=True)
 def create_event_for_appointment_group(
 	appointment_group_id: str,
@@ -123,10 +126,10 @@ def create_event_for_appointment_group(
 	**args,
 ):
 	event_info = args
-	starts_on =utc_to_sys_time(start_time)
+	starts_on = utc_to_sys_time(start_time)
 	ends_on = utc_to_sys_time(end_time)
-	reschedule= event_info.get('reschedule',False)
-		
+	reschedule = event_info.get("reschedule", False)
+
 	appointment_group = frappe.get_last_doc(
 		APPOINTMENT_GROUP, filters={"route": appointment_group_id}
 	)
@@ -148,11 +151,13 @@ def create_event_for_appointment_group(
 
 	google_calendar_api_obj, account = get_google_calendar_object(google_calendar.name)
 	if reschedule:
-		event = frappe.get_last_doc('Event',filters={'custom_appointment_group':appointment_group.name})
+		event = frappe.get_last_doc(
+			"Event", filters={"custom_appointment_group": appointment_group.name}
+		)
 		event.starts_on = starts_on
-		event.ends_on =ends_on	
+		event.ends_on = ends_on
 		event.save(ignore_permissions=True)
-		
+
 		if not event.handle_webhook(
 			{
 				"event": event.as_dict(),
@@ -200,7 +205,7 @@ def create_event_for_appointment_group(
 	return _("Event has been created")
 
 
-def utc_to_sys_time(time:str):
+def utc_to_sys_time(time: str):
 	return get_datetime_str(
 		convert_utc_to_system_timezone(
 			datetime.datetime.fromisoformat(time).replace(tzinfo=None)
