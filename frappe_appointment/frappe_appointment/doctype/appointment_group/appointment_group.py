@@ -38,6 +38,7 @@ class AppointmentGroup(WebsiteGenerator):
 			self.route = frappe.scrub(self.group_name).replace("_", "-")
 
 	def get_context(self, context):
+		context["group_name"] = " ".join(context["group_name"].split("-")).title()
 		return context
 
 
@@ -129,7 +130,6 @@ def get_time_slots_for_day(appointment_group_id: str, date: str) -> object:
 			date_validation_obj=date_validation_obj,
 		)
 	except Exception as e:
-		raise Exception(e)
 		return None
 
 
