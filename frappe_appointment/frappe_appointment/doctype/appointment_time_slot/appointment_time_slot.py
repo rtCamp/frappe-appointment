@@ -99,13 +99,16 @@ def get_google_calendar_slots_member(
 	range_events = []
 
 	for event in events_items:
-		if check_if_datetime_in_range(
-			convert_timezone_to_utc(event["start"]["dateTime"], event["start"]["timeZone"]),
-			convert_timezone_to_utc(event["end"]["dateTime"], event["end"]["timeZone"]),
-			starttime,
-			endtime,
-		):
-			range_events.append(event)
+		try:
+			if check_if_datetime_in_range(
+				convert_timezone_to_utc(event["start"]["dateTime"], event["start"]["timeZone"]),
+				convert_timezone_to_utc(event["end"]["dateTime"], event["end"]["timeZone"]),
+				starttime,
+				endtime,
+			):
+				range_events.append(event)
+		except Exception as e:
+			pass
 
 	return range_events
 
