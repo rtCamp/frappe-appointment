@@ -31,6 +31,17 @@ class AppointmentTimeSlot(Document):
 def get_all_unavailable_google_calendar_slots_for_day(
 	member_time_slots: object, starttime: datetime, endtime: datetime, date: datetime
 ) -> list:
+	"""Get all google time slots of the given memebers
+
+	Args:
+		member_time_slots (object): list  of members
+		starttime (datetime): start time for slot
+		endtime (datetime): end time for slot
+		date (datetime): data for whihc need to fetch the data
+
+	Returns:
+		list: List of all google time slots of members
+	"""
 
 	cal_slots = []
 
@@ -39,13 +50,15 @@ def get_all_unavailable_google_calendar_slots_for_day(
 			member, starttime, endtime, date
 		)
 
+	# Sort based on start time
 	cal_slots = sorted(
 		cal_slots,
 		key=lambda slot: get_datetime_str(
 			convert_timezone_to_utc(slot["start"]["dateTime"], slot["start"]["timeZone"])
 		),
 	)
-
+ 
+	# Sort based on end time
 	cal_slots = sorted(
 		cal_slots,
 		key=lambda slot: get_datetime_str(
@@ -61,6 +74,17 @@ def get_all_unavailable_google_calendar_slots_for_day(
 def get_google_calendar_slots_member(
 	memebr: str, starttime: datetime, endtime: datetime, date: datetime
 ) -> list:
+	"""Fetch the google slots data for given memebr/user
+
+	Args:
+		memebr (str): memebr email
+		starttime (datetime): Start time
+		endtime (datetime): end time
+		date (datetime): date
+
+	Returns:
+		list: list of slots of user
+	"""
 
 	if not memebr:
 		return None
@@ -111,7 +135,14 @@ def get_google_calendar_slots_member(
 
 
 def remove_duplicate_slots(cal_slots: list):
+	"""Remove duplicate from google slots
 
+	Args:
+		cal_slots (list): List of time slots
+
+	Returns:
+		_type_: List of time slots
+	"""
 	if len(cal_slots) <= 1:
 		return cal_slots
 

@@ -22,7 +22,7 @@ from frappe_appointment.constants import (
 from frappe_appointment.frappe_appointment.doctype.appointment_group.appointment_group import (
 	vaild_date,
 )
-from frappe_appointment.helpers import utc_to_sys_time
+from frappe_appointment.helpers.utils import utc_to_sys_time
 
 
 class EventOverride(Event):
@@ -55,7 +55,9 @@ class EventOverride(Event):
 			and self.custom_doctype_link_with_event
 		):
 			args = dict(
-				appointment_group=self.appointment_group, event=self, metadata=self.event_info
+				appointment_group=self.appointment_group.as_dict(),
+				event=self.as_dict(),
+				metadata=self.event_info,
 			)
 
 			# Only send the email to first user of custom_doctype_link_with_event
@@ -173,6 +175,8 @@ def create_event_for_appointment_group(
 	starts_on = utc_to_sys_time(start_time)
 	ends_on = utc_to_sys_time(end_time)
 
+	starts_on = utc_to_sys_time(start_time)
+	ends_on = utc_to_sys_time(end_time)
 	reschedule = event_info.get("reschedule", False)
 
 	appointment_group = frappe.get_last_doc(

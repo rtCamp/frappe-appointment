@@ -62,10 +62,10 @@ def get_send_after(doc):
 	"""Get thhe email send after value
 
 	Args:
-	        doc (obj): Email Template DocType Object
+	    doc (obj): Email Template DocType Object
 
 	Returns:
-	        string: datatime string for email send
+	    string: datatime string for email send
 	"""
 	if doc.custom_time_to_send_email <= 0 or doc.custom_time_to_send_email > 24:
 		return None
