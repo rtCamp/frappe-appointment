@@ -113,6 +113,14 @@ def get_time_slots_for_day(appointment_group_id: str, date: str) -> object:
 			member_time_slots, starttime, endtime, date
 		)
 
+		if all_slots == False:
+			return get_resonce_body(
+				avaiable_time_slot_for_day=[],
+				appointment_group=appointment_group,
+				date=date,
+				date_validation_obj=date_validation_obj,
+			)
+
 		all_slots = update_cal_slots_with_events(
 			all_slots, booking_frequency_reached_obj["events"]
 		)

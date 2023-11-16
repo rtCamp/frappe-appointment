@@ -35,9 +35,14 @@ def get_all_unavailable_google_calendar_slots_for_day(
 	cal_slots = []
 
 	for member in member_time_slots:
-		cal_slots = cal_slots + get_google_calendar_slots_member(
+		google_calendar_slots = get_google_calendar_slots_member(
 			member, starttime, endtime, date
 		)
+
+		if google_calendar_slots == False:
+			return False
+
+		cal_slots = cal_slots + google_calendar_slots
 
 	cal_slots = sorted(
 		cal_slots,
@@ -108,7 +113,7 @@ def get_google_calendar_slots_member(
 			):
 				range_events.append(event)
 		except Exception as e:
-			pass
+			return False
 
 	return range_events
 
