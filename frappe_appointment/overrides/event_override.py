@@ -1,6 +1,9 @@
 import frappe
-from frappe import _
 import datetime
+import requests
+import json
+
+from frappe import _
 from frappe.desk.doctype.event.event import Event
 from frappe.integrations.doctype.google_calendar.google_calendar import (
 	get_google_calendar_object,
@@ -19,12 +22,19 @@ from frappe_appointment.constants import (
 from frappe_appointment.frappe_appointment.doctype.appointment_group.appointment_group import (
 	vaild_date,
 )
-import requests
-import json
+from frappe_appointment.helpers.utils import utc_to_sys_time
 
 
 class EventOverride(Event):
+	"""Event Doctype Overwrite
+
+	Args:
+		Event (class): Default class
+	"""
 	def before_insert(self):
+		"""Handle the Appointment Group in Event
+		"""
+
 		if self.custom_appointment_group:
 			self.appointment_group = frappe.get_doc(
 				APPOINTMENT_GROUP, self.custom_appointment_group
@@ -33,6 +43,8 @@ class EventOverride(Event):
 			self.update_attendees_for_appointment_group()
 
 	def send_meet_email(self):
+		"""Sent the meeting link email to the given user using the provided Email Template
+		"""
 		appointment_group = self.appointment_group
 
 		if (
@@ -47,7 +59,9 @@ class EventOverride(Event):
 				metadata=self.event_info,
 			)
 
+			# Only send the email to first user of custom_doctype_link_with_event
 			send_doc_value = self.custom_doctype_link_with_event[0]
+
 			send_doc = frappe.get_doc(
 				send_doc_value.reference_doctype, send_doc_value.reference_docname
 			)
@@ -60,18 +74,26 @@ class EventOverride(Event):
 			)
 
 	def get_recipients_event(self):
+		"""Get the list of recipients as per event_participants 
+
+		Returns:
+			list: recipients emails
+		"""
 		if not self.event_participants:
 			return []
 
 		recipients = []
 
 		for participant in self.event_participants:
+			# Don't send the meet link to Appointment Group Members
 			if participant.reference_doctype != USER_APPOINTMENT_AVAILABILITY:
 				recipients.append(participant.email)
 
 		return recipients
 
 	def update_attendees_for_appointment_group(self):
+		"""Insert Appointment Group Member as Event participants
+		"""
 		members = self.appointment_group.members
 
 		for member in members:
@@ -93,7 +115,15 @@ class EventOverride(Event):
 				pass
 
 	def handle_webhook(self, body):
+		"""Handle the webhook call
+
+		Args:
+			body (object): data the send in req body
+		"""
+  
 		def datetime_serializer(obj):
+			"""Handle the encode datetime object in JSON
+			"""
 			if isinstance(obj, datetime.datetime):
 				return obj.isoformat()
 
@@ -125,7 +155,25 @@ def create_event_for_appointment_group(
 	event_participants,
 	**args,
 ):
+	"""API Endpoint to Create the Event
+
+	Args:
+		appointment_group_id (str): Appointment ID
+		date (str): Date for which the event is scheduled
+		start_time (str): Start time of the event
+		end_time (str): End time of the event
+		event_participants (list): List of participants
+		args (object): Query Parameters of api
+
+	Returns:
+		res (object): Result object
+	"""
+    #query parameters
 	event_info = args
+ 
+	starts_on = utc_to_sys_time(start_time)
+	ends_on = utc_to_sys_time(end_time)
+
 	starts_on = utc_to_sys_time(start_time)
 	ends_on = utc_to_sys_time(end_time)
 	reschedule = event_info.get("reschedule", False)
@@ -145,11 +193,13 @@ def create_event_for_appointment_group(
 	if len(members) <= 0:
 		return frappe.throw(_("No Member found"))
 
+
 	google_calendar = frappe.get_last_doc(
 		doctype="Google Calendar", filters={"user": members[0].user}
 	)
 
 	google_calendar_api_obj, account = get_google_calendar_object(google_calendar.name)
+	
 	if reschedule:
 		event = frappe.get_last_doc(
 			"Event", filters={"custom_appointment_group": appointment_group.name}
@@ -167,6 +217,7 @@ def create_event_for_appointment_group(
 		):
 			return frappe.throw(_("Unable to Update an event"))
 		return frappe.msgprint("Interview has been Re-Scheduled.")
+
 	calendar_event = {
 		"doctype": "Event",
 		"subject": event_info.get("subject"),
@@ -203,11 +254,3 @@ def create_event_for_appointment_group(
 	frappe.db.commit()
 
 	return _("Event has been created")
-
-
-def utc_to_sys_time(time: str):
-	return get_datetime_str(
-		convert_utc_to_system_timezone(
-			datetime.datetime.fromisoformat(time).replace(tzinfo=None)
-		)
-	)

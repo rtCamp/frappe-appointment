@@ -3,10 +3,10 @@ from frappe.custom.doctype.customize_form.customize_form import CustomizeForm
 
 class CareersOverrideCustomizeForm(CustomizeForm):
 	"""Need of override
-	        1. Frappe, by default, does not allow updating the core doctype properties(Like req,hidden etc). Given overwrite allows importing the defined profile in customization.
+	    1. Frappe, by default, does not allow updating the core doctype properties(Like req,hidden etc). Given overwrite allows importing the defined profile in customization.
 
 	Args:
-	        CustomizeForm (class): Default class
+	    CustomizeForm (class): Default class
 	"""
 
 	def allow_property_change(self, prop, meta_df, df):
@@ -14,7 +14,7 @@ class CareersOverrideCustomizeForm(CustomizeForm):
 		Check if a given property can be exported or not
 
 		Returns:
-		        boolean
+		    boolean
 		"""
 		if prop == "hidden":
 			return True
