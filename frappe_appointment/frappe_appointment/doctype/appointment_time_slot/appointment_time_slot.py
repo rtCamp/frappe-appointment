@@ -46,9 +46,14 @@ def get_all_unavailable_google_calendar_slots_for_day(
 	cal_slots = []
 
 	for member in member_time_slots:
-		cal_slots = cal_slots + get_google_calendar_slots_member(
+		google_calendar_slots = get_google_calendar_slots_member(
 			member, starttime, endtime, date
 		)
+
+		if google_calendar_slots == False:
+			return False
+
+		cal_slots = cal_slots + google_calendar_slots
 
 	# Sort based on start time
 	cal_slots = sorted(
@@ -123,13 +128,17 @@ def get_google_calendar_slots_member(
 	range_events = []
 
 	for event in events_items:
-		if check_if_datetime_in_range(
-			convert_timezone_to_utc(event["start"]["dateTime"], event["start"]["timeZone"]),
-			convert_timezone_to_utc(event["end"]["dateTime"], event["end"]["timeZone"]),
-			starttime,
-			endtime,
-		):
-			range_events.append(event)
+		try:
+			if check_if_datetime_in_range(
+				convert_timezone_to_utc(event["start"]["dateTime"], event["start"]["timeZone"]),
+				convert_timezone_to_utc(event["end"]["dateTime"], event["end"]["timeZone"]),
+				starttime,
+				endtime,
+			):
+				range_events.append(event)
+		except Exception as e:
+			# Handle all day event case her as in that case start object will only have date value. False return make sure don't show solt for that day.
+			return False
 
 	return range_events
 
@@ -178,6 +187,14 @@ def remove_duplicate_slots(cal_slots: list):
 
 
 def get_today_min_max_time(date: datetime):
+	"""Retrieve the current day's start and end time in UTC format.
+
+	Args:
+		date (datetime): date
+
+	Returns:
+		list: Date start and end time
+	"""
 	time_min = datetime(date.year, date.month, date.day, 0, 0, 0)
 	time_max = datetime(date.year, date.month, date.day, 23, 59, 59)
 
@@ -188,6 +205,15 @@ def get_today_min_max_time(date: datetime):
 
 
 def get_utc_datatime_with_time(date: datetime, time: str) -> datetime:
+	"""Function to generate a datetime object for a given date and time.
+
+	Args:
+	date (datetime): Date
+	time (str): Time
+
+	Returns:
+	datetime: Updated datetime object
+	"""
 	system_timezone = pytz.timezone(get_system_timezone())
 	local_datetime = system_timezone.localize(
 		datetime.strptime(f"{get_date_str(date)} {time}", "%Y-%m-%d %H:%M:%S")
@@ -196,11 +222,28 @@ def get_utc_datatime_with_time(date: datetime, time: str) -> datetime:
 
 
 def convert_timezone_to_utc(date_time: str, time_zone: str) -> datetime:
+	"""Helper function to convert a given datetime string to a datetime object with the specified time zone.
+
+	Args:
+	date_time (str): Datetime string
+	time_zone (str): Time zone
+
+	Returns:
+	datetime: Datetime object
+	"""
 	local_datetime = parser.parse(date_time).astimezone(pytz.timezone(time_zone))
 	return local_datetime.astimezone(pytz.utc)
 
 
 def convert_datetime_to_utc(date_time: datetime) -> datetime:
+	"""Converts the given datetime object to a UTC timezone datetime object.
+
+	Args:
+	date_time (datetime): Datetime Object
+
+	Returns:
+	datetime: Updated Object
+	"""
 	system_timezone = pytz.timezone(get_system_timezone())
 	local_datetime = system_timezone.localize(date_time)
 	return local_datetime.astimezone(pytz.utc)
@@ -212,6 +255,17 @@ def check_if_datetime_in_range(
 	lower_datetime: datetime,
 	upper_datetime: datetime,
 ):
+	"""Check if [start_datetime, end_datetime] (s1) has an intersection with [lower_datetime, upper_datetime] (r1).
+
+	Args:
+	start_datetime (datetime): Start Datetime
+	end_datetime (datetime): End Datetime
+	lower_datetime (datetime): Lower Datetime (Start time of range)
+	upper_datetime (datetime): Upper Datetime (End time of range)
+
+	Returns:
+	bool: True if s1 has overlap with r1, False otherwise.
+	"""
 
 	# if lower_datetime <= start_datetime and end_datetime <= upper_datetime:
 	# 	return True

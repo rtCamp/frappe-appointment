@@ -127,6 +127,14 @@ def get_time_slots_for_day(appointment_group_id: str, date: str) -> object:
 			member_time_slots, starttime, endtime, date
 		)
 
+		if all_slots == False:
+			return get_resonce_body(
+				avaiable_time_slot_for_day=[],
+				appointment_group=appointment_group,
+				date=date,
+				date_validation_obj=date_validation_obj,
+			)
+
 		all_slots = update_cal_slots_with_events(
 			all_slots, booking_frequency_reached_obj["events"]
 		)
@@ -349,11 +357,24 @@ def update_cal_slots_with_events(all_slots: list, all_events: list) -> list:
 def get_avaiable_time_slot_for_day(
 	all_slots: list, starttime: datetime, endtime: datetime, appointment_group: object
 ) -> list:
+	"""Generate time available time slots for a given date based on Google slots within the range [starttime, endtime].
+
+	Args:
+		all_slots (list): All Google slots
+		starttime (datetime): Start time from which slots should be generated
+		endtime (datetime): End time until which slots should be generated
+		appointment_group (object): Appointment Group
+
+	Returns:
+		list: List of available slots
+	"""
 	available_slots = []
 
 	index = 0
 
 	minimum_buffer_time = appointment_group.minimum_buffer_time
+    
+    # Start time of event
 	current_start_time = get_next_round_value(minimum_buffer_time, starttime, False)
 
 	minute, second = divmod(appointment_group.duration_for_event.seconds, 60)
@@ -363,16 +384,20 @@ def get_avaiable_time_slot_for_day(
 		current_start_time, hours=hour, minutes=minute, seconds=second
 	)
 
+	# This will make sure that slots will be genrate even though we reach at end of all_slots
 	while current_end_time <= endtime:
 
 		if index >= len(all_slots) and current_end_time <= endtime:
+      
 			available_slots.append(
 				{"start_time": current_start_time, "end_time": current_end_time}
 			)
+
 			current_start_time = get_next_round_value(minimum_buffer_time, current_end_time)
 			current_end_time = add_to_date(
 				current_start_time, hours=hour, minutes=minute, seconds=second
 			)
+
 			continue
 
 		currernt_slot = all_slots[index]
@@ -408,6 +433,17 @@ def is_valid_buffer_time(
 	next_start: datetime,
 	is_add_buffer_in_event: bool = True,
 ):
+	"""Check if the time difference between the next time slot and the current time slot meets the minimum_buffer_time requirement.
+
+	Args:
+		minimum_buffer_time (datetime): Minimum buffer time to maintain
+		end (datetime): End time of the current time slot
+		next_start (datetime): Start time of the next time slot
+		is_add_buffer_in_event (bool, optional): Whether to add buffer time in the current slot. Defaults to True.
+
+	Returns:
+		bool: True if the buffer time is maintained, False otherwise
+	"""
 	if not minimum_buffer_time or not is_add_buffer_in_event:
 		return True
 
@@ -416,17 +452,27 @@ def is_valid_buffer_time(
 
 def get_next_round_value(
 	minimum_buffer_time: datetime,
-	current_start_time: datetime,
+	current_end_time: datetime,
 	is_add_buffer_in_event: bool = True,
 ):
+	"""Generate the next possible start time for an event as per the buffer time value.
+
+	Args:
+		minimum_buffer_time (datetime): Minimum buffer time to maintain
+		current_end_time (datetime): Start time of the current slot
+		is_add_buffer_in_event (bool, optional): Whether to add buffer time in the current slot. Defaults to True.
+
+	Returns:
+		Datetime: Next slot possible start time
+	"""
 	if not minimum_buffer_time or not is_add_buffer_in_event:
-		return current_start_time
+		return current_end_time
 
 	minute, second = divmod(minimum_buffer_time.seconds, 60)
 	hour, minute = divmod(minute, 60)
 
 	min_start_time = add_to_date(
-		current_start_time, hours=hour, minutes=minute, seconds=second
+		current_end_time, hours=hour, minutes=minute, seconds=second
 	)
 
 	return min_start_time
@@ -435,6 +481,16 @@ def get_next_round_value(
 def get_max_min_time_slot(
 	appointmen_time_slots: list, max_start_time: str, min_end_time: str
 ) -> list:
+	"""Select the maximum between the given start time and appointment_time_slots start time, and the minimum between the given end time and appointment_time_slots end time.
+
+	Args:
+	appointment_time_slots (list): Appointment time slots
+	max_start_time (str): Max start time
+	min_end_time (str): Min end time
+
+	Returns:
+	list: Updated list of start time and min end time
+	"""
 
 	for appointmen_time_slot in appointmen_time_slots:
 		max_start_time = max(

@@ -34,7 +34,6 @@ class EventOverride(Event):
 	def before_insert(self):
 		"""Handle the Appointment Group in Event
 		"""
-		super().before_insert()
 
 		if self.custom_appointment_group:
 			self.appointment_group = frappe.get_doc(

@@ -31,6 +31,9 @@ let todaySlotsData = {};
 
 // HTML Updates
 const manipulate = () => {
+	/**
+	 * This function will generate the date element of the given month based on the year and month values.
+	 */
 	let dayone = new Date(year, month, 1).getDay();
 	let lastdate = new Date(year, month + 1, 0).getDate();
 	let dayend = new Date(year, month, lastdate).getDay();
@@ -51,9 +54,13 @@ const manipulate = () => {
 	}
 	currdate.innerText = `${months[month]} ${year}`;
 	day.innerHTML = lit;
+
 };
 
 const get_date_on_click = () => {
+	/**
+	 * Add an onclick event to the dates of the current month based on valid start and end times
+	 */
 	const vaild_start_date = new Date(todaySlotsData.valid_start_date);
 	const valid_end_date = todaySlotsData.valid_end_date
 		? new Date(todaySlotsData.valid_end_date)
@@ -68,6 +75,7 @@ const get_date_on_click = () => {
 			parseInt(date.innerHTML)
 		);
 
+		// Weekend Check
 		if (
 			!todaySlotsData.enable_scheduling_on_weekends &&
 			(selected_date.getDay() == "0" || selected_date.getDay() == "6")
@@ -162,6 +170,7 @@ function update_time_slots_html() {
 }
 
 function update_calander() {
+	/*** Main function to update calander ui */
 	manipulate();
 	update_active_date();
 	get_date_on_click();
@@ -195,7 +204,6 @@ function get_time_slots(re_call = true) {
 				month = date.getMonth();
 				todaySlotsData = r.message;
 				if (re_call) {
-					console.log(todaySlotsData);
 					get_time_slots(false);
 				} else {
 					setdaySlotsData();
@@ -213,6 +221,8 @@ function setdaySlotsData(daySlotsData = false) {
 			all_avaiable_slots_for_data: [],
 			appointment_group_id: get_appointment_group(),
 			date: getURLSearchParam("date"),
+			valid_start_date: new Date().toUTCString(),
+			valid_end_date: new Date().toUTCString(),
 		};
 	}
 	todaySlotsData = daySlotsData;
