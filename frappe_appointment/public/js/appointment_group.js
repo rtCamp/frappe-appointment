@@ -195,7 +195,6 @@ function get_time_slots(re_call = true) {
 				month = date.getMonth();
 				todaySlotsData = r.message;
 				if (re_call) {
-					console.log(todaySlotsData);
 					get_time_slots(false);
 				} else {
 					setdaySlotsData();
@@ -213,6 +212,8 @@ function setdaySlotsData(daySlotsData = false) {
 			all_avaiable_slots_for_data: [],
 			appointment_group_id: get_appointment_group(),
 			date: getURLSearchParam("date"),
+			valid_start_date: new Date().toUTCString(),
+			valid_end_date: new Date().toUTCString(),
 		};
 	}
 	todaySlotsData = daySlotsData;
