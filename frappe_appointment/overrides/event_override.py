@@ -31,9 +31,9 @@ class EventOverride(Event):
 	Args:
 		Event (class): Default class
 	"""
+
 	def before_insert(self):
-		"""Handle the Appointment Group in Event
-		"""
+		"""Handle the Appointment Group in Event"""
 
 		if self.custom_appointment_group:
 			self.appointment_group = frappe.get_doc(
@@ -43,8 +43,7 @@ class EventOverride(Event):
 			self.update_attendees_for_appointment_group()
 
 	def send_meet_email(self):
-		"""Sent the meeting link email to the given user using the provided Email Template
-		"""
+		"""Sent the meeting link email to the given user using the provided Email Template"""
 		appointment_group = self.appointment_group
 
 		if (
@@ -74,7 +73,7 @@ class EventOverride(Event):
 			)
 
 	def get_recipients_event(self):
-		"""Get the list of recipients as per event_participants 
+		"""Get the list of recipients as per event_participants
 
 		Returns:
 			list: recipients emails
@@ -92,8 +91,7 @@ class EventOverride(Event):
 		return recipients
 
 	def update_attendees_for_appointment_group(self):
-		"""Insert Appointment Group Member as Event participants
-		"""
+		"""Insert Appointment Group Member as Event participants"""
 		members = self.appointment_group.members
 
 		for member in members:
@@ -120,10 +118,9 @@ class EventOverride(Event):
 		Args:
 			body (object): data the send in req body
 		"""
-  
+
 		def datetime_serializer(obj):
-			"""Handle the encode datetime object in JSON
-			"""
+			"""Handle the encode datetime object in JSON"""
 			if isinstance(obj, datetime.datetime):
 				return obj.isoformat()
 
@@ -168,9 +165,9 @@ def create_event_for_appointment_group(
 	Returns:
 		res (object): Result object
 	"""
-    #query parameters
+	# query parameters
 	event_info = args
- 
+
 	starts_on = utc_to_sys_time(start_time)
 	ends_on = utc_to_sys_time(end_time)
 
@@ -193,13 +190,12 @@ def create_event_for_appointment_group(
 	if len(members) <= 0:
 		return frappe.throw(_("No Member found"))
 
-
 	google_calendar = frappe.get_last_doc(
 		doctype="Google Calendar", filters={"user": members[0].user}
 	)
 
 	google_calendar_api_obj, account = get_google_calendar_object(google_calendar.name)
-	
+
 	if reschedule:
 		event = frappe.get_last_doc(
 			"Event", filters={"custom_appointment_group": appointment_group.name}
@@ -233,7 +229,8 @@ def create_event_for_appointment_group(
 		"custom_doctype_link_with_event": json.loads(
 			event_info.get("custom_doctype_link_with_event", "[]")
 		),
-		"event_type": event_info.get("event_type", "Public"),
+		"send_reminder": 0,
+		"event_type": "Public",
 		"custom_appointment_group": appointment_group.name,
 		"event_info": event_info,
 	}
