@@ -29,22 +29,29 @@ class EventOverride(Event):
 	"""Event Doctype Overwrite
 
 	Args:
-		Event (class): Default class
+	        Event (class): Default class
 	"""
+
 	def before_insert(self):
-		"""Handle the Appointment Group in Event
-		"""
+		"""Handle the Appointment Group in Event"""
 
 		if self.custom_appointment_group:
 			self.appointment_group = frappe.get_doc(
 				APPOINTMENT_GROUP, self.custom_appointment_group
 			)
-			self.send_meet_email()
 			self.update_attendees_for_appointment_group()
 
+	def before_save(self):
+		super().before_save()
+		if self.custom_appointment_group:
+			self.appointment_group = frappe.get_doc(
+				APPOINTMENT_GROUP, self.custom_appointment_group
+			)
+			if self.has_value_changed("starts_on"):
+				self.send_meet_email()
+
 	def send_meet_email(self):
-		"""Sent the meeting link email to the given user using the provided Email Template
-		"""
+		"""Sent the meeting link email to the given user using the provided Email Template"""
 		appointment_group = self.appointment_group
 
 		if (
@@ -53,6 +60,7 @@ class EventOverride(Event):
 			and self.event_participants
 			and self.custom_doctype_link_with_event
 		):
+    
 			args = dict(
 				appointment_group=self.appointment_group.as_dict(),
 				event=self.as_dict(),
@@ -74,10 +82,10 @@ class EventOverride(Event):
 			)
 
 	def get_recipients_event(self):
-		"""Get the list of recipients as per event_participants 
+		"""Get the list of recipients as per event_participants
 
 		Returns:
-			list: recipients emails
+		    list: recipients emails
 		"""
 		if not self.event_participants:
 			return []
@@ -92,8 +100,7 @@ class EventOverride(Event):
 		return recipients
 
 	def update_attendees_for_appointment_group(self):
-		"""Insert Appointment Group Member as Event participants
-		"""
+		"""Insert Appointment Group Member as Event participants"""
 		members = self.appointment_group.members
 
 		for member in members:
@@ -118,12 +125,11 @@ class EventOverride(Event):
 		"""Handle the webhook call
 
 		Args:
-			body (object): data the send in req body
+		        body (object): data the send in req body
 		"""
-  
+
 		def datetime_serializer(obj):
-			"""Handle the encode datetime object in JSON
-			"""
+			"""Handle the encode datetime object in JSON"""
 			if isinstance(obj, datetime.datetime):
 				return obj.isoformat()
 
@@ -158,19 +164,19 @@ def create_event_for_appointment_group(
 	"""API Endpoint to Create the Event
 
 	Args:
-		appointment_group_id (str): Appointment ID
-		date (str): Date for which the event is scheduled
-		start_time (str): Start time of the event
-		end_time (str): End time of the event
-		event_participants (list): List of participants
-		args (object): Query Parameters of api
+	        appointment_group_id (str): Appointment ID
+	        date (str): Date for which the event is scheduled
+	        start_time (str): Start time of the event
+	        end_time (str): End time of the event
+	        event_participants (list): List of participants
+	        args (object): Query Parameters of api
 
 	Returns:
-		res (object): Result object
+	        res (object): Result object
 	"""
-    #query parameters
+	# query parameters
 	event_info = args
- 
+
 	starts_on = utc_to_sys_time(start_time)
 	ends_on = utc_to_sys_time(end_time)
 
@@ -193,19 +199,19 @@ def create_event_for_appointment_group(
 	if len(members) <= 0:
 		return frappe.throw(_("No Member found"))
 
-
 	google_calendar = frappe.get_last_doc(
 		doctype="Google Calendar", filters={"user": members[0].user}
 	)
 
 	google_calendar_api_obj, account = get_google_calendar_object(google_calendar.name)
-	
+
 	if reschedule:
 		event = frappe.get_last_doc(
 			"Event", filters={"custom_appointment_group": appointment_group.name}
 		)
 		event.starts_on = starts_on
 		event.ends_on = ends_on
+		event.event_info = event_info
 		event.save(ignore_permissions=True)
 
 		if not event.handle_webhook(
@@ -233,7 +239,8 @@ def create_event_for_appointment_group(
 		"custom_doctype_link_with_event": json.loads(
 			event_info.get("custom_doctype_link_with_event", "[]")
 		),
-		"event_type": event_info.get("event_type", "Public"),
+		"send_reminder": 0,
+		"event_type": "Private",
 		"custom_appointment_group": appointment_group.name,
 		"event_info": event_info,
 	}
