@@ -42,6 +42,7 @@ class EventOverride(Event):
 			self.update_attendees_for_appointment_group()
 
 	def before_save(self):
+		super().before_save()
 		if self.custom_appointment_group:
 			self.appointment_group = frappe.get_doc(
 				APPOINTMENT_GROUP, self.custom_appointment_group
