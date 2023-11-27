@@ -10,7 +10,9 @@
 .cal-main-container h3 {
   margin: 0;
 }
-
+.applicant-detail{
+    padding-top:1em
+}
 .cal-main-container ul {
   margin-bottom: 0;
 }
@@ -24,6 +26,7 @@
 .cal-main-container .column {
   flex: 1;
   display: flex;
+  flex-direction: column;
 }
 .cal-main-container .middle-column {
   flex: 1.5;
