@@ -11,6 +11,9 @@
 .nav-item .btn-login-area{
     display: none;
 }
+.no-flex{
+    flex-direction: row !important;
+}
 .cal-main-container h3 {
   margin: 0;
 }
