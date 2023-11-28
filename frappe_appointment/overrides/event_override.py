@@ -164,15 +164,15 @@ def create_event_for_appointment_group(
 	"""API Endpoint to Create the Event
 
 	Args:
-	        appointment_group_id (str): Appointment ID
-	        date (str): Date for which the event is scheduled
-	        start_time (str): Start time of the event
-	        end_time (str): End time of the event
-	        event_participants (list): List of participants
-	        args (object): Query Parameters of api
+	    appointment_group_id (str): Appointment ID
+	    date (str): Date for which the event is scheduled
+	    start_time (str): Start time of the event
+	    end_time (str): End time of the event
+	    event_participants (list): List of participants
+	    args (object): Query Parameters of api
 
 	Returns:
-	        res (object): Result object
+	    res (object): Result object
 	"""
 	# query parameters
 	event_info = args

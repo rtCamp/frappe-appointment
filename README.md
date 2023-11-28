@@ -1,4 +1,4 @@
-## Frappe Appointment
+## Frappe Appointments
 
 The appointment scheduling app supports team functionality, allowing users to create groups with a shared calendar feature. This feature enables selecting time slots to generate meetings.
 
@@ -6,19 +6,16 @@ The appointment scheduling app supports team functionality, allowing users to cr
 
 [Link](https://dbdiagram.io/d/ERD_frappe_appointment-6548d5667d8bbd64659355e6)
 
-## Setup 
-
-1. Install the app locally
+## Install The App 
 
 ```bash
 bench get-app git@github.com:rtCamp/frappe-appointment.git
+bench --site {sitename} install-app frappe-appointment
 ```
 
-2. Integrate Google Calendar into Frappe site [Link](https://docs.erpnext.com/docs/user/manual/en/google_settings)
+## How To Use App ?
 
-3. Add the user's Google Calendar.
-
-4. Set up User Appointment Availability and Create the Appointment Group.
+[Link](./docs/Use.md)
 
 #### License
 
