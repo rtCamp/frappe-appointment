@@ -2,11 +2,15 @@
   margin: 0;
   padding: 0;
 }
-
+.navbar-brand{
+    display: none;
+}
 .web-footer {
   margin-top: 0px;
 }
-
+.nav-item .btn-login-area{
+    display: none;
+}
 .cal-main-container h3 {
   margin: 0;
 }
