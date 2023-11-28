@@ -191,7 +191,10 @@ header .calendar-current-date {
   cursor: default;
   font-weight: 500;
 }
-
+.applicant-detail p{
+    margin-bottom: 0.1rem;
+    font-size: 16px;
+}
 .calendar-body .calendar-dates li {
   /* margin-top: 10px; */
   position: relative;
