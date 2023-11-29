@@ -1,5 +1,5 @@
 import frappe
-from frappe_appointment.helpers.role import add_permission_doctype
+from frappe_appointments.helpers.role import add_permission_doctype
 
 
 def add_role():

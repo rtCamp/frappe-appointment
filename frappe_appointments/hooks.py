@@ -1,5 +1,5 @@
-app_name = "frappe_appointment"
-app_title = "Frappe Appointment"
+app_name = "frappe_appointments"
+app_title = "Frappe Appointments"
 app_publisher = "rtCamp"
 app_description = "The appointment scheduling app with team support in Frappe."
 app_email = "sys@rtcamp.com"
@@ -10,15 +10,15 @@ app_license = "MIT"
 # ------------------
 
 # include js, css files in header of desk.html
-# app_include_css = "/assets/frappe_appointment/css/frappe_appointment.css"
-# app_include_js = "/assets/frappe_appointment/js/frappe_appointment.js"
+# app_include_css = "/assets/frappe_appointments/css/frappe_appointments.css"
+# app_include_js = "/assets/frappe_appointments/js/frappe_appointments.js"
 
 # include js, css files in header of web template
-# web_include_css = "/assets/frappe_appointment/css/frappe_appointment.css"
-# web_include_js = "/assets/frappe_appointment/js/frappe_appointment.js"
+# web_include_css = "/assets/frappe_appointments/css/frappe_appointments.css"
+# web_include_js = "/assets/frappe_appointments/js/frappe_appointments.js"
 
 # include custom scss in every website theme (without file extension ".scss")
-# website_theme_scss = "frappe_appointment/public/scss/website"
+# website_theme_scss = "frappe_appointments/public/scss/website"
 
 # include js, css files in header of web form
 # webform_include_js = {"doctype": "public/js/doctype.js"}
@@ -55,43 +55,43 @@ app_license = "MIT"
 
 # add methods and filters to jinja environment
 # jinja = {
-# 	"methods": "frappe_appointment.utils.jinja_methods",
-# 	"filters": "frappe_appointment.utils.jinja_filters"
+# 	"methods": "frappe_appointments.utils.jinja_methods",
+# 	"filters": "frappe_appointments.utils.jinja_filters"
 # }
 
 # Installation
 # ------------
 
-# before_install = "frappe_appointment.install.before_install"
-# after_install = "frappe_appointment.install.after_install"
+# before_install = "frappe_appointments.install.before_install"
+# after_install = "frappe_appointments.install.after_install"
 
 # Uninstallation
 # ------------
 
-# before_uninstall = "frappe_appointment.uninstall.before_uninstall"
-# after_uninstall = "frappe_appointment.uninstall.after_uninstall"
+# before_uninstall = "frappe_appointments.uninstall.before_uninstall"
+# after_uninstall = "frappe_appointments.uninstall.after_uninstall"
 
 # Integration Setup
 # ------------------
 # To set up dependencies/integrations with other apps
 # Name of the app being installed is passed as an argument
 
-# before_app_install = "frappe_appointment.utils.before_app_install"
-# after_app_install = "frappe_appointment.utils.after_app_install"
+# before_app_install = "frappe_appointments.utils.before_app_install"
+# after_app_install = "frappe_appointments.utils.after_app_install"
 
 # Integration Cleanup
 # -------------------
 # To clean up dependencies/integrations with other apps
 # Name of the app being uninstalled is passed as an argument
 
-# before_app_uninstall = "frappe_appointment.utils.before_app_uninstall"
-# after_app_uninstall = "frappe_appointment.utils.after_app_uninstall"
+# before_app_uninstall = "frappe_appointments.utils.before_app_uninstall"
+# after_app_uninstall = "frappe_appointments.utils.after_app_uninstall"
 
 # Desk Notifications
 # ------------------
 # See frappe.core.notifications.get_notification_config
 
-# notification_config = "frappe_appointment.notifications.get_notification_config"
+# notification_config = "frappe_appointments.notifications.get_notification_config"
 
 # Permissions
 # -----------
@@ -110,9 +110,9 @@ app_license = "MIT"
 # Override standard doctype classes
 
 override_doctype_class = {
-	"Event": "frappe_appointment.overrides.event_override.EventOverride",
-	"Google Calendar": "frappe_appointment.overrides.google_calendar_override.GoogleCalendarOverride",
-	"Customize Form": "frappe_appointment.overrides.customize_form_override.CareersOverrideCustomizeForm",
+	"Event": "frappe_appointments.overrides.event_override.EventOverride",
+	"Google Calendar": "frappe_appointments.overrides.google_calendar_override.GoogleCalendarOverride",
+	"Customize Form": "frappe_appointments.overrides.customize_form_override.CareersOverrideCustomizeForm",
 }
 
 # Document Events
@@ -124,39 +124,39 @@ override_doctype_class = {
 
 # scheduler_events = {
 # 	"all": [
-# 		"frappe_appointment.tasks.all"
+# 		"frappe_appointments.tasks.all"
 # 	],
 # 	"daily": [
-# 		"frappe_appointment.tasks.daily"
+# 		"frappe_appointments.tasks.daily"
 # 	],
 # 	"hourly": [
-# 		"frappe_appointment.tasks.hourly"
+# 		"frappe_appointments.tasks.hourly"
 # 	],
 # 	"weekly": [
-# 		"frappe_appointment.tasks.weekly"
+# 		"frappe_appointments.tasks.weekly"
 # 	],
 # 	"monthly": [
-# 		"frappe_appointment.tasks.monthly"
+# 		"frappe_appointments.tasks.monthly"
 # 	],
 # }
 
 # Testing
 # -------
 
-# before_tests = "frappe_appointment.install.before_tests"
+# before_tests = "frappe_appointments.install.before_tests"
 
 # Overriding Methods
 # ------------------------------
 #
 # override_whitelisted_methods = {
-# 	"frappe.desk.doctype.event.event.get_events": "frappe_appointment.event.get_events"
+# 	"frappe.desk.doctype.event.event.get_events": "frappe_appointments.event.get_events"
 # }
 #
 # each overriding function accepts a `data` argument;
 # generated from the base implementation of the doctype dashboard,
 # along with any modifications made in other Frappe apps
 # override_doctype_dashboards = {
-# 	"Task": "frappe_appointment.task.get_dashboard_data"
+# 	"Task": "frappe_appointments.task.get_dashboard_data"
 # }
 
 # exempt linked doctypes from being automatically cancelled
@@ -170,13 +170,13 @@ override_doctype_class = {
 
 # Request Events
 # ----------------
-# before_request = ["frappe_appointment.utils.before_request"]
-# after_request = ["frappe_appointment.utils.after_request"]
+# before_request = ["frappe_appointments.utils.before_request"]
+# after_request = ["frappe_appointments.utils.after_request"]
 
 # Job Events
 # ----------
-# before_job = ["frappe_appointment.utils.before_job"]
-# after_job = ["frappe_appointment.utils.after_job"]
+# before_job = ["frappe_appointments.utils.before_job"]
+# after_job = ["frappe_appointments.utils.after_job"]
 
 # User Data Protection
 # --------------------
@@ -206,5 +206,5 @@ override_doctype_class = {
 # --------------------------------
 
 # auth_hooks = [
-# 	"frappe_appointment.auth.validate"
+# 	"frappe_appointments.auth.validate"
 # ]

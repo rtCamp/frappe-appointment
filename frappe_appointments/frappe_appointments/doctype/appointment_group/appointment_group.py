@@ -3,15 +3,15 @@
 
 import frappe
 from frappe.website.website_generator import WebsiteGenerator
-from frappe_appointment.constants import APPOINTMENT_GROUP, APPOINTMENT_TIME_SLOT
-from frappe_appointment.frappe_appointment.doctype.appointment_time_slot.appointment_time_slot import (
+from frappe_appointments.constants import APPOINTMENT_GROUP, APPOINTMENT_TIME_SLOT
+from frappe_appointments.frappe_appointments.doctype.appointment_time_slot.appointment_time_slot import (
 	get_all_unavailable_google_calendar_slots_for_day,
 	get_utc_datatime_with_time,
 	convert_timezone_to_utc,
 	convert_datetime_to_utc,
 )
 from dateutil import parser
-from frappe_appointment.helpers.utils import get_weekday
+from frappe_appointments.helpers.utils import get_weekday
 from frappe.utils import (
 	getdate,
 	get_time_str,

@@ -14,15 +14,15 @@ from frappe.utils import (
 	get_datetime_str,
 	now,
 )
-from frappe_appointment.helpers.email import send_email_template_mail
-from frappe_appointment.constants import (
+from frappe_appointments.helpers.email import send_email_template_mail
+from frappe_appointments.constants import (
 	APPOINTMENT_GROUP,
 	USER_APPOINTMENT_AVAILABILITY,
 )
-from frappe_appointment.frappe_appointment.doctype.appointment_group.appointment_group import (
+from frappe_appointments.frappe_appointments.doctype.appointment_group.appointment_group import (
 	vaild_date,
 )
-from frappe_appointment.helpers.utils import utc_to_sys_time
+from frappe_appointments.helpers.utils import utc_to_sys_time
 
 
 class EventOverride(Event):
