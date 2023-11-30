@@ -30,4 +30,4 @@ class CareersOverrideCustomizeForm(CustomizeForm):
 
 		if prop == "options" and df.get("fieldtype") == "Select":
 			return True
-		super().allow_property_change(prop, meta_df, df)
+		return super().allow_property_change(prop, meta_df, df)
