@@ -22,6 +22,12 @@ from frappe_appointment.constants import (
 from frappe_appointment.frappe_appointment.doctype.appointment_group.appointment_group import (
 	vaild_date,
 )
+from frappe.integrations.doctype.google_calendar.google_calendar import (
+	format_date_according_to_google_calendar,
+	repeat_on_to_google_calendar_recurrence_rule,
+	get_attendees,
+	get_conference_data,
+)
 from frappe_appointment.helpers.utils import utc_to_sys_time
 
 
@@ -29,7 +35,7 @@ class EventOverride(Event):
 	"""Event Doctype Overwrite
 
 	Args:
-	        Event (class): Default class
+		Event (class): Default class
 	"""
 
 	def before_insert(self):
@@ -39,6 +45,11 @@ class EventOverride(Event):
 			self.appointment_group = frappe.get_doc(
 				APPOINTMENT_GROUP, self.custom_appointment_group
 			)
+			if self.appointment_group.meet_link:
+				if self.description:
+					self.description=f"\nMeet Link: {self.appointment_group.meet_link}"
+				else: 
+					self.description=f"Meet Link: {self.appointment_group.meet_link}"
 			self.update_attendees_for_appointment_group()
 
 	def before_save(self):
@@ -60,7 +71,7 @@ class EventOverride(Event):
 			and self.event_participants
 			and self.custom_doctype_link_with_event
 		):
-    
+
 			args = dict(
 				appointment_group=self.appointment_group.as_dict(),
 				event=self.as_dict(),
@@ -85,7 +96,7 @@ class EventOverride(Event):
 		"""Get the list of recipients as per event_participants
 
 		Returns:
-		    list: recipients emails
+			list: recipients emails
 		"""
 		if not self.event_participants:
 			return []
@@ -125,7 +136,7 @@ class EventOverride(Event):
 		"""Handle the webhook call
 
 		Args:
-		        body (object): data the send in req body
+			body (object): data the send in req body
 		"""
 
 		def datetime_serializer(obj):
@@ -152,6 +163,7 @@ class EventOverride(Event):
 			return False
 
 
+
 @frappe.whitelist(allow_guest=True)
 def create_event_for_appointment_group(
 	appointment_group_id: str,
@@ -164,15 +176,15 @@ def create_event_for_appointment_group(
 	"""API Endpoint to Create the Event
 
 	Args:
-	    appointment_group_id (str): Appointment ID
-	    date (str): Date for which the event is scheduled
-	    start_time (str): Start time of the event
-	    end_time (str): End time of the event
-	    event_participants (list): List of participants
-	    args (object): Query Parameters of api
+		appointment_group_id (str): Appointment ID
+		date (str): Date for which the event is scheduled
+		start_time (str): Start time of the event
+		end_time (str): End time of the event
+		event_participants (list): List of participants
+		args (object): Query Parameters of api
 
 	Returns:
-	    res (object): Result object
+		res (object): Result object
 	"""
 	# query parameters
 	event_info = args
@@ -242,7 +254,7 @@ def create_event_for_appointment_group(
 		"send_reminder": 0,
 		"event_type": "Private",
 		"custom_appointment_group": appointment_group.name,
-		"event_info": event_info,
+		"event_info": event_info
 	}
 
 	event = frappe.get_doc(calendar_event)

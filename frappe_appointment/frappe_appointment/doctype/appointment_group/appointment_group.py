@@ -274,6 +274,7 @@ def get_booking_frequency_reached(
 		],
 		fields=["starts_on", "ends_on"],
 		order_by="starts_on asc",
+        ignore_permissions=True
 	)
 
 	all_events = sorted(
