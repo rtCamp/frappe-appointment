@@ -38,6 +38,7 @@ const manipulate = () => {
 	let lastdate = new Date(year, month + 1, 0).getDate();
 	let dayend = new Date(year, month, lastdate).getDay();
 
+
 	let monthlastdate = new Date(year, month, 0).getDate();
 
 	let lit = "";
@@ -126,22 +127,22 @@ function update_active_date() {
 }
 
 function update_time_slots_html() {
-	if (!todaySlotsData.all_avaiable_slots_for_data) {
+	if (!todaySlotsData.all_available_slots_for_data) {
 		return;
 	}
 
-	all_avaiable_slots_for_data = todaySlotsData.all_avaiable_slots_for_data;
+	all_available_slots_for_data = todaySlotsData.all_available_slots_for_data;
 
 	const timeslot_container = document.querySelector(".timeslot-container");
 
 	timeslot_container.innerHTML = "";
 
-	for (let index = 0; index < all_avaiable_slots_for_data.length; index++) {
+	for (let index = 0; index < all_available_slots_for_data.length; index++) {
 		const format_am_pm_start = format_am_pm(
-			new Date(all_avaiable_slots_for_data[index].start_time)
+			new Date(all_available_slots_for_data[index].start_time)
 		);
 		const format_am_pm_end = format_am_pm(
-			new Date(all_avaiable_slots_for_data[index].end_time)
+			new Date(all_available_slots_for_data[index].end_time)
 		);
 
 		const div = document.createElement("div");
@@ -164,7 +165,7 @@ function update_time_slots_html() {
 		timeslot_container.append(div);
 	}
 
-	if (all_avaiable_slots_for_data.length == 0) {
+	if (all_available_slots_for_data.length == 0) {
 		timeslot_container.innerHTML = `<div class="timeslot-empty">No open time slots</div>`;
 	}
 }
@@ -190,6 +191,7 @@ function get_time_slots(re_call = true) {
 			{
 				appointment_group_id: get_appointment_group(),
 				date: getURLSearchParam("date"),
+                user_timezone_offset: -(new Date().getTimezoneOffset())
 			}
 		)
 		.then((r) => {
@@ -218,7 +220,7 @@ function get_time_slots(re_call = true) {
 function setdaySlotsData(daySlotsData = false) {
 	if (!daySlotsData) {
 		daySlotsData = {
-			all_avaiable_slots_for_data: [],
+			all_available_slots_for_data: [],
 			appointment_group_id: get_appointment_group(),
 			date: getURLSearchParam("date"),
 			valid_start_date: new Date().toUTCString(),
@@ -394,7 +396,7 @@ submit_button.addEventListener("click", function () {
 		}
 	}
 
-	add_event_slots(todaySlotsData.all_avaiable_slots_for_data[select_index]);
+	add_event_slots(todaySlotsData.all_available_slots_for_data[select_index]);
 });
 
 cancel_button.addEventListener("click", function () {
