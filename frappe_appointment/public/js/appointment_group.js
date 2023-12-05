@@ -241,6 +241,7 @@ function add_event_slots(time_slots) {
 			end_time: time_slots.end_time,
 			subject: getURLSearchParam("subject"),
 			date: getURLSearchParam("date"),
+            user_timezone_offset: -(new Date().getTimezoneOffset()),
 			...get_all_query_param(),
 			event_participants: !getURLSearchParam("event_participants")
 				? []

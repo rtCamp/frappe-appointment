@@ -118,6 +118,23 @@ def get_user_time_slots(all_time_slots_global_object:list, date:str, user_timezo
 	return list_all_available_slots_for_data
 
 
+def is_valid_time_slots(appointment_group_id: str, date: str, user_timezone_offset:str,start_time:str,end_time:str):
+	today_time_slots=get_time_slots_for_day(appointment_group_id,date,user_timezone_offset)
+	
+	if not today_time_slots:
+		return False
+	
+	all_available_slots_for_data=today_time_slots["all_available_slots_for_data"]
+	
+	start_time=datetime.datetime.strptime(start_time, "%Y-%m-%d %H:%M:%S%z")
+	end_time=datetime.datetime.strptime(end_time, "%Y-%m-%d %H:%M:%S%z")
+	
+	for time_slot in all_available_slots_for_data:
+		if time_slot["start_time"]==start_time and time_slot["end_time"]==end_time:
+			return True
+
+	return False
+
 def get_time_slots_for_given_date(appointment_group: object, datetime: str):
 	date = datetime.date()
 	weekday = get_weekday(datetime)
