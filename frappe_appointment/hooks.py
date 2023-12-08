@@ -148,9 +148,9 @@ override_doctype_class = {
 # Overriding Methods
 # ------------------------------
 #
-# override_whitelisted_methods = {
-# 	"frappe.desk.doctype.event.event.get_events": "frappe_appointment.event.get_events"
-# }
+override_whitelisted_methods = {
+	"frappe.integrations.doctype.google_calendar.google_calendar.google_callback": "frappe_appointment.overrides.google_calendar_override.google_callback"
+}
 #
 # each overriding function accepts a `data` argument;
 # generated from the base implementation of the doctype dashboard,
