@@ -10,8 +10,6 @@ from frappe.integrations.doctype.google_calendar.google_calendar import (
 )
 from frappe.utils import (
 	get_datetime,
-	convert_utc_to_system_timezone,
-	get_datetime_str,
 	now,
 )
 from frappe_appointment.helpers.email import send_email_template_mail
@@ -21,12 +19,7 @@ from frappe_appointment.constants import (
 )
 from frappe_appointment.frappe_appointment.doctype.appointment_group.appointment_group import (
 	vaild_date,
-)
-from frappe.integrations.doctype.google_calendar.google_calendar import (
-	format_date_according_to_google_calendar,
-	repeat_on_to_google_calendar_recurrence_rule,
-	get_attendees,
-	get_conference_data,
+ 	is_valid_time_slots
 )
 from frappe_appointment.helpers.utils import utc_to_sys_time
 
@@ -170,6 +163,7 @@ def create_event_for_appointment_group(
 	date: str,
 	start_time: str,
 	end_time: str,
+	user_timezone_offset:str,
 	event_participants,
 	**args,
 ):
@@ -188,6 +182,9 @@ def create_event_for_appointment_group(
 	"""
 	# query parameters
 	event_info = args
+
+	if not is_valid_time_slots(appointment_group_id,date,user_timezone_offset,start_time,end_time):
+		return frappe.throw(_("The slot is not available. Please try to book again!"))
 
 	starts_on = utc_to_sys_time(start_time)
 	ends_on = utc_to_sys_time(end_time)

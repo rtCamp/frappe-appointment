@@ -9,9 +9,10 @@ from frappe_appointment.frappe_appointment.doctype.appointment_time_slot.appoint
 	get_utc_datatime_with_time,
 	convert_timezone_to_utc,
 	convert_datetime_to_utc,
+ 
 )
 from dateutil import parser
-from frappe_appointment.helpers.utils import get_weekday
+from frappe_appointment.helpers.utils import get_weekday,utc_to_given_time_zone
 from frappe.utils import (
 	getdate,
 	get_time_str,
@@ -52,7 +53,7 @@ def get_list_context(context):
 
 
 @frappe.whitelist(allow_guest=True)
-def get_time_slots_for_day(appointment_group_id: str, date: str) -> object:
+def get_time_slots_for_day(appointment_group_id: str, date: str, user_timezone_offset:str) -> object:
 	"""API endpoint for fetch the google time slots for user
 
 	Args:
@@ -60,7 +61,7 @@ def get_time_slots_for_day(appointment_group_id: str, date: str) -> object:
 		date (str): Date for which need to fetch slots
   
 	Returns:
-		object: Responce
+		object: Response
 	"""
 	try:
 		if not appointment_group_id:
@@ -69,93 +70,154 @@ def get_time_slots_for_day(appointment_group_id: str, date: str) -> object:
 		appointment_group = frappe.get_last_doc(
 			APPOINTMENT_GROUP, filters={"route": appointment_group_id}
 		)
+  
+		datetime_today = get_datetime(date)
+		datetime_tomorrow = add_days(datetime_today,1)
+		datetime_yesterday = add_days(datetime_today,-1)
+  
+		all_time_slots_global_object={}
+		
+		if int(user_timezone_offset)>0:
+			all_time_slots_global_object={
+				"yesterday":get_time_slots_for_given_date(appointment_group,datetime_yesterday),
+				"today":get_time_slots_for_given_date(appointment_group,datetime_today),
+			}
+		else: 
+			all_time_slots_global_object={
+				"today":get_time_slots_for_given_date(appointment_group,datetime_today),
+				"tomorrow":get_time_slots_for_given_date(appointment_group,datetime_tomorrow)
+			}
+   
+  
+		user_time_slots=get_user_time_slots(all_time_slots_global_object, date, user_timezone_offset)
 
-		datetime = get_datetime(date)
-		date = datetime.date()
-		weekday = get_weekday(datetime)
-
-		date_validation_obj = vaild_date(datetime, appointment_group)
-
-		weekend_avalability = check_weekend_avalability(
-			appointment_group.enable_scheduling_on_weekends, weekday, date_validation_obj
-		)
-
-		if weekend_avalability["is_invalid_date"]:
-			return get_resonce_body(
-				avaiable_time_slot_for_day=[],
-				appointment_group=appointment_group,
-				date=date,
-				date_validation_obj=weekend_avalability["date_validation_obj"],
-				is_invalid_date=True,
-			)
-
-		booking_frequency_reached_obj = get_booking_frequency_reached(
-			datetime, appointment_group
-		)
-
-		if not booking_frequency_reached_obj["is_slots_available"]:
-			return get_resonce_body(
-				avaiable_time_slot_for_day=[],
-				appointment_group=appointment_group,
-				date=date,
-				date_validation_obj=date_validation_obj,
-			)
-
-		members = appointment_group.members
-
-		member_time_slots = {}
-		max_start_time, min_end_time = "00:00:00", "24:00:00"
-
-		for member in members:
-			if not member.is_mandatory:
-				continue
-
-			appointmen_time_slots = frappe.db.get_all(
-				APPOINTMENT_TIME_SLOT, filters={"parent": member.user, "day": weekday}, fields="*"
-			)
-
-			max_start_time, min_end_time = get_max_min_time_slot(
-				appointmen_time_slots, max_start_time, min_end_time
-			)
-
-			member_time_slots[member.user] = appointmen_time_slots
-
-		starttime = get_utc_datatime_with_time(date, max_start_time)
-		endtime = get_utc_datatime_with_time(date, min_end_time)
-
-		all_slots = get_all_unavailable_google_calendar_slots_for_day(
-			member_time_slots, starttime, endtime, date
-		)
-
-		if all_slots == False:
-			return get_resonce_body(
-				avaiable_time_slot_for_day=[],
-				appointment_group=appointment_group,
-				date=date,
-				date_validation_obj=date_validation_obj,
-			)
-
-		all_slots = update_cal_slots_with_events(
-			all_slots, booking_frequency_reached_obj["events"]
-		)
-
-		avaiable_time_slot_for_day = get_avaiable_time_slot_for_day(
-			all_slots, starttime, endtime, appointment_group
-		)
-
-		return get_resonce_body(
-			avaiable_time_slot_for_day=avaiable_time_slot_for_day,
-			appointment_group=appointment_group,
-			starttime=starttime,
-			endtime=endtime,
-			date=date,
-			date_validation_obj=date_validation_obj,
-		)
+		time_slots_today_object=all_time_slots_global_object["today"]
+		time_slots_today_object["all_available_slots_for_data"]=user_time_slots
+  
+		return time_slots_today_object
+		
 	except Exception as e:
+		raise Exception(e)
 		return None
 
 
-def check_weekend_avalability(
+def get_user_time_slots(all_time_slots_global_object:list, date:str, user_timezone_offset:str):
+	list_all_available_slots_for_data=[]
+  
+	today=int(date.split("-")[2])
+	
+	for day in all_time_slots_global_object:
+		day_slots_object=all_time_slots_global_object[day]
+		all_available_slots_for_data=day_slots_object["all_available_slots_for_data"]
+
+		for time_slot in all_available_slots_for_data:
+			user_timezone_start_time_slot=utc_to_given_time_zone(time_slot["start_time"],user_timezone_offset)
+			if user_timezone_start_time_slot.day==today:
+				list_all_available_slots_for_data.append(time_slot)
+
+	return list_all_available_slots_for_data
+
+
+def is_valid_time_slots(appointment_group_id: str, date: str, user_timezone_offset:str,start_time:str,end_time:str):
+	today_time_slots=get_time_slots_for_day(appointment_group_id,date,user_timezone_offset)
+	
+	if not today_time_slots:
+		return False
+	
+	all_available_slots_for_data=today_time_slots["all_available_slots_for_data"]
+	
+	start_time=datetime.datetime.strptime(start_time, "%Y-%m-%d %H:%M:%S%z")
+	end_time=datetime.datetime.strptime(end_time, "%Y-%m-%d %H:%M:%S%z")
+	
+	for time_slot in all_available_slots_for_data:
+		if time_slot["start_time"]==start_time and time_slot["end_time"]==end_time:
+			return True
+
+	return False
+
+def get_time_slots_for_given_date(appointment_group: object, datetime: str):
+	date = datetime.date()
+	weekday = get_weekday(datetime)
+
+	date_validation_obj = vaild_date(datetime, appointment_group)
+
+	weekend_availability = check_weekend_availability(
+		appointment_group.enable_scheduling_on_weekends, weekday, date_validation_obj
+	)
+
+	if weekend_availability["is_invalid_date"]:
+		return get_response_body(
+			avaiable_time_slot_for_day=[],
+			appointment_group=appointment_group,
+			date=date,
+			date_validation_obj=weekend_availability["date_validation_obj"],
+			is_invalid_date=True,
+		)
+
+	booking_frequency_reached_obj = get_booking_frequency_reached(
+		datetime, appointment_group
+	)
+
+	if not booking_frequency_reached_obj["is_slots_available"]:
+		return get_response_body(
+			avaiable_time_slot_for_day=[],
+			appointment_group=appointment_group,
+			date=date,
+			date_validation_obj=date_validation_obj,
+		)
+
+	members = appointment_group.members
+
+	member_time_slots = {}
+	max_start_time, min_end_time = "00:00:00", "24:00:00"
+
+	for member in members:
+		if not member.is_mandatory:
+			continue
+
+		appointment_time_slots = frappe.db.get_all(
+			APPOINTMENT_TIME_SLOT, filters={"parent": member.user, "day": weekday}, fields="*"
+		)
+
+		max_start_time, min_end_time = get_max_min_time_slot(
+			appointment_time_slots, max_start_time, min_end_time
+		)
+
+		member_time_slots[member.user] = appointment_time_slots
+
+	starttime = get_utc_datatime_with_time(date, max_start_time)
+	endtime = get_utc_datatime_with_time(date, min_end_time)
+
+	all_slots = get_all_unavailable_google_calendar_slots_for_day(
+		member_time_slots, starttime, endtime, date
+	)
+
+	if all_slots == False:
+		return get_response_body(
+			avaiable_time_slot_for_day=[],
+			appointment_group=appointment_group,
+			date=date,
+			date_validation_obj=date_validation_obj,
+		)
+
+	all_slots = update_cal_slots_with_events(
+		all_slots, booking_frequency_reached_obj["events"]
+	)
+
+	avaiable_time_slot_for_day = get_avaiable_time_slot_for_day(
+		all_slots, starttime, endtime, appointment_group
+	)
+
+	return get_response_body(
+		avaiable_time_slot_for_day=avaiable_time_slot_for_day,
+		appointment_group=appointment_group,
+		starttime=starttime,
+		endtime=endtime,
+		date=date,
+		date_validation_obj=date_validation_obj,
+	)
+
+def check_weekend_availability(
 	enable_scheduling_on_weekends: bool, weekday: str, date_validation_obj: object
 ):
 	"""
@@ -198,7 +260,7 @@ def check_weekend_avalability(
 	return res
 
 
-def get_resonce_body(
+def get_response_body(
 	avaiable_time_slot_for_day: list,
 	appointment_group: object,
 	starttime: datetime = None,
@@ -226,7 +288,7 @@ def get_resonce_body(
 		date_validation_obj = {"valid_start_date": None, "valid_end_date": None}
 
 	return {
-		"all_avaiable_slots_for_data": avaiable_time_slot_for_day,
+		"all_available_slots_for_data": avaiable_time_slot_for_day,
 		"date": date,
 		"duration": appointment_group.duration_for_event,
 		"appointment_group_id": appointment_group.name,
@@ -274,7 +336,7 @@ def get_booking_frequency_reached(
 		],
 		fields=["starts_on", "ends_on"],
 		order_by="starts_on asc",
-        ignore_permissions=True
+		ignore_permissions=True
 	)
 
 	all_events = sorted(
@@ -374,8 +436,8 @@ def get_avaiable_time_slot_for_day(
 	index = 0
 
 	minimum_buffer_time = appointment_group.minimum_buffer_time
-    
-    # Start time of event
+	
+	# Start time of event
 	current_start_time = get_next_round_value(minimum_buffer_time, starttime, False)
 
 	minute, second = divmod(appointment_group.duration_for_event.seconds, 60)
@@ -389,7 +451,7 @@ def get_avaiable_time_slot_for_day(
 	while current_end_time <= endtime:
 
 		if index >= len(all_slots) and current_end_time <= endtime:
-      
+	  
 			available_slots.append(
 				{"start_time": current_start_time, "end_time": current_end_time}
 			)

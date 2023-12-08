@@ -4,6 +4,7 @@ from frappe.utils import (
 	convert_utc_to_system_timezone,
 	get_datetime_str,
 )
+import pytz
 
 weekdays = [
 	"Monday",
@@ -27,3 +28,12 @@ def utc_to_sys_time(time: str) -> str:
 			datetime.datetime.fromisoformat(time).replace(tzinfo=None)
 		)
 	)
+
+
+def utc_to_given_time_zone(utc_datetime: datetime, time_zone_offset:str) -> str:
+    
+	# utc_date_time = datetime.datetime.strptime(utc_string, "%Y-%m-%d %H:%M:%S%z")
+
+	converted_datetime = utc_datetime.astimezone(pytz.FixedOffset(int(time_zone_offset)))
+ 
+	return converted_datetime
