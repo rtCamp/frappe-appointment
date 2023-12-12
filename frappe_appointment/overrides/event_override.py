@@ -19,7 +19,7 @@ from frappe_appointment.constants import (
 )
 from frappe_appointment.frappe_appointment.doctype.appointment_group.appointment_group import (
 	vaild_date,
- 	is_valid_time_slots
+	is_valid_time_slots,
 )
 from frappe_appointment.helpers.utils import utc_to_sys_time
 
@@ -28,7 +28,7 @@ class EventOverride(Event):
 	"""Event Doctype Overwrite
 
 	Args:
-		Event (class): Default class
+	Event (class): Default class
 	"""
 
 	def before_insert(self):
@@ -40,9 +40,9 @@ class EventOverride(Event):
 			)
 			if self.appointment_group.meet_link:
 				if self.description:
-					self.description=f"\nMeet Link: {self.appointment_group.meet_link}"
-				else: 
-					self.description=f"Meet Link: {self.appointment_group.meet_link}"
+					self.description = f"\nMeet Link: {self.appointment_group.meet_link}"
+				else:
+					self.description = f"Meet Link: {self.appointment_group.meet_link}"
 			self.update_attendees_for_appointment_group()
 
 	def before_save(self):
@@ -57,39 +57,42 @@ class EventOverride(Event):
 	def send_meet_email(self):
 		"""Sent the meeting link email to the given user using the provided Email Template"""
 		appointment_group = self.appointment_group
+  
+		try:
+			if (
+				appointment_group.meet_link
+				and appointment_group.response_email_template
+				and self.event_participants
+				and self.custom_doctype_link_with_event
+			):
 
-		if (
-			appointment_group.meet_link
-			and appointment_group.response_email_template
-			and self.event_participants
-			and self.custom_doctype_link_with_event
-		):
+				args = dict(
+					appointment_group=self.appointment_group.as_dict(),
+					event=self.as_dict(),
+					metadata=self.event_info,
+				)
 
-			args = dict(
-				appointment_group=self.appointment_group.as_dict(),
-				event=self.as_dict(),
-				metadata=self.event_info,
-			)
+				# Only send the email to first user of custom_doctype_link_with_event
+				send_doc_value = self.custom_doctype_link_with_event[0]
 
-			# Only send the email to first user of custom_doctype_link_with_event
-			send_doc_value = self.custom_doctype_link_with_event[0]
+				send_doc = frappe.get_doc(
+					send_doc_value.reference_doctype, send_doc_value.reference_docname
+				)
 
-			send_doc = frappe.get_doc(
-				send_doc_value.reference_doctype, send_doc_value.reference_docname
-			)
-
-			send_email_template_mail(
-				send_doc,
-				args,
-				self.appointment_group.response_email_template,
-				recipients=self.get_recipients_event(),
-			)
+				send_email_template_mail(
+					send_doc,
+					args,
+					self.appointment_group.response_email_template,
+					recipients=self.get_recipients_event(),
+				)
+		except Exception as e:
+			pass
 
 	def get_recipients_event(self):
 		"""Get the list of recipients as per event_participants
 
 		Returns:
-			list: recipients emails
+		list: recipients emails
 		"""
 		if not self.event_participants:
 			return []
@@ -129,7 +132,7 @@ class EventOverride(Event):
 		"""Handle the webhook call
 
 		Args:
-			body (object): data the send in req body
+		body (object): data the send in req body
 		"""
 
 		def datetime_serializer(obj):
@@ -140,21 +143,32 @@ class EventOverride(Event):
 		appointment_group = frappe.get_doc(APPOINTMENT_GROUP, self.custom_appointment_group)
 
 		if not appointment_group.webhook:
-			return True
+			return {"status": True, "message": ""}
 
 		try:
+			
 			api_res = requests.post(
 				appointment_group.webhook, data=json.dumps(body, default=datetime_serializer)
 			).json()
+   
+			is_exc=False
+   
+			if api_res and "exc_type" in api_res:
+				is_exc=True
+				
+			if not api_res or is_exc:
+				messages = json.loads(api_res["_server_messages"])
+				messages = json.loads(messages[0])
 
-			if not api_res:
-				raise False
+				if len(messages) != 0:
+					messages = messages["message"]
 
-			return True
+				return {"status": False, "message": messages}
+
+			return {"status": True, "message": ""}
 
 		except Exception as e:
-			return False
-
+			return {"status": False, "message": "Unable to create an event"}
 
 
 @frappe.whitelist(allow_guest=True)
@@ -163,27 +177,29 @@ def create_event_for_appointment_group(
 	date: str,
 	start_time: str,
 	end_time: str,
-	user_timezone_offset:str,
+	user_timezone_offset: str,
 	event_participants,
 	**args,
 ):
 	"""API Endpoint to Create the Event
 
 	Args:
-		appointment_group_id (str): Appointment ID
-		date (str): Date for which the event is scheduled
-		start_time (str): Start time of the event
-		end_time (str): End time of the event
-		event_participants (list): List of participants
-		args (object): Query Parameters of api
+	appointment_group_id (str): Appointment ID
+	date (str): Date for which the event is scheduled
+	start_time (str): Start time of the event
+	end_time (str): End time of the event
+	event_participants (list): List of participants
+	args (object): Query Parameters of api
 
 	Returns:
-		res (object): Result object
+			res (object): Result object
 	"""
 	# query parameters
 	event_info = args
 
-	if not is_valid_time_slots(appointment_group_id,date,user_timezone_offset,start_time,end_time):
+	if not is_valid_time_slots(
+		appointment_group_id, date, user_timezone_offset, start_time, end_time
+	):
 		return frappe.throw(_("The slot is not available. Please try to book again!"))
 
 	starts_on = utc_to_sys_time(start_time)
@@ -251,19 +267,20 @@ def create_event_for_appointment_group(
 		"send_reminder": 0,
 		"event_type": "Private",
 		"custom_appointment_group": appointment_group.name,
-		"event_info": event_info
+		"event_info": event_info,
 	}
 
 	event = frappe.get_doc(calendar_event)
 
-	if not event.handle_webhook(
+	webhook_call = event.handle_webhook(
 		{
 			"event": event.as_dict(),
 			"appointment_group": appointment_group.as_dict(),
 			"metadata": event_info,
 		}
-	):
-		return frappe.throw(_("Unable to create an event"))
+	)
+	if not webhook_call['status']:
+		return frappe.throw(webhook_call['message'])
 
 	event.insert(ignore_permissions=True)
 
