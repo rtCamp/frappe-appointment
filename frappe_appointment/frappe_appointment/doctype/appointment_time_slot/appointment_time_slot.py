@@ -29,25 +29,30 @@ class AppointmentTimeSlot(Document):
 
 
 def get_all_unavailable_google_calendar_slots_for_day(
-	member_time_slots: object, starttime: datetime, endtime: datetime, date: datetime
+	member_time_slots: object,
+	starttime: datetime,
+	endtime: datetime,
+	date: datetime,
+	appointment_group: object,
 ) -> list:
 	"""Get all google time slots of the given memebers
 
 	Args:
-		member_time_slots (object): list  of members
-		starttime (datetime): start time for slot
-		endtime (datetime): end time for slot
-		date (datetime): data for whihc need to fetch the data
+	member_time_slots (object): list  of members
+	starttime (datetime): start time for slot
+	endtime (datetime): end time for slot
+	date (datetime): data for which need to fetch the data
+	appointment_group (object): object
 
 	Returns:
-		list: List of all google time slots of members
+	list: List of all google time slots of members
 	"""
 
 	cal_slots = []
 
 	for member in member_time_slots:
 		google_calendar_slots = get_google_calendar_slots_member(
-			member, starttime, endtime, date
+			member, starttime, endtime, date, appointment_group
 		)
 
 		if google_calendar_slots == False:
@@ -62,7 +67,7 @@ def get_all_unavailable_google_calendar_slots_for_day(
 			convert_timezone_to_utc(slot["start"]["dateTime"], slot["start"]["timeZone"])
 		),
 	)
- 
+
 	# Sort based on end time
 	cal_slots = sorted(
 		cal_slots,
@@ -77,25 +82,30 @@ def get_all_unavailable_google_calendar_slots_for_day(
 
 
 def get_google_calendar_slots_member(
-	memebr: str, starttime: datetime, endtime: datetime, date: datetime
+	member: str,
+	starttime: datetime,
+	endtime: datetime,
+	date: datetime,
+	appointment_group: object,
 ) -> list:
 	"""Fetch the google slots data for given memebr/user
 
 	Args:
-		memebr (str): memebr email
-		starttime (datetime): Start time
-		endtime (datetime): end time
-		date (datetime): date
+	member (str): member email
+	starttime (datetime): Start time
+	endtime (datetime): end time
+	date (datetime): date
+	appointment_group (object): object
 
 	Returns:
-		list: list of slots of user
+	list: list of slots of user
 	"""
 
-	if not memebr:
+	if not member:
 		return None
 
 	google_calendar = frappe.get_last_doc(
-		doctype="Google Calendar", filters={"user": memebr}
+		doctype="Google Calendar", filters={"user": member}
 	)
 
 	google_calendar_api_obj, account = get_google_calendar_object(google_calendar.name)
@@ -137,8 +147,10 @@ def get_google_calendar_slots_member(
 			):
 				range_events.append(event)
 		except Exception as e:
-			# Handle all day event case her as in that case start object will only have date value. False return make sure don't show solt for that day.
-			return False
+			if "timeZone" not in event["start"] and appointment_group.ignore_all_day_events:
+				pass
+			else:
+				return False
 
 	return range_events
 
@@ -147,10 +159,10 @@ def remove_duplicate_slots(cal_slots: list):
 	"""Remove duplicate from google slots
 
 	Args:
-		cal_slots (list): List of time slots
+	cal_slots (list): List of time slots
 
 	Returns:
-		_type_: List of time slots
+	_type_: List of time slots
 	"""
 	if len(cal_slots) <= 1:
 		return cal_slots
@@ -190,10 +202,10 @@ def get_today_min_max_time(date: datetime):
 	"""Retrieve the current day's start and end time in UTC format.
 
 	Args:
-		date (datetime): date
+	date (datetime): date
 
 	Returns:
-		list: Date start and end time
+	list: Date start and end time
 	"""
 	time_min = datetime(date.year, date.month, date.day, 0, 0, 0)
 	time_max = datetime(date.year, date.month, date.day, 23, 59, 59)

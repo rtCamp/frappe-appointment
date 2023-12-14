@@ -16,6 +16,7 @@
   "publish_on_website",
   "column_break_4pgb",
   "enable_scheduling_on_weekends",
+  "ignore_all_day_events",
   "section_break_3djy",
   "duration_for_event",
   "column_break_xzbw",
@@ -142,12 +143,18 @@
   {
    "fieldname": "section_break_3djy",
    "fieldtype": "Section Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "ignore_all_day_events",
+   "fieldtype": "Check",
+   "label": "Ignore All Day Events"
   }
  ],
  "has_web_view": 1,
  "is_published_field": "publish_on_website",
  "links": [],
- "modified": "2023-11-02 22:19:04.589522",
+ "modified": "2023-12-14 16:46:28.381118",
  "modified_by": "Administrator",
  "module": "Frappe Appointment",
  "name": "Appointment Group",
