@@ -189,7 +189,7 @@ def get_time_slots_for_given_date(appointment_group: object, datetime: str):
 	endtime = get_utc_datatime_with_time(date, min_end_time)
 
 	all_slots = get_all_unavailable_google_calendar_slots_for_day(
-		member_time_slots, starttime, endtime, date
+		member_time_slots, starttime, endtime, date, appointment_group
 	)
 
 	if all_slots == False:
