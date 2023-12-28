@@ -13,9 +13,9 @@ bench get-app git@github.com:rtCamp/frappe-appointment.git
 bench --site {sitename} install-app frappe-appointment
 ```
 
-## How To Use App ?
+## Setup App on Frappe Site
 
-[Link](./docs/Use.md)
+[Link](https://github.com/rtCamp/frappe-appointments/wiki#setup-app-on-frappe-site)
 
 #### License
 
