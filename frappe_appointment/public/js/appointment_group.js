@@ -38,7 +38,6 @@ const manipulate = () => {
 	let lastdate = new Date(year, month + 1, 0).getDate();
 	let dayend = new Date(year, month, lastdate).getDay();
 
-
 	let monthlastdate = new Date(year, month, 0).getDate();
 
 	let lit = "";
@@ -55,7 +54,6 @@ const manipulate = () => {
 	}
 	currdate.innerText = `${months[month]} ${year}`;
 	day.innerHTML = lit;
-
 };
 
 const get_date_on_click = () => {
@@ -136,14 +134,18 @@ function update_time_slots_html() {
 	const timeslot_container = document.querySelector(".timeslot-container");
 
 	timeslot_container.innerHTML = "";
-
+	let past_time_slots = false; // To check if there are any past time slots
 	for (let index = 0; index < all_available_slots_for_data.length; index++) {
-		const format_am_pm_start = format_am_pm(
-			new Date(all_available_slots_for_data[index].start_time)
-		);
-		const format_am_pm_end = format_am_pm(
-			new Date(all_available_slots_for_data[index].end_time)
-		);
+
+		let start_time = new Date(all_available_slots_for_data[index].start_time);
+		let end_time = new Date(all_available_slots_for_data[index].end_time);
+
+		if (remove_past_time_slots(start_time, end_time)) {
+			past_time_slots =true;
+			continue;
+		}
+		const format_am_pm_start = format_am_pm(start_time);
+		const format_am_pm_end = format_am_pm(end_time);
 
 		const div = document.createElement("div");
 
@@ -165,7 +167,7 @@ function update_time_slots_html() {
 		timeslot_container.append(div);
 	}
 
-	if (all_available_slots_for_data.length == 0) {
+	if (all_available_slots_for_data.length == 0 || past_time_slots) {
 		timeslot_container.innerHTML = `<div class="timeslot-empty">No open time slots</div>`;
 	}
 }
@@ -191,7 +193,7 @@ function get_time_slots(re_call = true) {
 			{
 				appointment_group_id: get_appointment_group(),
 				date: getURLSearchParam("date"),
-                user_timezone_offset: -(new Date().getTimezoneOffset())
+				user_timezone_offset: -new Date().getTimezoneOffset(),
 			}
 		)
 		.then((r) => {
@@ -241,7 +243,7 @@ function add_event_slots(time_slots) {
 			end_time: time_slots.end_time,
 			subject: getURLSearchParam("subject"),
 			date: getURLSearchParam("date"),
-            user_timezone_offset: -(new Date().getTimezoneOffset()),
+			user_timezone_offset: -new Date().getTimezoneOffset(),
 			...get_all_query_param(),
 			event_participants: !getURLSearchParam("event_participants")
 				? []
@@ -340,7 +342,19 @@ function getURLSearchParam(key) {
 	const url = new URL(window.location.href);
 	return url.searchParams.get(key);
 }
-
+function remove_past_time_slots(start_time, end_time) {
+	const currentDate = new Date();
+	const start = new Date(start_time);
+	const end = new Date(end_time);
+	
+	if ( currentDate.toLocaleDateString() == end.toLocaleDateString() &&
+		(start.toLocaleTimeString() < currentDate.toLocaleTimeString() ||
+		end.toLocaleTimeString() < currentDate.toLocaleTimeString())
+	) {
+		return true;
+	}
+	return false;
+}
 function format_am_pm(date) {
 	let hours = date.getHours();
 	let minutes = date.getMinutes();
