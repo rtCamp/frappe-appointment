@@ -92,8 +92,17 @@ def get_time_slots_for_day(appointment_group_id: str, date: str, user_timezone_o
 		user_time_slots=get_user_time_slots(all_time_slots_global_object, date, user_timezone_offset)
 
 		time_slots_today_object=all_time_slots_global_object["today"]
-		time_slots_today_object["all_available_slots_for_data"]=user_time_slots
-  
+		
+		current_time  = datetime.datetime.now()
+		filtered_slots=[]
+
+		for slot in user_time_slots:
+			start_time = slot.get('start_time').utcnow()+datetime.timedelta(int(user_timezone_offset))
+			end_time = slot.get('end_time').utcnow()+datetime.timedelta(int(user_timezone_offset))
+			if current_time.date() == end_time.date()  and (start_time<current_time and end_time<current_time): 
+				continue
+			filtered_slots.append(slot)
+		time_slots_today_object["all_available_slots_for_data"]=filtered_slots
 		return time_slots_today_object
 		
 	except Exception as e:
