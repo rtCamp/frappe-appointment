@@ -23,6 +23,10 @@ from frappe_appointment.frappe_appointment.doctype.appointment_group.appointment
 )
 from frappe_appointment.helpers.utils import utc_to_sys_time
 
+from frappe_appointment.helpers.google_calendar import (
+	insert_event_in_google_calendar_override,
+)
+
 
 class EventOverride(Event):
 	"""Event Doctype Overwrite
@@ -47,6 +51,7 @@ class EventOverride(Event):
 
 	def before_save(self):
 		super().before_save()
+		self.pulled_from_google_calendar = True
 		if self.custom_appointment_group:
 			self.appointment_group = frappe.get_doc(
 				APPOINTMENT_GROUP, self.custom_appointment_group
@@ -54,10 +59,13 @@ class EventOverride(Event):
 			if self.has_value_changed("starts_on"):
 				self.send_meet_email()
 
+	def after_insert(self):
+		insert_event_in_google_calendar_override(self)
+
 	def send_meet_email(self):
 		"""Sent the meeting link email to the given user using the provided Email Template"""
 		appointment_group = self.appointment_group
-  
+
 		try:
 			if (
 				appointment_group.meet_link
@@ -146,16 +154,16 @@ class EventOverride(Event):
 			return {"status": True, "message": ""}
 
 		try:
-			
+
 			api_res = requests.post(
 				appointment_group.webhook, data=json.dumps(body, default=datetime_serializer)
 			).json()
-   
-			is_exc=False
-   
+
+			is_exc = False
+
 			if api_res and "exc_type" in api_res:
-				is_exc=True
-				
+				is_exc = True
+
 			if not api_res or is_exc:
 				messages = json.loads(api_res["_server_messages"])
 				messages = json.loads(messages[0])
@@ -192,7 +200,7 @@ def create_event_for_appointment_group(
 	args (object): Query Parameters of api
 
 	Returns:
-			res (object): Result object
+	                res (object): Result object
 	"""
 	# query parameters
 	event_info = args
@@ -279,8 +287,8 @@ def create_event_for_appointment_group(
 			"metadata": event_info,
 		}
 	)
-	if not webhook_call['status']:
-		return frappe.throw(webhook_call['message'])
+	if not webhook_call["status"]:
+		return frappe.throw(webhook_call["message"])
 
 	event.insert(ignore_permissions=True)
 
