@@ -46,6 +46,21 @@ def insert_event_in_google_calendar_override(doc, method=None):
 	if doc.appointment_group and doc.appointment_group.meet_link:
 		event.update({"location": doc.appointment_group.meet_link})
 
+	if doc.appointment_group:
+		event.update(
+			{
+				"reminders": {
+					"useDefault": False,
+					"overrides": [
+						{"method": "email", "minutes": 10},
+						{"method": "email", "minutes": 60},
+						{"method": "email", "minutes": 120},
+						{"method": "email", "minutes": 720},
+					],
+				}
+			}
+		)
+
 	event.update({"attendees": get_attendees(doc)})
 
 	conference_data_version = 0
