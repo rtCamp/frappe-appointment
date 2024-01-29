@@ -17,9 +17,8 @@ def insert_event_in_google_calendar_override(doc, method=None):
 	"""
 	Insert Events in Google Calendar if sync_with_google_calendar is checked.
 	"""
-	if (
-		not doc.sync_with_google_calendar
-		or not frappe.db.exists("Google Calendar", {"name": doc.google_calendar})
+	if not doc.sync_with_google_calendar or not frappe.db.exists(
+		"Google Calendar", {"name": doc.google_calendar}
 	):
 		return
 
@@ -43,6 +42,9 @@ def insert_event_in_google_calendar_override(doc, method=None):
 
 	if doc.repeat_on:
 		event.update({"recurrence": repeat_on_to_google_calendar_recurrence_rule(doc)})
+
+	if doc.appointment_group and doc.appointment_group.meet_link:
+		event.update({"location": doc.appointment_group.meet_link})
 
 	event.update({"attendees": get_attendees(doc)})
 
