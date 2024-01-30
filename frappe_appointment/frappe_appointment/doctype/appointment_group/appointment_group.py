@@ -454,13 +454,13 @@ def get_avaiable_time_slot_for_day(
 	"""Generate time available time slots for a given date based on Google slots within the range [starttime, endtime].
 
 	Args:
-	                all_slots (list): All Google slots
-	                starttime (datetime): Start time from which slots should be generated
-	                endtime (datetime): End time until which slots should be generated
-	                appointment_group (object): Appointment Group
+	all_slots (list): All Google slots
+	starttime (datetime): Start time from which slots should be generated
+	endtime (datetime): End time until which slots should be generated
+	appointment_group (object): Appointment Group
 
 	Returns:
-	                list: List of available slots
+	list: List of available slots
 	"""
 	available_slots = []
 
@@ -530,13 +530,13 @@ def is_valid_buffer_time(
 	"""Check if the time difference between the next time slot and the current time slot meets the minimum_buffer_time requirement.
 
 	Args:
-	                minimum_buffer_time (datetime): Minimum buffer time to maintain
-	                end (datetime): End time of the current time slot
-	                next_start (datetime): Start time of the next time slot
-	                is_add_buffer_in_event (bool, optional): Whether to add buffer time in the current slot. Defaults to True.
+	minimum_buffer_time (datetime): Minimum buffer time to maintain
+	end (datetime): End time of the current time slot
+	next_start (datetime): Start time of the next time slot
+	is_add_buffer_in_event (bool, optional): Whether to add buffer time in the current slot. Defaults to True.
 
 	Returns:
-	                bool: True if the buffer time is maintained, False otherwise
+	bool: True if the buffer time is maintained, False otherwise
 	"""
 	if not minimum_buffer_time or not is_add_buffer_in_event:
 		return True
@@ -552,12 +552,12 @@ def get_next_round_value(
 	"""Generate the next possible start time for an event as per the buffer time value.
 
 	Args:
-	                minimum_buffer_time (datetime): Minimum buffer time to maintain
-	                current_end_time (datetime): Start time of the current slot
-	                is_add_buffer_in_event (bool, optional): Whether to add buffer time in the current slot. Defaults to True.
+	minimum_buffer_time (datetime): Minimum buffer time to maintain
+	current_end_time (datetime): Start time of the current slot
+	is_add_buffer_in_event (bool, optional): Whether to add buffer time in the current slot. Defaults to True.
 
 	Returns:
-	                Datetime: Next slot possible start time
+	Datetime: Next slot possible start time
 	"""
 	if not minimum_buffer_time or not is_add_buffer_in_event:
 		return current_end_time
