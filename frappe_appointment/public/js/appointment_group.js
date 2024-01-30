@@ -162,7 +162,7 @@ function update_time_slots_html() {
 		timeslot_container.append(div);
 	}
 
-	if (all_available_slots_for_data.length == 0 || past_time_slots) {
+	if (all_available_slots_for_data.length == 0) {
 		timeslot_container.innerHTML = `<div class="timeslot-empty">No open time slots</div>`;
 	}
 }
