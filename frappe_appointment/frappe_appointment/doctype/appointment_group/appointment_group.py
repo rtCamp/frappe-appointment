@@ -9,10 +9,9 @@ from frappe_appointment.frappe_appointment.doctype.appointment_time_slot.appoint
 	get_utc_datatime_with_time,
 	convert_timezone_to_utc,
 	convert_datetime_to_utc,
- 
 )
 from dateutil import parser
-from frappe_appointment.helpers.utils import get_weekday,utc_to_given_time_zone
+from frappe_appointment.helpers.utils import get_weekday, utc_to_given_time_zone
 from frappe.utils import (
 	getdate,
 	get_time_str,
@@ -47,21 +46,23 @@ def get_list_context(context):
 	"""List page context for 'Appointment Group' and ensure that this page is not functional.
 
 	Args:
-		context (Object): Context of page
+	context (Object): Context of page
 	"""
 	return frappe.redirect("/")
 
 
 @frappe.whitelist(allow_guest=True)
-def get_time_slots_for_day(appointment_group_id: str, date: str, user_timezone_offset:str) -> object:
+def get_time_slots_for_day(
+	appointment_group_id: str, date: str, user_timezone_offset: str
+) -> object:
 	"""API endpoint for fetch the google time slots for user
 
 	Args:
-		appointment_group_id (str): Appointment Group ID
-		date (str): Date for which need to fetch slots
-  
+	appointment_group_id (str): Appointment Group ID
+	date (str): Date for which need to fetch slots
+
 	Returns:
-		object: Response
+	object: Response
 	"""
 	try:
 		if not appointment_group_id:
@@ -70,70 +71,99 @@ def get_time_slots_for_day(appointment_group_id: str, date: str, user_timezone_o
 		appointment_group = frappe.get_last_doc(
 			APPOINTMENT_GROUP, filters={"route": appointment_group_id}
 		)
-  
-		datetime_today = get_datetime(date)
-		datetime_tomorrow = add_days(datetime_today,1)
-		datetime_yesterday = add_days(datetime_today,-1)
-  
-		all_time_slots_global_object={}
-		
-		if int(user_timezone_offset)>0:
-			all_time_slots_global_object={
-				"yesterday":get_time_slots_for_given_date(appointment_group,datetime_yesterday),
-				"today":get_time_slots_for_given_date(appointment_group,datetime_today),
-			}
-		else: 
-			all_time_slots_global_object={
-				"today":get_time_slots_for_given_date(appointment_group,datetime_today),
-				"tomorrow":get_time_slots_for_given_date(appointment_group,datetime_tomorrow)
-			}
-   
-  
-		user_time_slots=get_user_time_slots(all_time_slots_global_object, date, user_timezone_offset)
 
-		time_slots_today_object=all_time_slots_global_object["today"]
-		time_slots_today_object["all_available_slots_for_data"]=user_time_slots
-  
+		datetime_today = get_datetime(date)
+		datetime_tomorrow = add_days(datetime_today, 1)
+		datetime_yesterday = add_days(datetime_today, -1)
+
+		all_time_slots_global_object = {}
+
+		if int(user_timezone_offset) > 0:
+			all_time_slots_global_object = {
+				"yesterday": get_time_slots_for_given_date(appointment_group, datetime_yesterday),
+				"today": get_time_slots_for_given_date(appointment_group, datetime_today),
+			}
+		else:
+			all_time_slots_global_object = {
+				"today": get_time_slots_for_given_date(appointment_group, datetime_today),
+				"tomorrow": get_time_slots_for_given_date(appointment_group, datetime_tomorrow),
+			}
+
+		user_time_slots = get_user_time_slots(
+			all_time_slots_global_object, date, user_timezone_offset
+		)
+
+		time_slots_today_object = all_time_slots_global_object["today"]
+
+		current_time = utc_to_given_time_zone(datetime.datetime.now(), user_timezone_offset)
+
+		filtered_slots = []
+
+		for slot in user_time_slots:
+			start_time = utc_to_given_time_zone(slot["start_time"], user_timezone_offset)
+			end_time = utc_to_given_time_zone(slot["end_time"], user_timezone_offset)
+
+			if current_time.date() == end_time.date() and (
+				start_time < current_time and end_time < current_time
+			):
+				continue
+
+			filtered_slots.append(slot)
+
+		time_slots_today_object["all_available_slots_for_data"] = filtered_slots
+
 		return time_slots_today_object
-		
+
 	except Exception as e:
-		raise Exception(e)
 		return None
 
 
-def get_user_time_slots(all_time_slots_global_object:list, date:str, user_timezone_offset:str):
-	list_all_available_slots_for_data=[]
-  
-	today=int(date.split("-")[2])
-	
+def get_user_time_slots(
+	all_time_slots_global_object: list, date: str, user_timezone_offset: str
+):
+	list_all_available_slots_for_data = []
+
+	today = int(date.split("-")[2])
+
 	for day in all_time_slots_global_object:
-		day_slots_object=all_time_slots_global_object[day]
-		all_available_slots_for_data=day_slots_object["all_available_slots_for_data"]
+		day_slots_object = all_time_slots_global_object[day]
+		all_available_slots_for_data = day_slots_object["all_available_slots_for_data"]
 
 		for time_slot in all_available_slots_for_data:
-			user_timezone_start_time_slot=utc_to_given_time_zone(time_slot["start_time"],user_timezone_offset)
-			if user_timezone_start_time_slot.day==today:
+			user_timezone_start_time_slot = utc_to_given_time_zone(
+				time_slot["start_time"], user_timezone_offset
+			)
+			if user_timezone_start_time_slot.day == today:
 				list_all_available_slots_for_data.append(time_slot)
 
 	return list_all_available_slots_for_data
 
 
-def is_valid_time_slots(appointment_group_id: str, date: str, user_timezone_offset:str,start_time:str,end_time:str):
-	today_time_slots=get_time_slots_for_day(appointment_group_id,date,user_timezone_offset)
-	
+def is_valid_time_slots(
+	appointment_group_id: str,
+	date: str,
+	user_timezone_offset: str,
+	start_time: str,
+	end_time: str,
+):
+	today_time_slots = get_time_slots_for_day(
+		appointment_group_id, date, user_timezone_offset
+	)
+
 	if not today_time_slots:
 		return False
-	
-	all_available_slots_for_data=today_time_slots["all_available_slots_for_data"]
-	
-	start_time=datetime.datetime.strptime(start_time, "%Y-%m-%d %H:%M:%S%z")
-	end_time=datetime.datetime.strptime(end_time, "%Y-%m-%d %H:%M:%S%z")
-	
+
+	all_available_slots_for_data = today_time_slots["all_available_slots_for_data"]
+
+	start_time = datetime.datetime.strptime(start_time, "%Y-%m-%d %H:%M:%S%z")
+	end_time = datetime.datetime.strptime(end_time, "%Y-%m-%d %H:%M:%S%z")
+
 	for time_slot in all_available_slots_for_data:
-		if time_slot["start_time"]==start_time and time_slot["end_time"]==end_time:
+		if time_slot["start_time"] == start_time and time_slot["end_time"] == end_time:
 			return True
 
 	return False
+
 
 def get_time_slots_for_given_date(appointment_group: object, datetime: str):
 	date = datetime.date()
@@ -217,6 +247,7 @@ def get_time_slots_for_given_date(appointment_group: object, datetime: str):
 		date_validation_obj=date_validation_obj,
 	)
 
+
 def check_weekend_availability(
 	enable_scheduling_on_weekends: bool, weekday: str, date_validation_obj: object
 ):
@@ -224,12 +255,12 @@ def check_weekend_availability(
 	Check if data is valid with a weekend check. If enable_scheduling_on_weekends is True, then the date will be the next available date except on weekends.
 
 	Args:
-		enable_scheduling_on_weekends (bool): Boolean to check if scheduling is enabled on weekends.
-		weekday (str): Weekday Name
-		date_validation_obj (object): Date Object
+	enable_scheduling_on_weekends (bool): Boolean to check if scheduling is enabled on weekends.
+	weekday (str): Weekday Name
+	date_validation_obj (object): Date Object
 
 	Returns:
-		Object: Object with a valid start date
+	Object: Object with a valid start date
 	"""
 	res = {
 		"is_invalid_date": not date_validation_obj["is_valid"],
@@ -273,16 +304,16 @@ def get_response_body(
 	Generate the API Response object for the API endpoint: get_time_slots_for_day
 
 	Args:
-		available_time_slots_for_day (list): List of available time slots for the user
-		appointment_group (object): Appointment Group ID
-		starttime (datetime, optional): Start Time for Events. Defaults to None.
-		endtime (datetime, optional): End Time for Events. Defaults to None.
-		date (datetime, optional): Date for which slots are fetched. Defaults to None.
-		date_validation_obj (object, optional): Date validation object. Defaults to None.
-		is_invalid_date (bool, optional): Is the given date invalid or not. Defaults to False.
+	                available_time_slots_for_day (list): List of available time slots for the user
+	                appointment_group (object): Appointment Group ID
+	                starttime (datetime, optional): Start Time for Events. Defaults to None.
+	                endtime (datetime, optional): End Time for Events. Defaults to None.
+	                date (datetime, optional): Date for which slots are fetched. Defaults to None.
+	                date_validation_obj (object, optional): Date validation object. Defaults to None.
+	                is_invalid_date (bool, optional): Is the given date invalid or not. Defaults to False.
 
 	Returns:
-		Object: API Response object
+	                Object: API Response object
 	"""
 	if not date_validation_obj:
 		date_validation_obj = {"valid_start_date": None, "valid_end_date": None}
@@ -309,11 +340,11 @@ def get_booking_frequency_reached(
 	Get a list of booked events from Frappe for a given date and Appointment Group.
 
 	Args:
-		datetime (datetime): Datetime object of the time for which events need to be fetched.
-		appointment_group (object): Appointment Group
+	                datetime (datetime): Datetime object of the time for which events need to be fetched.
+	                appointment_group (object): Appointment Group
 
 	Returns:
-		Object: List of events
+	                Object: List of events
 	"""
 	res = {
 		"is_slots_available": int(appointment_group.limit_booking_frequency) < 0,
@@ -336,7 +367,7 @@ def get_booking_frequency_reached(
 		],
 		fields=["starts_on", "ends_on"],
 		order_by="starts_on asc",
-		ignore_permissions=True
+		ignore_permissions=True,
 	)
 
 	all_events = sorted(
@@ -359,11 +390,11 @@ def vaild_date(date: datetime, appointment_group: object) -> object:
 	Check if the given date is valid or not and return an object with valid start and end dates.
 
 	Args:
-		date (datetime): Date
-		appointment_group (object): Appointment Group
+	                date (datetime): Date
+	                appointment_group (object): Appointment Group
 
 	Returns:
-		Object: Object that holds data for valid start and end dates
+	                Object: Object that holds data for valid start and end dates
 	"""
 	current_date = get_datetime(datetime.datetime.utcnow().date())
 
@@ -388,11 +419,11 @@ def update_cal_slots_with_events(all_slots: list, all_events: list) -> list:
 	Function to take all Frappe events and all Google Calendar available time slots and create a new list where each slot has a boolean 'is_frappe_event' to show if the given event is a Frappe event or not.
 
 	Args:
-		all_slots (list): List of all Google slots available
-		all_events (list): List of all Frappe Events
+	                all_slots (list): List of all Google slots available
+	                all_events (list): List of all Frappe Events
 
 	Returns:
-		List: List of all slots with the 'is_frappe_event' check
+	                List: List of all slots with the 'is_frappe_event' check
 	"""
 	update_slots = []
 	for currernt_slot in all_slots:
@@ -423,20 +454,20 @@ def get_avaiable_time_slot_for_day(
 	"""Generate time available time slots for a given date based on Google slots within the range [starttime, endtime].
 
 	Args:
-		all_slots (list): All Google slots
-		starttime (datetime): Start time from which slots should be generated
-		endtime (datetime): End time until which slots should be generated
-		appointment_group (object): Appointment Group
+	all_slots (list): All Google slots
+	starttime (datetime): Start time from which slots should be generated
+	endtime (datetime): End time until which slots should be generated
+	appointment_group (object): Appointment Group
 
 	Returns:
-		list: List of available slots
+	list: List of available slots
 	"""
 	available_slots = []
 
 	index = 0
 
 	minimum_buffer_time = appointment_group.minimum_buffer_time
-	
+
 	# Start time of event
 	current_start_time = get_next_round_value(minimum_buffer_time, starttime, False)
 
@@ -451,7 +482,7 @@ def get_avaiable_time_slot_for_day(
 	while current_end_time <= endtime:
 
 		if index >= len(all_slots) and current_end_time <= endtime:
-	  
+
 			available_slots.append(
 				{"start_time": current_start_time, "end_time": current_end_time}
 			)
@@ -499,13 +530,13 @@ def is_valid_buffer_time(
 	"""Check if the time difference between the next time slot and the current time slot meets the minimum_buffer_time requirement.
 
 	Args:
-		minimum_buffer_time (datetime): Minimum buffer time to maintain
-		end (datetime): End time of the current time slot
-		next_start (datetime): Start time of the next time slot
-		is_add_buffer_in_event (bool, optional): Whether to add buffer time in the current slot. Defaults to True.
+	minimum_buffer_time (datetime): Minimum buffer time to maintain
+	end (datetime): End time of the current time slot
+	next_start (datetime): Start time of the next time slot
+	is_add_buffer_in_event (bool, optional): Whether to add buffer time in the current slot. Defaults to True.
 
 	Returns:
-		bool: True if the buffer time is maintained, False otherwise
+	bool: True if the buffer time is maintained, False otherwise
 	"""
 	if not minimum_buffer_time or not is_add_buffer_in_event:
 		return True
@@ -521,12 +552,12 @@ def get_next_round_value(
 	"""Generate the next possible start time for an event as per the buffer time value.
 
 	Args:
-		minimum_buffer_time (datetime): Minimum buffer time to maintain
-		current_end_time (datetime): Start time of the current slot
-		is_add_buffer_in_event (bool, optional): Whether to add buffer time in the current slot. Defaults to True.
+	minimum_buffer_time (datetime): Minimum buffer time to maintain
+	current_end_time (datetime): Start time of the current slot
+	is_add_buffer_in_event (bool, optional): Whether to add buffer time in the current slot. Defaults to True.
 
 	Returns:
-		Datetime: Next slot possible start time
+	Datetime: Next slot possible start time
 	"""
 	if not minimum_buffer_time or not is_add_buffer_in_event:
 		return current_end_time
