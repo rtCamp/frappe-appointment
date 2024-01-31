@@ -8,7 +8,7 @@ repos:
     rev: v4.5.0
     hooks:
       - id: trailing-whitespace
-        files: "comment_enhancer.*"
+        files: "frappe_appointment.*"
         exclude: ".*json$|.*txt$|.*csv|.*md|.*svg"
       - id: check-yaml
       - id: check-merge-conflict
@@ -37,13 +37,13 @@ repos:
         # Ignore any files that might contain jinja / bundles
         exclude: |
             (?x)^(
-                comment_enhancer/public/dist/.*|
+                frappe_appointment/public/dist/.*|
                 .*node_modules.*|
                 .*boilerplate.*|
-                comment_enhancer/www/website_script.js|
-                comment_enhancer/templates/includes/.*|
-                comment_enhancer/public/js/lib/.*|
-                comment_enhancer/website/doctype/website_theme/website_theme_template.scss
+                frappe_appointment/www/website_script.js|
+                frappe_appointment/templates/includes/.*|
+                frappe_appointment/public/js/lib/.*|
+                frappe_appointment/website/doctype/website_theme/website_theme_template.scss
             )$
 
 
@@ -56,13 +56,13 @@ repos:
         # Ignore any files that might contain jinja / bundles
         exclude: |
             (?x)^(
-                comment_enhancer/public/dist/.*|
+                frappe_appointment/public/dist/.*|
                 cypress/.*|
                 .*node_modules.*|
                 .*boilerplate.*|
-                comment_enhancer/www/website_script.js|
-                comment_enhancer/templates/includes/.*|
-                comment_enhancer/public/js/lib/.*
+                frappe_appointment/www/website_script.js|
+                frappe_appointment/templates/includes/.*|
+                frappe_appointment/public/js/lib/.*
             )$
 
   - repo: https://github.com/PyCQA/isort
