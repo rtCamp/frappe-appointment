@@ -117,8 +117,15 @@ class EventOverride(Event):
         """Insert Appointment Group Member as Event participants"""
         members = self.appointment_group.members
 
+        google_calendar_api_obj, account = get_google_calendar_object(
+            self.appointment_group.event_creator
+        )
+
         for member in members:
             try:
+                if member.user == account.user:
+                    continue
+
                 user = frappe.get_doc(
                     {
                         "idx": len(self.event_participants),
@@ -134,6 +141,20 @@ class EventOverride(Event):
                 self.event_participants.append(user)
             except Exception as e:
                 pass
+
+        user = frappe.get_doc(
+            {
+                "idx": len(self.event_participants),
+                "doctype": "Event Participants",
+                "parent": self.name,
+                "reference_doctype": "Google Calendar",
+                "reference_docname": account.name,
+                "email": account.user,
+                "parenttype": "Event",
+                "parentfield": "event_participants",
+            }
+        )
+        self.event_participants.append(user)
 
     def handle_webhook(self, body):
         """Handle the webhook call
@@ -202,7 +223,7 @@ def create_event_for_appointment_group(
     args (object): Query Parameters of api
 
     Returns:
-                    res (object): Result object
+    res (object): Result object
     """
     # query parameters
     event_info = args
@@ -234,9 +255,9 @@ def create_event_for_appointment_group(
     if len(members) <= 0:
         return frappe.throw(_("No Member found"))
 
-    google_calendar = frappe.get_doc("Google Calendar", appointment_group.event_creator)
-
-    google_calendar_api_obj, account = get_google_calendar_object(google_calendar.name)
+    google_calendar_api_obj, account = get_google_calendar_object(
+        appointment_group.event_creator
+    )
 
     if reschedule:
         event = frappe.get_last_doc(
