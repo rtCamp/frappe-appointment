@@ -11,7 +11,7 @@ from frappe.utils.data import get_datetime
 from googleapiclient.errors import HttpError
 
 
-def insert_event_in_google_calendar_override(doc, method=None):
+def insert_event_in_google_calendar_override(doc, method=None, mute_message=False):
     """
     Insert Events in Google Calendar if sync_with_google_calendar is checked.
     """
@@ -89,7 +89,8 @@ def insert_event_in_google_calendar_override(doc, method=None):
             update_modified=False,
         )
 
-        frappe.msgprint(_("Event Synced with Google Calendar."))
+        if not mute_message:
+            frappe.msgprint(_("Event Synced with Google Calendar."))
     except HttpError as err:
         frappe.throw(
             _(
