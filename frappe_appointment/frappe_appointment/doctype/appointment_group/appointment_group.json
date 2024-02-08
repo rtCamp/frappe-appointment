@@ -10,6 +10,9 @@
  "engine": "InnoDB",
  "field_order": [
   "group_name",
+  "column_break_kcm2",
+  "event_creator",
+  "section_break_gocd",
   "members",
   "route",
   "section_break_v4rw",
@@ -149,12 +152,28 @@
    "fieldname": "ignore_all_day_events",
    "fieldtype": "Check",
    "label": "Ignore All Day Events"
+  },
+  {
+   "fieldname": "column_break_kcm2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "The given google calendar will use to create the Google events for given appointment group.",
+   "fieldname": "event_creator",
+   "fieldtype": "Link",
+   "label": "Event Creator",
+   "options": "Google Calendar",
+   "reqd": 1
+  },
+  {
+   "fieldname": "section_break_gocd",
+   "fieldtype": "Section Break"
   }
  ],
  "has_web_view": 1,
  "is_published_field": "publish_on_website",
  "links": [],
- "modified": "2023-12-14 16:46:28.381118",
+ "modified": "2024-02-06 14:26:40.947046",
  "modified_by": "Administrator",
  "module": "Frappe Appointment",
  "name": "Appointment Group",

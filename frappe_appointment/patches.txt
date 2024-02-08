@@ -5,3 +5,4 @@
 [post_model_sync]
 # Patches added in this section will be executed after doctypes are migrated
 frappe_appointment.patches.v0_1.add_appointment_manager_role
+frappe_appointment.patches.v0_1.add_event_creator
