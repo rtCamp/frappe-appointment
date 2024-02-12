@@ -108,7 +108,10 @@ class EventOverride(Event):
 
         for participant in self.event_participants:
             # Don't send the meet link to Appointment Group Members
-            if participant.reference_doctype != USER_APPOINTMENT_AVAILABILITY:
+            if (
+                participant.reference_doctype != USER_APPOINTMENT_AVAILABILITY
+                and participant.reference_doctype != "Google Calendar"
+            ):
                 recipients.append(participant.email)
 
         return recipients
