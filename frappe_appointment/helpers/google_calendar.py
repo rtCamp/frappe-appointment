@@ -51,7 +51,6 @@ def insert_event_in_google_calendar_override(doc, method=None, mute_message=Fals
                     "useDefault": False,
                     "overrides": [
                         {"method": "email", "minutes": 10},
-                        {"method": "email", "minutes": 60},
                         {"method": "email", "minutes": 120},
                         {"method": "email", "minutes": 720},
                     ],
