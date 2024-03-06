@@ -25,7 +25,7 @@ repos:
         args: ['--py310-plus']
 
   - repo: https://github.com/psf/black
-    rev: 24.1.1
+    rev: 24.2.0
     hooks:
       - id: black
 
@@ -76,8 +76,3 @@ repos:
     hooks:
       - id: flake8
         additional_dependencies: ['flake8-isort','flake8-bugbear',]
-
-ci:
-    autoupdate_schedule: weekly
-    skip: []
-    submodules: false

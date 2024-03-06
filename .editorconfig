@@ -8,8 +8,13 @@ insert_final_newline = true
 trim_trailing_whitespace = true
 charset = utf-8
 
-# python, js indentation settings
-[{*.py,*.js,*.vue,*.css,*.scss,*.html}]
+# pythonindentation settings
+[{*.py}]
 indent_style = space
 indent_size = 4
-max_line_length = 99
+max_line_length = 88
+
+[{*.js,*.vue,*.css,*.scss,*.html}]
+indent_style = space
+indent_size = 2
+max_line_length = 80
