@@ -8,12 +8,11 @@ from frappe import _
 
 class GoogleCalendarOverride(GoogleCalendar):
 	"""Google Calendar DocType overwrite"""
-
-	def before_insert(self):
-		"""Set the google_calendar_id as the user's email. So, for each user, the primary calendar will be the one used to update, get, and insert events."""
-		self.google_calendar_id = self.user
-
 	def before_save(self):
+		"""Set the google_calendar_id as the user's email. So, for each user, the primary calendar will be the one used to update, get, and insert events."""
+		if not self.google_calendar_id:
+			self.google_calendar_id = self.user
+
 		if self.refresh_token:
 			self.custom_is_google_calendar_authorized = True
 		else:
