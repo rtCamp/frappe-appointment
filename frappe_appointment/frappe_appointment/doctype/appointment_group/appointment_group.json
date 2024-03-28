@@ -28,6 +28,7 @@
   "minimum_notice_before_event",
   "event_availability_window",
   "limit_booking_frequency",
+  "schedule_only_once",
   "section_break_jbhn",
   "meet_link",
   "response_email_template",
@@ -168,12 +169,18 @@
   {
    "fieldname": "section_break_gocd",
    "fieldtype": "Section Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "schedule_only_once",
+   "fieldtype": "Check",
+   "label": "Schedule only once"
   }
  ],
  "has_web_view": 1,
  "is_published_field": "publish_on_website",
  "links": [],
- "modified": "2024-02-06 14:26:40.947046",
+ "modified": "2024-03-28 11:41:13.567032",
  "modified_by": "Administrator",
  "module": "Frappe Appointment",
  "name": "Appointment Group",
