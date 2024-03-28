@@ -319,3 +319,27 @@ def create_event_for_appointment_group(
     frappe.db.commit()
 
     return _("Event has been created")
+
+
+@frappe.whitelist(allow_guest=True)
+def check_one_time_schedule(
+    appointment_group_id: str,
+    **args,
+):
+    appointment_group = frappe.get_last_doc(
+        APPOINTMENT_GROUP, filters={"route": appointment_group_id}
+    )
+    if appointment_group.schedule_only_once:
+        event_info = args
+        interview_id = json.loads(
+            event_info.get("custom_doctype_link_with_event", "[]")
+        )
+        interview_id = interview_id[1]["reference_docname"]
+        scheduled_events = frappe.get_all(
+            "Event",
+            filters=[
+                ["Event DocType Link", "reference_docname", "=", interview_id],
+            ],
+        )
+        if scheduled_events:
+            return frappe.throw(_("Event can be scheduled only once."))
