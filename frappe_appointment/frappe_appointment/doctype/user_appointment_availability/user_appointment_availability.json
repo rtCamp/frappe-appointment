@@ -38,7 +38,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2024-02-06 14:26:19.396413",
+ "modified": "2024-04-01 15:31:18.507444",
  "modified_by": "Administrator",
  "module": "Frappe Appointment",
  "name": "User Appointment Availability",
@@ -60,5 +60,6 @@
  ],
  "sort_field": "modified",
  "sort_order": "DESC",
- "states": []
+ "states": [],
+ "track_changes": 1
 }
