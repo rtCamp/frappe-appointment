@@ -180,7 +180,7 @@
  "has_web_view": 1,
  "is_published_field": "publish_on_website",
  "links": [],
- "modified": "2024-03-28 11:41:13.567032",
+ "modified": "2024-04-01 15:27:38.609304",
  "modified_by": "Administrator",
  "module": "Frappe Appointment",
  "name": "Appointment Group",
@@ -203,5 +203,6 @@
  "route": "group",
  "sort_field": "modified",
  "sort_order": "DESC",
- "states": []
+ "states": [],
+ "track_changes": 1
 }
