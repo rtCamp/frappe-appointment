@@ -5,7 +5,6 @@ from datetime import datetime
 from functools import cmp_to_key
 
 import frappe
-from frappe_appointment.helpers.utils import compare_end_time_slots, convert_timezone_to_utc, get_today_min_max_time
 from frappe import _
 from frappe.integrations.doctype.google_calendar.google_calendar import (
     get_google_calendar_object,
@@ -23,6 +22,12 @@ from frappe.utils import (
     nowdate,
 )
 from googleapiclient.errors import HttpError
+
+from frappe_appointment.helpers.utils import (
+    compare_end_time_slots,
+    convert_timezone_to_utc,
+    get_today_min_max_time,
+)
 
 
 class AppointmentTimeSlot(Document):
@@ -48,7 +53,6 @@ def get_all_unavailable_google_calendar_slots_for_day(
     Returns:
     list: List of all google time slots of members
     """
-
     cal_slots = []
 
     for member in member_time_slots:
@@ -61,11 +65,6 @@ def get_all_unavailable_google_calendar_slots_for_day(
 
         cal_slots = cal_slots + google_calendar_slots
 
-    import random
-
-    random.shuffle(cal_slots)
-
-    # Sort based on end time
     cal_slots.sort(key=cmp_to_key(compare_end_time_slots))
 
     return remove_duplicate_slots(cal_slots)
@@ -199,6 +198,7 @@ def remove_duplicate_slots(cal_slots: list):
         current += 1
 
     return remove_duplicate_time_slots
+
 
 def check_if_datetime_in_range(
     start_datetime: datetime,
