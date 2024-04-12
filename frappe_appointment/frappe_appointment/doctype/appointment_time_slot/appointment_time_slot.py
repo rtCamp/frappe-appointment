@@ -2,10 +2,9 @@
 # For license information, please see license.txt
 
 from datetime import datetime
+from functools import cmp_to_key
 
 import frappe
-import pytz
-from dateutil import parser
 from frappe import _
 from frappe.integrations.doctype.google_calendar.google_calendar import (
     get_google_calendar_object,
@@ -23,6 +22,12 @@ from frappe.utils import (
     nowdate,
 )
 from googleapiclient.errors import HttpError
+
+from frappe_appointment.helpers.utils import (
+    compare_end_time_slots,
+    convert_timezone_to_utc,
+    get_today_min_max_time,
+)
 
 
 class AppointmentTimeSlot(Document):
@@ -48,7 +53,6 @@ def get_all_unavailable_google_calendar_slots_for_day(
     Returns:
     list: List of all google time slots of members
     """
-
     cal_slots = []
 
     for member in member_time_slots:
@@ -61,27 +65,9 @@ def get_all_unavailable_google_calendar_slots_for_day(
 
         cal_slots = cal_slots + google_calendar_slots
 
-    # Sort based on start time
-    cal_slots = sorted(
-        cal_slots,
-        key=lambda slot: get_datetime_str(
-            convert_timezone_to_utc(
-                slot["start"]["dateTime"], slot["start"]["timeZone"]
-            )
-        ),
-    )
+    cal_slots.sort(key=cmp_to_key(compare_end_time_slots))
 
-    # Sort based on end time
-    cal_slots = sorted(
-        cal_slots,
-        key=lambda slot: get_datetime_str(
-            convert_timezone_to_utc(slot["end"]["dateTime"], slot["end"]["timeZone"])
-        ),
-    )
-
-    remove_same_slots = remove_duplicate_slots(cal_slots)
-
-    return remove_same_slots
+    return remove_duplicate_slots(cal_slots)
 
 
 def get_google_calendar_slots_member(
@@ -212,69 +198,6 @@ def remove_duplicate_slots(cal_slots: list):
         current += 1
 
     return remove_duplicate_time_slots
-
-
-def get_today_min_max_time(date: datetime):
-    """Retrieve the current day's start and end time in UTC format.
-
-    Args:
-    date (datetime): date
-
-    Returns:
-    list: Date start and end time
-    """
-    time_min = datetime(date.year, date.month, date.day, 0, 0, 0)
-    time_max = datetime(date.year, date.month, date.day, 23, 59, 59)
-
-    time_min_str = time_min.isoformat() + "Z"
-    time_max_str = time_max.isoformat() + "Z"
-
-    return [time_max_str, time_min_str]
-
-
-def get_utc_datatime_with_time(date: datetime, time: str) -> datetime:
-    """Function to generate a datetime object for a given date and time.
-
-    Args:
-    date (datetime): Date
-    time (str): Time
-
-    Returns:
-    datetime: Updated datetime object
-    """
-    system_timezone = pytz.timezone(get_system_timezone())
-    local_datetime = system_timezone.localize(
-        datetime.strptime(f"{get_date_str(date)} {time}", "%Y-%m-%d %H:%M:%S")
-    )
-    return local_datetime.astimezone(pytz.utc)
-
-
-def convert_timezone_to_utc(date_time: str, time_zone: str) -> datetime:
-    """Helper function to convert a given datetime string to a datetime object with the specified time zone.
-
-    Args:
-    date_time (str): Datetime string
-    time_zone (str): Time zone
-
-    Returns:
-    datetime: Datetime object
-    """
-    local_datetime = parser.parse(date_time).astimezone(pytz.timezone(time_zone))
-    return local_datetime.astimezone(pytz.utc)
-
-
-def convert_datetime_to_utc(date_time: datetime) -> datetime:
-    """Converts the given datetime object to a UTC timezone datetime object.
-
-    Args:
-    date_time (datetime): Datetime Object
-
-    Returns:
-    datetime: Updated Object
-    """
-    system_timezone = pytz.timezone(get_system_timezone())
-    local_datetime = system_timezone.localize(date_time)
-    return local_datetime.astimezone(pytz.utc)
 
 
 def check_if_datetime_in_range(

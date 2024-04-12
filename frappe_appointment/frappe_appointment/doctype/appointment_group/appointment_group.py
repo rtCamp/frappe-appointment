@@ -20,12 +20,15 @@ from frappe.website.website_generator import WebsiteGenerator
 
 from frappe_appointment.constants import APPOINTMENT_GROUP, APPOINTMENT_TIME_SLOT
 from frappe_appointment.frappe_appointment.doctype.appointment_time_slot.appointment_time_slot import (
+    get_all_unavailable_google_calendar_slots_for_day,
+)
+from frappe_appointment.helpers.utils import (
+    get_weekday,
+    utc_to_given_time_zone,
     convert_datetime_to_utc,
     convert_timezone_to_utc,
-    get_all_unavailable_google_calendar_slots_for_day,
     get_utc_datatime_with_time,
 )
-from frappe_appointment.helpers.utils import get_weekday, utc_to_given_time_zone
 
 
 class AppointmentGroup(WebsiteGenerator):
@@ -40,7 +43,6 @@ class AppointmentGroup(WebsiteGenerator):
             self.route = frappe.scrub(self.group_name).replace("_", "-")
 
     def get_context(self, context):
-        context["group_name"] = " ".join(context["group_name"].split("-")).title()
         return context
 
 
