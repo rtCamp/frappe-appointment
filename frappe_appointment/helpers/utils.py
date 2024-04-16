@@ -1,24 +1,20 @@
 from datetime import datetime
-from frappe.utils import (
-	get_datetime,
-	convert_utc_to_system_timezone,
-	get_datetime_str,
-)
 
-from frappe.utils.data import get_date_str, get_system_timezone
 import pytz
-
 from dateutil import parser
+from frappe.utils import convert_utc_to_system_timezone, get_datetime, get_datetime_str
+from frappe.utils.data import get_date_str, get_system_timezone
 
 weekdays = [
-	"Monday",
-	"Tuesday",
-	"Wednesday",
-	"Thursday",
-	"Friday",
-	"Saturday",
-	"Sunday",
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
+    "Sunday",
 ]
+
 
 def get_today_min_max_time(date: datetime):
     """Retrieve the current day's start and end time in UTC format.
@@ -83,52 +79,54 @@ def convert_datetime_to_utc(date_time: datetime) -> datetime:
     return local_datetime.astimezone(pytz.utc)
 
 
-
 def get_weekday(date_time: datetime) -> str:
-	date = date_time.date()
-	return weekdays[date.weekday()]
+    date = date_time.date()
+    return weekdays[date.weekday()]
 
 
 def utc_to_sys_time(time: str) -> str:
-	return get_datetime_str(
-		convert_utc_to_system_timezone(
-			datetime.datetime.fromisoformat(time).replace(tzinfo=None)
-		)
-	)
+    return get_datetime_str(
+        convert_utc_to_system_timezone(
+            datetime.fromisoformat(time).replace(tzinfo=None)
+        )
+    )
 
 
-def utc_to_given_time_zone(utc_datetime: datetime, time_zone_offset:str) -> str:
-    
-	# utc_date_time = datetime.datetime.strptime(utc_string, "%Y-%m-%d %H:%M:%S%z")
+def utc_to_given_time_zone(utc_datetime: datetime, time_zone_offset: str) -> str:
 
-	converted_datetime = utc_datetime.astimezone(pytz.FixedOffset(int(time_zone_offset)))
- 
-	return converted_datetime
+    # utc_date_time = datetime.datetime.strptime(utc_string, "%Y-%m-%d %H:%M:%S%z")
+
+    converted_datetime = utc_datetime.astimezone(
+        pytz.FixedOffset(int(time_zone_offset))
+    )
+
+    return converted_datetime
 
 
 def compare_end_time_slots(current_slot, next_slot):
-    
-	current_slot, next_slot = get_time_slots_utc(current_slot) ,  get_time_slots_utc(next_slot)
 
-	if current_slot["start_time"] != next_slot["start_time"]:
-		return cmp_items(current_slot["start_time"], next_slot["start_time"])
-	
-	return cmp_items(current_slot["end_time"], next_slot["end_time"])
+    current_slot, next_slot = get_time_slots_utc(current_slot), get_time_slots_utc(
+        next_slot
+    )
+
+    if current_slot["start_time"] != next_slot["start_time"]:
+        return cmp_items(current_slot["start_time"], next_slot["start_time"])
+
+    return cmp_items(current_slot["end_time"], next_slot["end_time"])
 
 
 def get_time_slots_utc(slot):
     return {
-		"start_time": get_datetime_str(
+        "start_time": get_datetime_str(
             convert_timezone_to_utc(
                 slot["start"]["dateTime"], slot["start"]["timeZone"]
             )
         ),
-		"end_time": get_datetime_str(
-            convert_timezone_to_utc(
-                slot["end"]["dateTime"], slot["end"]["timeZone"]
-            )
+        "end_time": get_datetime_str(
+            convert_timezone_to_utc(slot["end"]["dateTime"], slot["end"]["timeZone"])
         ),
-	}
+    }
+
 
 def cmp_items(a, b):
     if a > b:
