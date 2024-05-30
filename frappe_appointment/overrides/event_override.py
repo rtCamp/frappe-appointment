@@ -3,7 +3,7 @@ import json
 
 import frappe
 import requests
-from frappe import _
+from frappe import _, clear_messages
 from frappe.desk.doctype.event.event import Event
 from frappe.integrations.doctype.google_calendar.google_calendar import (
     get_google_calendar_object,
@@ -179,7 +179,6 @@ class EventOverride(Event):
             return {"status": True, "message": ""}
 
         try:
-
             api_res = requests.post(
                 appointment_group.webhook,
                 data=json.dumps(body, default=datetime_serializer),
@@ -270,6 +269,9 @@ def create_event_for_appointment_group(
         event.ends_on = ends_on
         event.event_info = event_info
         event.save(ignore_permissions=True)
+
+        # clear all previous logs
+        clear_messages()
 
         if not event.handle_webhook(
             {
