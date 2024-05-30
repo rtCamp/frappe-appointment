@@ -76,6 +76,8 @@ def insert_event_in_google_calendar_override(doc, method=None, mute_message=Fals
 
         if not mute_message:
             frappe.msgprint(success_msg)
+            
+        return event.get("id")
     except HttpError as err:
         frappe.throw(
             _(
