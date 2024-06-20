@@ -22,6 +22,7 @@ from frappe_appointment.helpers.email import send_email_template_mail
 from frappe_appointment.helpers.google_calendar import (
     insert_event_in_google_calendar_override,
 )
+from frappe_appointment.helpers.ics_file import add_ics_file_in_attachment
 from frappe_appointment.helpers.utils import utc_to_sys_time
 
 
@@ -34,7 +35,6 @@ class EventOverride(Event):
 
     def before_insert(self):
         """Handle the Appointment Group in Event"""
-
         if self.custom_appointment_group:
             self.appointment_group = frappe.get_doc(
                 APPOINTMENT_GROUP, self.custom_appointment_group
@@ -56,44 +56,19 @@ class EventOverride(Event):
                 APPOINTMENT_GROUP, self.custom_appointment_group
             )
             if self.has_value_changed("starts_on"):
-                self.send_meet_email()
-
-    def after_insert(self):
-        insert_event_in_google_calendar_override(self)
-
-    def send_meet_email(self):
-        """Sent the meeting link email to the given user using the provided Email Template"""
-        appointment_group = self.appointment_group
-
-        try:
-            if (
-                appointment_group.meet_link
-                and appointment_group.response_email_template
-                and self.event_participants
-                and self.custom_doctype_link_with_event
-            ):
-
-                args = dict(
-                    appointment_group=self.appointment_group.as_dict(),
-                    event=self.as_dict(),
+                frappe.enqueue(
+                    send_meet_email,
+                    timeout=600,
+                    enqueue_after_commit=True,
+                    job_name=f"Send interview time slot book response email: {self.name}",
+                    queue="long",
+                    doc=self,
+                    appointment_group=self.appointment_group,
                     metadata=self.event_info,
                 )
 
-                # Only send the email to first user of custom_doctype_link_with_event
-                send_doc_value = self.custom_doctype_link_with_event[0]
-
-                send_doc = frappe.get_doc(
-                    send_doc_value.reference_doctype, send_doc_value.reference_docname
-                )
-
-                send_email_template_mail(
-                    send_doc,
-                    args,
-                    self.appointment_group.response_email_template,
-                    recipients=self.get_recipients_event(),
-                )
-        except Exception as e:
-            pass
+    def after_insert(self):
+        insert_event_in_google_calendar_override(self)
 
     def get_recipients_event(self):
         """Get the list of recipients as per event_participants
@@ -202,6 +177,46 @@ class EventOverride(Event):
 
         except Exception as e:
             return {"status": False, "message": "Unable to create an event"}
+
+
+def send_meet_email(doc, appointment_group, metadata):
+    """Sent the meeting link email to the given user using the provided Email Template"""
+    doc.reload()
+
+    try:
+        if (
+            appointment_group.meet_link
+            and appointment_group.response_email_template
+            and doc.event_participants
+            and doc.custom_doctype_link_with_event
+        ):
+
+            args = dict(
+                appointment_group=appointment_group.as_dict(),
+                event=doc.as_dict(),
+                metadata=metadata,
+            )
+
+            # Only send the email to first user of custom_doctype_link_with_event
+            send_doc_value = doc.custom_doctype_link_with_event[0]
+
+            send_doc = frappe.get_doc(
+                send_doc_value.reference_doctype, send_doc_value.reference_docname
+            )
+
+            send_email_template_mail(
+                send_doc,
+                args,
+                appointment_group.response_email_template,
+                recipients=doc.get_recipients_event(),
+                attachments=[{"fid": add_ics_file_in_attachment(doc)}],
+            )
+
+            frappe.db.commit()
+    except Exception as e:
+        frappe.log_error(
+            title="Interview time slot book response email error " + doc.name
+        )
 
 
 @frappe.whitelist(allow_guest=True)
