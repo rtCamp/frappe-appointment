@@ -12,6 +12,7 @@
   "group_name",
   "column_break_kcm2",
   "event_creator",
+  "event_organizer",
   "section_break_gocd",
   "members",
   "route",
@@ -175,12 +176,18 @@
    "fieldname": "schedule_only_once",
    "fieldtype": "Check",
    "label": "Schedule only once"
+  },
+  {
+   "fieldname": "event_organizer",
+   "fieldtype": "Link",
+   "label": "Event Organizer",
+   "options": "User"
   }
  ],
  "has_web_view": 1,
  "is_published_field": "publish_on_website",
  "links": [],
- "modified": "2024-04-01 15:27:38.609304",
+ "modified": "2024-06-20 13:58:51.559044",
  "modified_by": "Administrator",
  "module": "Frappe Appointment",
  "name": "Appointment Group",
