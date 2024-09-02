@@ -133,6 +133,22 @@ def get_google_calendar_slots_member(
 
     for event in events_items:
         try:
+            creator = event.get("creator", {}).get("email")
+            if creator != member:
+
+                attendees = event.get("attendees", [])
+                filtered_attendees = [
+                    attendee for attendee in attendees if attendee.get("self", False)
+                ]
+
+                if len(filtered_attendees) > 0:
+                    attendee = filtered_attendees[0]
+
+                    if attendee.get("responseStatus") == "declined":
+                        continue
+                else:
+                    continue
+
             if check_if_datetime_in_range(
                 convert_timezone_to_utc(
                     event["start"]["dateTime"], event["start"]["timeZone"]
