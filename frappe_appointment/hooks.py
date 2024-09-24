@@ -59,6 +59,33 @@ app_license = "MIT"
 # 	"filters": "frappe_appointment.utils.jinja_filters"
 # }
 
+fixtures = [
+    {
+        "dt": "Custom Field",
+        "filters": [
+            [
+                "module",
+                "in",
+                {
+                    "Frappe Appointment",
+                },
+            ]
+        ],
+    },
+    {
+        "dt": "Property Setter",
+        "filters": [
+            [
+                "module",
+                "in",
+                {
+                    "Frappe Appointment",
+                },
+            ]
+        ],
+    },
+]
+
 # Installation
 # ------------
 
@@ -110,9 +137,9 @@ app_license = "MIT"
 # Override standard doctype classes
 
 override_doctype_class = {
-	"Event": "frappe_appointment.overrides.event_override.EventOverride",
-	"Google Calendar": "frappe_appointment.overrides.google_calendar_override.GoogleCalendarOverride",
-	"Customize Form": "frappe_appointment.overrides.customize_form_override.CareersOverrideCustomizeForm",
+    "Event": "frappe_appointment.overrides.event_override.EventOverride",
+    "Google Calendar": "frappe_appointment.overrides.google_calendar_override.GoogleCalendarOverride",
+    "Customize Form": "frappe_appointment.overrides.customize_form_override.CareersOverrideCustomizeForm",
 }
 
 # Document Events
@@ -149,7 +176,7 @@ override_doctype_class = {
 # ------------------------------
 #
 override_whitelisted_methods = {
-	"frappe.integrations.doctype.google_calendar.google_calendar.google_callback": "frappe_appointment.overrides.google_calendar_override.google_callback"
+    "frappe.integrations.doctype.google_calendar.google_calendar.google_callback": "frappe_appointment.overrides.google_calendar_override.google_callback"
 }
 #
 # each overriding function accepts a `data` argument;

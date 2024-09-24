@@ -71,7 +71,8 @@ ignore =
     E712,
     B028,
     I001,
-    I005
+    I005,
+    B008
 
 max-line-length = 200
 exclude=,test_*.py
