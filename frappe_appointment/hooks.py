@@ -74,6 +74,33 @@ fixtures = [
 # 	"filters": "frappe_appointment.utils.jinja_filters"
 # }
 
+fixtures = [
+    {
+        "dt": "Custom Field",
+        "filters": [
+            [
+                "module",
+                "in",
+                {
+                    "Frappe Appointment",
+                },
+            ]
+        ],
+    },
+    {
+        "dt": "Property Setter",
+        "filters": [
+            [
+                "module",
+                "in",
+                {
+                    "Frappe Appointment",
+                },
+            ]
+        ],
+    },
+]
+
 # Installation
 # ------------
 
