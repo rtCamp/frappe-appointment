@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import pytz
 from dateutil import parser
@@ -66,17 +66,13 @@ def convert_timezone_to_utc(date_time: str, time_zone: str) -> datetime:
 
 
 def convert_datetime_to_utc(date_time: datetime) -> datetime:
-    """Converts the given datetime object to a UTC timezone datetime object.
+    """Converts the given datetime object to a UTC timezone datetime object."""
+    return date_time.astimezone(pytz.utc)
 
-    Args:
-    date_time (datetime): Datetime Object
 
-    Returns:
-    datetime: Updated Object
-    """
-    system_timezone = pytz.timezone(get_system_timezone())
-    local_datetime = system_timezone.localize(date_time)
-    return local_datetime.astimezone(pytz.utc)
+def convert_utc_datetime_to_timezone(date_time: datetime, timezone: str) -> datetime:
+    """Converts the given datetime object to a UTC timezone datetime object."""
+    return date_time.astimezone(pytz.timezone(timezone))
 
 
 def get_weekday(date_time: datetime) -> str:
@@ -135,3 +131,21 @@ def cmp_items(a, b):
         return 0
     else:
         return -1
+
+
+def get_date_start_end_time_for_given_timezone(date_str: str, timezone_offset: str):
+    date = datetime.strptime(date_str, "%Y-%m-%d")
+    timezone = pytz.FixedOffset(int(timezone_offset))
+    start_time = timezone.localize(datetime(date.year, date.month, date.day, 0, 0, 0))
+    end_time = start_time + timedelta(days=1) - timedelta(seconds=1)
+
+    return start_time, end_time
+
+
+def update_time_of_datetime(dt: datetime, new_time: timedelta):
+    total_seconds = new_time.total_seconds()
+    hours = int(total_seconds // 3600)
+    minutes = int((total_seconds % 3600) // 60)
+    seconds = int(total_seconds % 60)
+
+    return dt.replace(hour=hours, minute=minutes, second=seconds)

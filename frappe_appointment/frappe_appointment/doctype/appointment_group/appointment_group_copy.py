@@ -18,9 +18,14 @@ from frappe_appointment.constants import APPOINTMENT_GROUP, APPOINTMENT_TIME_SLO
 from frappe_appointment.frappe_appointment.doctype.appointment_time_slot.appointment_time_slot import (
     get_all_unavailable_google_calendar_slots_for_day,
 )
+from frappe_appointment.frappe_appointment.doctype.user_appointment_availability.user_appointment_availability import (
+    get_user_appointment_availability_slots,
+)
+from frappe_appointment.helpers.error import send_http_response
 from frappe_appointment.helpers.utils import (
     convert_datetime_to_utc,
     convert_timezone_to_utc,
+    get_date_start_end_time_for_given_timezone,
     get_utc_datatime_with_time,
     get_weekday,
     utc_to_given_time_zone,
@@ -43,11 +48,7 @@ class AppointmentGroup(WebsiteGenerator):
 
 
 def get_list_context(context):
-    """List page context for 'Appointment Group' and ensure that this page is not functional.
-
-    Args:
-    context (Object): Context of page
-    """
+    """List page context for 'Appointment Group' and ensure that this page is not functional."""
     return frappe.redirect("/")
 
 
@@ -55,79 +56,33 @@ def get_list_context(context):
 def get_time_slots_for_day(
     appointment_group_id: str, date: str, user_timezone_offset: str
 ) -> object:
-    """API endpoint for fetch the google time slots for user
+    """API endpoint for fetch the google time slots for user"""
 
-    Args:
-    appointment_group_id (str): Appointment Group ID
-    date (str): Date for which need to fetch slots
+    if not appointment_group_id:
+        return send_http_response(400, {"message": "Appointment Group ID is required."})
 
-    Returns:
-    object: Response
-    """
+    appointment_group = None
+
     try:
-        if not appointment_group_id:
-            return {"result": []}
-
-        appointment_group = frappe.get_last_doc(
-            APPOINTMENT_GROUP, filters={"route": appointment_group_id}
+        appointment_group = frappe.get_doc(APPOINTMENT_GROUP, appointment_group_id)
+    except frappe.DoesNotExistError:
+        return send_http_response(
+            404, {"message": "Appointment Group not found with the given ID."}
         )
 
-        datetime_today = get_datetime(date)
-        datetime_tomorrow = add_days(datetime_today, 1)
-        datetime_yesterday = add_days(datetime_today, -1)
+    user_start_time, user_end_time = get_date_start_end_time_for_given_timezone(
+        date, user_timezone_offset
+    )
 
-        all_time_slots_global_object = {}
+    utc_start_time, utc_end_time = convert_datetime_to_utc(
+        user_start_time
+    ), convert_datetime_to_utc(user_end_time)
 
-        if int(user_timezone_offset) > 0:
-            all_time_slots_global_object = {
-                "yesterday": get_time_slots_for_given_date(
-                    appointment_group, datetime_yesterday
-                ),
-                "today": get_time_slots_for_given_date(
-                    appointment_group, datetime_today
-                ),
-            }
-        else:
-            all_time_slots_global_object = {
-                "today": get_time_slots_for_given_date(
-                    appointment_group, datetime_today
-                ),
-                "tomorrow": get_time_slots_for_given_date(
-                    appointment_group, datetime_tomorrow
-                ),
-            }
+    user_system_slots = get_user_appointment_availability_slots(
+        appointment_group, utc_start_time, utc_end_time
+    )
 
-        user_time_slots = get_user_time_slots(
-            all_time_slots_global_object, date, user_timezone_offset
-        )
-
-        time_slots_today_object = all_time_slots_global_object["today"]
-
-        current_time = utc_to_given_time_zone(
-            datetime.datetime.now(), user_timezone_offset
-        )
-
-        filtered_slots = []
-
-        for slot in user_time_slots:
-            start_time = utc_to_given_time_zone(
-                slot["start_time"], user_timezone_offset
-            )
-            end_time = utc_to_given_time_zone(slot["end_time"], user_timezone_offset)
-
-            if current_time.date() == end_time.date() and (
-                start_time < current_time and end_time < current_time
-            ):
-                continue
-
-            filtered_slots.append(slot)
-
-        time_slots_today_object["all_available_slots_for_data"] = filtered_slots
-
-        return time_slots_today_object
-
-    except Exception as e:
-        return None
+    return user_system_slots
 
 
 def get_user_time_slots(
