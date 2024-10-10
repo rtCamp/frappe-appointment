@@ -1,9 +1,15 @@
 # Copyright (c) 2023, rtCamp and contributors
 # For license information, please see license.txt
 
-# import frappe
+import frappe
 from frappe.model.document import Document
 
 
 class UserAppointmentAvailability(Document):
-	pass
+    def validate(self):
+
+        calendar = frappe.get_doc("Google Calendar", self.google_calendar)
+        if not calendar.custom_is_google_calendar_authorized:
+            frappe.throw(
+                "Please authorize Google Calendar before creating appointment availability."
+            )
