@@ -17,6 +17,10 @@ bench --site {sitename} install-app frappe-appointment
 
 [Link](https://github.com/rtCamp/frappe-appointments/wiki#setup-app-on-frappe-site)
 
-#### License
+## Contribution Guide
 
-MIT
+Please read [CONTRIBUTING.md](./CONTRIBUTING.md) for details.
+
+## License
+
+This project is licensed under the [AGPLv3 License](./LICENSE).
