@@ -3,7 +3,7 @@ app_title = "Frappe Appointment"
 app_publisher = "rtCamp"
 app_description = "The appointment scheduling app with team support in Frappe."
 app_email = "sys@rtcamp.com"
-app_license = "MIT"
+app_license = "GNU AFFERO GENERAL PUBLIC LICENSE (v3)"
 # required_apps = []
 
 # Includes in <head>

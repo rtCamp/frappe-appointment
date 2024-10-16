@@ -12,9 +12,15 @@ charset = utf-8
 [{*.py}]
 indent_style = space
 indent_size = 4
-max_line_length = 88
+max_line_length = 120
 
 [{*.js,*.vue,*.css,*.scss,*.html}]
 indent_style = space
 indent_size = 2
-max_line_length = 80
+max_line_length = 120
+
+# JSON files - mostly doctype schema files
+[{*.json}]
+insert_final_newline = false
+indent_style = space
+indent_size = 1
