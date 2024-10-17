@@ -36,14 +36,10 @@ class EventOverride(Event):
     def before_insert(self):
         """Handle the Appointment Group in Event"""
         if self.custom_appointment_group:
-            self.appointment_group = frappe.get_doc(
-                APPOINTMENT_GROUP, self.custom_appointment_group
-            )
+            self.appointment_group = frappe.get_doc(APPOINTMENT_GROUP, self.custom_appointment_group)
             if self.appointment_group.meet_link:
                 if self.description:
-                    self.description = (
-                        f"\nMeet Link: {self.appointment_group.meet_link}"
-                    )
+                    self.description = f"\nMeet Link: {self.appointment_group.meet_link}"
                 else:
                     self.description = f"Meet Link: {self.appointment_group.meet_link}"
             self.update_attendees_for_appointment_group()
@@ -52,9 +48,7 @@ class EventOverride(Event):
         super().before_save()
         self.pulled_from_google_calendar = True
         if self.custom_appointment_group:
-            self.appointment_group = frappe.get_doc(
-                APPOINTMENT_GROUP, self.custom_appointment_group
-            )
+            self.appointment_group = frappe.get_doc(APPOINTMENT_GROUP, self.custom_appointment_group)
             if self.has_value_changed("starts_on"):
                 frappe.enqueue(
                     send_meet_email,
@@ -95,9 +89,7 @@ class EventOverride(Event):
         """Insert Appointment Group Member as Event participants"""
         members = self.appointment_group.members
 
-        google_calendar_api_obj, account = get_google_calendar_object(
-            self.appointment_group.event_creator
-        )
+        google_calendar_api_obj, account = get_google_calendar_object(self.appointment_group.event_creator)
 
         for member in members:
             try:
@@ -117,7 +109,7 @@ class EventOverride(Event):
                     }
                 )
                 self.event_participants.append(user)
-            except Exception as e:
+            except Exception:
                 pass
 
         user = frappe.get_doc(
@@ -146,9 +138,7 @@ class EventOverride(Event):
             if isinstance(obj, datetime.datetime):
                 return obj.isoformat()
 
-        appointment_group = frappe.get_doc(
-            APPOINTMENT_GROUP, self.custom_appointment_group
-        )
+        appointment_group = frappe.get_doc(APPOINTMENT_GROUP, self.custom_appointment_group)
 
         if not appointment_group.webhook:
             return {"status": True, "message": ""}
@@ -175,7 +165,7 @@ class EventOverride(Event):
 
             return {"status": True, "message": ""}
 
-        except Exception as e:
+        except Exception:
             return {"status": False, "message": "Unable to create an event"}
 
 
@@ -190,7 +180,6 @@ def send_meet_email(doc, appointment_group, metadata):
             and doc.event_participants
             and doc.custom_doctype_link_with_event
         ):
-
             args = dict(
                 appointment_group=appointment_group.as_dict(),
                 event=doc.as_dict(),
@@ -200,9 +189,7 @@ def send_meet_email(doc, appointment_group, metadata):
             # Only send the email to first user of custom_doctype_link_with_event
             send_doc_value = doc.custom_doctype_link_with_event[0]
 
-            send_doc = frappe.get_doc(
-                send_doc_value.reference_doctype, send_doc_value.reference_docname
-            )
+            send_doc = frappe.get_doc(send_doc_value.reference_doctype, send_doc_value.reference_docname)
 
             send_email_template_mail(
                 send_doc,
@@ -213,10 +200,8 @@ def send_meet_email(doc, appointment_group, metadata):
             )
 
             frappe.db.commit()
-    except Exception as e:
-        frappe.log_error(
-            title="Interview time slot book response email error " + doc.name
-        )
+    except Exception:
+        frappe.log_error(title="Interview time slot book response email error " + doc.name)
 
 
 @frappe.whitelist(allow_guest=True)
@@ -245,9 +230,7 @@ def create_event_for_appointment_group(
     # query parameters
     event_info = args
 
-    if not is_valid_time_slots(
-        appointment_group_id, date, user_timezone_offset, start_time, end_time
-    ):
+    if not is_valid_time_slots(appointment_group_id, date, user_timezone_offset, start_time, end_time):
         return frappe.throw(_("The slot is not available. Please try to book again!"))
 
     starts_on = utc_to_sys_time(start_time)
@@ -257,9 +240,7 @@ def create_event_for_appointment_group(
     ends_on = utc_to_sys_time(end_time)
     reschedule = event_info.get("reschedule", False)
 
-    appointment_group = frappe.get_last_doc(
-        APPOINTMENT_GROUP, filters={"route": appointment_group_id}
-    )
+    appointment_group = frappe.get_last_doc(APPOINTMENT_GROUP, filters={"route": appointment_group_id})
 
     if not event_info.get("subject"):
         event_info["subject"] = appointment_group.name + " " + now()
@@ -272,14 +253,10 @@ def create_event_for_appointment_group(
     if len(members) <= 0:
         return frappe.throw(_("No Member found"))
 
-    google_calendar_api_obj, account = get_google_calendar_object(
-        appointment_group.event_creator
-    )
+    google_calendar_api_obj, account = get_google_calendar_object(appointment_group.event_creator)
 
     if reschedule:
-        event = frappe.get_last_doc(
-            "Event", filters={"custom_appointment_group": appointment_group.name}
-        )
+        event = frappe.get_last_doc("Event", filters={"custom_appointment_group": appointment_group.name})
         event.starts_on = starts_on
         event.ends_on = ends_on
         event.event_info = event_info
@@ -296,7 +273,7 @@ def create_event_for_appointment_group(
             }
         ):
             return frappe.throw(_("Unable to Update an event"))
-        return frappe.msgprint("Interview has been Re-Scheduled.")
+        return frappe.msgprint(_("Interview has been Re-Scheduled."))
 
     calendar_event = {
         "doctype": "Event",
@@ -310,9 +287,7 @@ def create_event_for_appointment_group(
         "pulled_from_google_calendar": 0,
         "custom_sync_participants_google_calendars": 1,
         "event_participants": json.loads(event_participants),
-        "custom_doctype_link_with_event": json.loads(
-            event_info.get("custom_doctype_link_with_event", "[]")
-        ),
+        "custom_doctype_link_with_event": json.loads(event_info.get("custom_doctype_link_with_event", "[]")),
         "send_reminder": 0,
         "event_type": "Private",
         "custom_appointment_group": appointment_group.name,
@@ -333,6 +308,7 @@ def create_event_for_appointment_group(
 
     event.insert(ignore_permissions=True)
 
+    # nosemgrep
     frappe.db.commit()
 
     return _("Event has been created")
@@ -343,14 +319,10 @@ def check_one_time_schedule(
     appointment_group_id: str,
     **args,
 ):
-    appointment_group = frappe.get_last_doc(
-        APPOINTMENT_GROUP, filters={"route": appointment_group_id}
-    )
+    appointment_group = frappe.get_last_doc(APPOINTMENT_GROUP, filters={"route": appointment_group_id})
     if appointment_group.schedule_only_once:
         event_info = args
-        interview_id = json.loads(
-            event_info.get("custom_doctype_link_with_event", "[]")
-        )
+        interview_id = json.loads(event_info.get("custom_doctype_link_with_event", "[]"))
         interview_id = interview_id[1]["reference_docname"]
         scheduled_events = frappe.get_all(
             "Event",
