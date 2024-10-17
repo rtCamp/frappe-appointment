@@ -34,11 +34,15 @@ class AppointmentGroup(WebsiteGenerator):
         no_breadcrumbs=1,
     )
 
-    def validate(self):
-        if not self.route:
-            self.route = frappe.scrub(self.group_name).replace("_", "-")
+    def autoname(self):
+        self.name = frappe.scrub(self.group_name).replace("_", "-")
 
+    def validate(self):
+        self.update_route()
         self.validate_members_list()
+
+    def update_route(self):
+        self.route = "appointment/" + self.name
 
     def validate_members_list(self):
         is_valid_list = [member for member in self.members if member.is_mandatory]
@@ -73,7 +77,9 @@ def get_time_slots_for_day(appointment_group_id: str, date: str, user_timezone_o
         if not appointment_group_id:
             return {"result": []}
 
-        appointment_group = frappe.get_last_doc(APPOINTMENT_GROUP, filters={"route": appointment_group_id})
+        appointment_group = frappe.get_last_doc(
+            APPOINTMENT_GROUP, filters={"route": "appointment/" + appointment_group_id}
+        )
 
         datetime_today = get_datetime(date)
         datetime_tomorrow = add_days(datetime_today, 1)
@@ -213,7 +219,7 @@ def get_time_slots_for_given_date(appointment_group: object, datetime: str):
         member_time_slots, starttime, endtime, date, appointment_group
     )
 
-    if not all_slots:
+    if not all_slots and all_slots != []:
         return get_response_body(
             avaiable_time_slot_for_day=[],
             appointment_group=appointment_group,
