@@ -240,7 +240,7 @@ def create_event_for_appointment_group(
     ends_on = utc_to_sys_time(end_time)
     reschedule = event_info.get("reschedule", False)
 
-    appointment_group = frappe.get_last_doc(APPOINTMENT_GROUP, filters={"route": appointment_group_id})
+    appointment_group = frappe.get_last_doc(APPOINTMENT_GROUP, filters={"route": "appointment/" + appointment_group_id})
 
     if not event_info.get("subject"):
         event_info["subject"] = appointment_group.name + " " + now()
@@ -319,7 +319,7 @@ def check_one_time_schedule(
     appointment_group_id: str,
     **args,
 ):
-    appointment_group = frappe.get_last_doc(APPOINTMENT_GROUP, filters={"route": appointment_group_id})
+    appointment_group = frappe.get_last_doc(APPOINTMENT_GROUP, filters={"route": "appointment/" + appointment_group_id})
     if appointment_group.schedule_only_once:
         event_info = args
         interview_id = json.loads(event_info.get("custom_doctype_link_with_event", "[]"))
