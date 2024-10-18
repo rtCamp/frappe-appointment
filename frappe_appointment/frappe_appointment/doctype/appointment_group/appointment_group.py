@@ -174,6 +174,15 @@ def get_time_slots_for_given_date(appointment_group: object, datetime: str):
         appointment_group.enable_scheduling_on_weekends, weekday, date_validation_obj
     )
 
+    if is_member_on_leave_or_is_holiday(appointment_group, date):
+        return get_response_body(
+            avaiable_time_slot_for_day=[],
+            appointment_group=appointment_group,
+            date=date,
+            date_validation_obj=date_validation_obj,
+        )
+
+
     if weekend_availability["is_invalid_date"]:
         return get_response_body(
             avaiable_time_slot_for_day=[],
@@ -572,3 +581,43 @@ def get_max_min_time_slot(appointmen_time_slots: list, max_start_time: str, min_
         min_end_time = min(min_end_time, format_time(get_time_str(appointmen_time_slot.end_time)))
 
     return [max_start_time, min_end_time]
+
+def is_member_on_leave_or_is_holiday(appointment_group, date):
+    """
+    Check if the given date is marked as invalid due to user leaves or holiday of mandatory members.
+
+    Args:
+    appointment_group (object): Appointment group containing members
+    date (datetime): Date to check
+
+    Returns:
+    bool: True if the date is invalid due to mandatory member leaves or holiday, False otherwise
+    """
+    date_str = date.strftime("%Y-%m-%d")
+    
+    for member in appointment_group.members:
+        if member.is_mandatory:  # Only check for mandatory members
+            employee = frappe.get_all(
+                "Employee", filters={"company_email": member.user}, fields=["name", "holiday_list"]
+            )
+            leaves = frappe.get_all(
+                "Leave Application",
+                filters={
+                    "employee": employee[0].name,
+                    "from_date": ["<=", date_str],
+                    "to_date": [">=", date_str],
+                    "status": "Approved",
+                },
+            )
+
+            if leaves:
+                return True
+
+            if employee and employee[0].holiday_list:
+                holidays = frappe.get_doc("Holiday List", employee[0].holiday_list)
+                for holiday in holidays.holidays:
+                        if holiday.holiday_date.strftime("%Y-%m-%d") == date_str:
+                            return True
+
+    return False
+
