@@ -110,9 +110,9 @@ app_license = "GNU AFFERO GENERAL PUBLIC LICENSE (v3)"
 # Override standard doctype classes
 
 override_doctype_class = {
-	"Event": "frappe_appointment.overrides.event_override.EventOverride",
-	"Google Calendar": "frappe_appointment.overrides.google_calendar_override.GoogleCalendarOverride",
-	"Customize Form": "frappe_appointment.overrides.customize_form_override.CareersOverrideCustomizeForm",
+    "Event": "frappe_appointment.overrides.event_override.EventOverride",
+    "Google Calendar": "frappe_appointment.overrides.google_calendar_override.GoogleCalendarOverride",
+    "Customize Form": "frappe_appointment.overrides.customize_form_override.CareersOverrideCustomizeForm",
 }
 
 # Document Events
@@ -145,11 +145,13 @@ override_doctype_class = {
 
 # before_tests = "frappe_appointment.install.before_tests"
 
+update_website_context = "frappe_appointment.overrides.website_context.website_context"
+
 # Overriding Methods
 # ------------------------------
 #
 override_whitelisted_methods = {
-	"frappe.integrations.doctype.google_calendar.google_calendar.google_callback": "frappe_appointment.overrides.google_calendar_override.google_callback"
+    "frappe.integrations.doctype.google_calendar.google_calendar.google_callback": "frappe_appointment.overrides.google_calendar_override.google_callback"
 }
 #
 # each overriding function accepts a `data` argument;

@@ -4,17 +4,13 @@
 import datetime
 
 import frappe
-from dateutil import parser
 from frappe.utils import (
     add_days,
     add_to_date,
     format_time,
-    get_date_str,
     get_datetime,
     get_datetime_str,
     get_time_str,
-    getdate,
-    now_datetime,
 )
 from frappe.website.website_generator import WebsiteGenerator
 
@@ -23,11 +19,11 @@ from frappe_appointment.frappe_appointment.doctype.appointment_time_slot.appoint
     get_all_unavailable_google_calendar_slots_for_day,
 )
 from frappe_appointment.helpers.utils import (
-    get_weekday,
-    utc_to_given_time_zone,
     convert_datetime_to_utc,
     convert_timezone_to_utc,
     get_utc_datatime_with_time,
+    get_weekday,
+    utc_to_given_time_zone,
 )
 
 
@@ -38,9 +34,20 @@ class AppointmentGroup(WebsiteGenerator):
         no_breadcrumbs=1,
     )
 
+    def autoname(self):
+        self.name = frappe.scrub(self.group_name).replace("_", "-")
+
     def validate(self):
-        if not self.route:
-            self.route = frappe.scrub(self.group_name).replace("_", "-")
+        self.update_route()
+        self.validate_members_list()
+
+    def update_route(self):
+        self.route = "appointment/" + self.name
+
+    def validate_members_list(self):
+        is_valid_list = [member for member in self.members if member.is_mandatory]
+        if not is_valid_list or len(is_valid_list) == 0:
+            return frappe.throw(frappe._("Please add at least one mandatory member to the appointment group."))
 
     def get_context(self, context):
         return context
@@ -56,9 +63,7 @@ def get_list_context(context):
 
 
 @frappe.whitelist(allow_guest=True)
-def get_time_slots_for_day(
-    appointment_group_id: str, date: str, user_timezone_offset: str
-) -> object:
+def get_time_slots_for_day(appointment_group_id: str, date: str, user_timezone_offset: str) -> object:
     """API endpoint for fetch the google time slots for user
 
     Args:
@@ -73,7 +78,7 @@ def get_time_slots_for_day(
             return {"result": []}
 
         appointment_group = frappe.get_last_doc(
-            APPOINTMENT_GROUP, filters={"route": appointment_group_id}
+            APPOINTMENT_GROUP, filters={"route": "appointment/" + appointment_group_id}
         )
 
         datetime_today = get_datetime(date)
@@ -84,44 +89,28 @@ def get_time_slots_for_day(
 
         if int(user_timezone_offset) > 0:
             all_time_slots_global_object = {
-                "yesterday": get_time_slots_for_given_date(
-                    appointment_group, datetime_yesterday
-                ),
-                "today": get_time_slots_for_given_date(
-                    appointment_group, datetime_today
-                ),
+                "yesterday": get_time_slots_for_given_date(appointment_group, datetime_yesterday),
+                "today": get_time_slots_for_given_date(appointment_group, datetime_today),
             }
         else:
             all_time_slots_global_object = {
-                "today": get_time_slots_for_given_date(
-                    appointment_group, datetime_today
-                ),
-                "tomorrow": get_time_slots_for_given_date(
-                    appointment_group, datetime_tomorrow
-                ),
+                "today": get_time_slots_for_given_date(appointment_group, datetime_today),
+                "tomorrow": get_time_slots_for_given_date(appointment_group, datetime_tomorrow),
             }
 
-        user_time_slots = get_user_time_slots(
-            all_time_slots_global_object, date, user_timezone_offset
-        )
+        user_time_slots = get_user_time_slots(all_time_slots_global_object, date, user_timezone_offset)
 
         time_slots_today_object = all_time_slots_global_object["today"]
 
-        current_time = utc_to_given_time_zone(
-            datetime.datetime.now(), user_timezone_offset
-        )
+        current_time = utc_to_given_time_zone(datetime.datetime.now(), user_timezone_offset)
 
         filtered_slots = []
 
         for slot in user_time_slots:
-            start_time = utc_to_given_time_zone(
-                slot["start_time"], user_timezone_offset
-            )
+            start_time = utc_to_given_time_zone(slot["start_time"], user_timezone_offset)
             end_time = utc_to_given_time_zone(slot["end_time"], user_timezone_offset)
 
-            if current_time.date() == end_time.date() and (
-                start_time < current_time and end_time < current_time
-            ):
+            if current_time.date() == end_time.date() and (start_time < current_time and end_time < current_time):
                 continue
 
             filtered_slots.append(slot)
@@ -130,13 +119,11 @@ def get_time_slots_for_day(
 
         return time_slots_today_object
 
-    except Exception as e:
+    except Exception:
         return None
 
 
-def get_user_time_slots(
-    all_time_slots_global_object: list, date: str, user_timezone_offset: str
-):
+def get_user_time_slots(all_time_slots_global_object: list, date: str, user_timezone_offset: str):
     list_all_available_slots_for_data = []
 
     today = int(date.split("-")[2])
@@ -146,9 +133,7 @@ def get_user_time_slots(
         all_available_slots_for_data = day_slots_object["all_available_slots_for_data"]
 
         for time_slot in all_available_slots_for_data:
-            user_timezone_start_time_slot = utc_to_given_time_zone(
-                time_slot["start_time"], user_timezone_offset
-            )
+            user_timezone_start_time_slot = utc_to_given_time_zone(time_slot["start_time"], user_timezone_offset)
             if user_timezone_start_time_slot.day == today:
                 list_all_available_slots_for_data.append(time_slot)
 
@@ -162,9 +147,7 @@ def is_valid_time_slots(
     start_time: str,
     end_time: str,
 ):
-    today_time_slots = get_time_slots_for_day(
-        appointment_group_id, date, user_timezone_offset
-    )
+    today_time_slots = get_time_slots_for_day(appointment_group_id, date, user_timezone_offset)
 
     if not today_time_slots:
         return False
@@ -200,9 +183,7 @@ def get_time_slots_for_given_date(appointment_group: object, datetime: str):
             is_invalid_date=True,
         )
 
-    booking_frequency_reached_obj = get_booking_frequency_reached(
-        datetime, appointment_group
-    )
+    booking_frequency_reached_obj = get_booking_frequency_reached(datetime, appointment_group)
 
     if not booking_frequency_reached_obj["is_slots_available"]:
         return get_response_body(
@@ -227,9 +208,7 @@ def get_time_slots_for_given_date(appointment_group: object, datetime: str):
             fields="*",
         )
 
-        max_start_time, min_end_time = get_max_min_time_slot(
-            appointment_time_slots, max_start_time, min_end_time
-        )
+        max_start_time, min_end_time = get_max_min_time_slot(appointment_time_slots, max_start_time, min_end_time)
 
         member_time_slots[member.user] = appointment_time_slots
 
@@ -240,7 +219,7 @@ def get_time_slots_for_given_date(appointment_group: object, datetime: str):
         member_time_slots, starttime, endtime, date, appointment_group
     )
 
-    if all_slots == False:
+    if not all_slots and all_slots != []:
         return get_response_body(
             avaiable_time_slot_for_day=[],
             appointment_group=appointment_group,
@@ -248,13 +227,9 @@ def get_time_slots_for_given_date(appointment_group: object, datetime: str):
             date_validation_obj=date_validation_obj,
         )
 
-    all_slots = update_cal_slots_with_events(
-        all_slots, booking_frequency_reached_obj["events"]
-    )
+    all_slots = update_cal_slots_with_events(all_slots, booking_frequency_reached_obj["events"])
 
-    avaiable_time_slot_for_day = get_avaiable_time_slot_for_day(
-        all_slots, starttime, endtime, appointment_group
-    )
+    avaiable_time_slot_for_day = get_avaiable_time_slot_for_day(all_slots, starttime, endtime, appointment_group)
 
     return get_response_body(
         avaiable_time_slot_for_day=avaiable_time_slot_for_day,
@@ -266,9 +241,7 @@ def get_time_slots_for_given_date(appointment_group: object, datetime: str):
     )
 
 
-def check_weekend_availability(
-    enable_scheduling_on_weekends: bool, weekday: str, date_validation_obj: object
-):
+def check_weekend_availability(enable_scheduling_on_weekends: bool, weekday: str, date_validation_obj: object):
     """
     Check if data is valid with a weekend check. If enable_scheduling_on_weekends is True, then the date will be the next available date except on weekends.
 
@@ -300,9 +273,7 @@ def check_weekend_availability(
     elif start_day_week_day == "Sunday":
         day_to_add = 1
 
-    date_validation_obj["valid_start_date"] = add_days(
-        date_validation_obj["valid_start_date"], day_to_add
-    )
+    date_validation_obj["valid_start_date"] = add_days(date_validation_obj["valid_start_date"], day_to_add)
 
     res["date_validation_obj"] = date_validation_obj
 
@@ -351,9 +322,7 @@ def get_response_body(
     }
 
 
-def get_booking_frequency_reached(
-    datetime: datetime, appointment_group: object
-) -> bool:
+def get_booking_frequency_reached(datetime: datetime, appointment_group: object) -> bool:
     """
         Get a list of booked events from Frappe for a given date and Appointment Group.
 
@@ -370,9 +339,7 @@ def get_booking_frequency_reached(
     }
 
     # Get today's data and the range for the next day to fetch events.
-    start_datetime, end_datetime = get_datetime_str(datetime), get_datetime_str(
-        add_days(datetime, 1)
-    )
+    start_datetime, end_datetime = get_datetime_str(datetime), get_datetime_str(add_days(datetime, 1))
 
     all_events = frappe.get_list(
         "Event",
@@ -394,9 +361,7 @@ def get_booking_frequency_reached(
     )
 
     if int(appointment_group.limit_booking_frequency) >= 0:
-        res["is_slots_available"] = len(all_events) < int(
-            appointment_group.limit_booking_frequency
-        )
+        res["is_slots_available"] = len(all_events) < int(appointment_group.limit_booking_frequency)
 
     res["events"] = all_events
 
@@ -416,16 +381,12 @@ def vaild_date(date: datetime, appointment_group: object) -> object:
     """
     current_date = get_datetime(datetime.datetime.utcnow().date())
 
-    start_date = add_days(
-        current_date, int(appointment_group.minimum_notice_before_event)
-    )
+    start_date = add_days(current_date, int(appointment_group.minimum_notice_before_event))
     end_date = ""
 
     # Add the days == event_availability_window into start_date date
     if int(appointment_group.event_availability_window) > 0:
-        end_date = add_days(
-            start_date, int(appointment_group.event_availability_window) - 1
-        )
+        end_date = add_days(start_date, int(appointment_group.event_availability_window) - 1)
 
     if start_date > date:
         return {
@@ -471,9 +432,9 @@ def update_cal_slots_with_events(all_slots: list, all_events: list) -> list:
         )
         for event in all_events:
             # Compare the start and end date of event and slots
-            if convert_datetime_to_utc(event["starts_on"]) == updated_slot[
-                "starts_on"
-            ] and updated_slot["ends_on"] == convert_datetime_to_utc(event["ends_on"]):
+            if convert_datetime_to_utc(event["starts_on"]) == updated_slot["starts_on"] and updated_slot[
+                "ends_on"
+            ] == convert_datetime_to_utc(event["ends_on"]):
                 updated_slot["is_frappe_event"] = True
                 break
 
@@ -508,25 +469,15 @@ def get_avaiable_time_slot_for_day(
     minute, second = divmod(appointment_group.duration_for_event.seconds, 60)
     hour, minute = divmod(minute, 60)
 
-    current_end_time = add_to_date(
-        current_start_time, hours=hour, minutes=minute, seconds=second
-    )
+    current_end_time = add_to_date(current_start_time, hours=hour, minutes=minute, seconds=second)
 
     # This will make sure that slots will be genrate even though we reach at end of all_slots
     while current_end_time <= endtime:
-
         if index >= len(all_slots) and current_end_time <= endtime:
+            available_slots.append({"start_time": current_start_time, "end_time": current_end_time})
 
-            available_slots.append(
-                {"start_time": current_start_time, "end_time": current_end_time}
-            )
-
-            current_start_time = get_next_round_value(
-                minimum_buffer_time, current_end_time
-            )
-            current_end_time = add_to_date(
-                current_start_time, hours=hour, minutes=minute, seconds=second
-            )
+            current_start_time = get_next_round_value(minimum_buffer_time, current_end_time)
+            current_end_time = add_to_date(current_start_time, hours=hour, minutes=minute, seconds=second)
 
             continue
 
@@ -540,12 +491,8 @@ def get_avaiable_time_slot_for_day(
             currernt_slot_start_time,
             currernt_slot["is_frappe_event"],
         ):
-            available_slots.append(
-                {"start_time": current_start_time, "end_time": current_end_time}
-            )
-            current_start_time = get_next_round_value(
-                minimum_buffer_time, current_end_time
-            )
+            available_slots.append({"start_time": current_start_time, "end_time": current_end_time})
+            current_start_time = get_next_round_value(minimum_buffer_time, current_end_time)
         else:
             current_start_time = get_next_round_value(
                 minimum_buffer_time,
@@ -554,9 +501,7 @@ def get_avaiable_time_slot_for_day(
             )
             index += 1
 
-        current_end_time = add_to_date(
-            current_start_time, hours=hour, minutes=minute, seconds=second
-        )
+        current_end_time = add_to_date(current_start_time, hours=hour, minutes=minute, seconds=second)
 
     return available_slots
 
@@ -605,16 +550,12 @@ def get_next_round_value(
     minute, second = divmod(minimum_buffer_time.seconds, 60)
     hour, minute = divmod(minute, 60)
 
-    min_start_time = add_to_date(
-        current_end_time, hours=hour, minutes=minute, seconds=second
-    )
+    min_start_time = add_to_date(current_end_time, hours=hour, minutes=minute, seconds=second)
 
     return min_start_time
 
 
-def get_max_min_time_slot(
-    appointmen_time_slots: list, max_start_time: str, min_end_time: str
-) -> list:
+def get_max_min_time_slot(appointmen_time_slots: list, max_start_time: str, min_end_time: str) -> list:
     """Select the maximum between the given start time and appointment_time_slots start time, and the minimum between the given end time and appointment_time_slots end time.
 
     Args:
@@ -627,11 +568,7 @@ def get_max_min_time_slot(
     """
 
     for appointmen_time_slot in appointmen_time_slots:
-        max_start_time = max(
-            max_start_time, format_time(get_time_str(appointmen_time_slot.start_time))
-        )
-        min_end_time = min(
-            min_end_time, format_time(get_time_str(appointmen_time_slot.end_time))
-        )
+        max_start_time = max(max_start_time, format_time(get_time_str(appointmen_time_slot.start_time)))
+        min_end_time = min(min_end_time, format_time(get_time_str(appointmen_time_slot.end_time)))
 
     return [max_start_time, min_end_time]

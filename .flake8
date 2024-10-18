@@ -14,6 +14,7 @@ ignore =
     "RUF001", # string contains ambiguous unicode character
     "UP032", # Use f-string instead of `format` call (translations)
     "UP030",
+    "RUF013"
 
 max-line-length = 120
 exclude=,test_*.py
