@@ -6,3 +6,4 @@
 # Patches added in this section will be executed after doctypes are migrated
 frappe_appointment.patches.v0_1.add_appointment_manager_role
 frappe_appointment.patches.v0_1.add_event_creator
+frappe_appointment.patches.v0_1.update_route_appointment

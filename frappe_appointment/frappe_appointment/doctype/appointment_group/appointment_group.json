@@ -2,7 +2,6 @@
  "actions": [],
  "allow_guest_to_view": 1,
  "allow_rename": 1,
- "autoname": "field:route",
  "creation": "2023-10-10 17:07:07.605016",
  "default_view": "List",
  "doctype": "DocType",
@@ -15,9 +14,9 @@
   "event_organizer",
   "section_break_gocd",
   "members",
-  "route",
   "section_break_v4rw",
   "publish_on_website",
+  "route",
   "column_break_4pgb",
   "enable_scheduling_on_weekends",
   "ignore_all_day_events",
@@ -75,6 +74,7 @@
    "fieldname": "route",
    "fieldtype": "Data",
    "label": "Route",
+   "read_only": 1,
    "unique": 1
   },
   {
@@ -187,11 +187,10 @@
  "has_web_view": 1,
  "is_published_field": "publish_on_website",
  "links": [],
- "modified": "2024-06-20 13:58:51.559044",
+ "modified": "2024-10-17 17:12:58.741993",
  "modified_by": "Administrator",
  "module": "Frappe Appointment",
  "name": "Appointment Group",
- "naming_rule": "By fieldname",
  "owner": "Administrator",
  "permissions": [
   {

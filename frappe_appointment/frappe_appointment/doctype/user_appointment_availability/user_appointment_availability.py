@@ -7,9 +7,6 @@ from frappe.model.document import Document
 
 class UserAppointmentAvailability(Document):
     def validate(self):
-
         calendar = frappe.get_doc("Google Calendar", self.google_calendar)
         if not calendar.custom_is_google_calendar_authorized:
-            frappe.throw(
-                "Please authorize Google Calendar before creating appointment availability."
-            )
+            frappe.throw(frappe._("Please authorize Google Calendar before creating appointment availability."))
