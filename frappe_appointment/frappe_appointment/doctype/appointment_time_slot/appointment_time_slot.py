@@ -10,18 +10,6 @@ from frappe.integrations.doctype.google_calendar.google_calendar import (
     get_google_calendar_object,
 )
 from frappe.model.document import Document
-from frappe.utils import (
-    DATETIME_FORMAT,
-    get_date_str,
-    get_datetime,
-    get_datetime_in_timezone,
-    get_datetime_str,
-    get_system_timezone,
-    get_timedelta,
-    now_datetime,
-    nowdate,
-)
-from googleapiclient.errors import HttpError
 
 from frappe_appointment.helpers.utils import (
     compare_end_time_slots,
@@ -56,11 +44,9 @@ def get_all_unavailable_google_calendar_slots_for_day(
     cal_slots = []
 
     for member in member_time_slots:
-        google_calendar_slots = get_google_calendar_slots_member(
-            member, starttime, endtime, date, appointment_group
-        )
+        google_calendar_slots = get_google_calendar_slots_member(member, starttime, endtime, date, appointment_group)
 
-        if google_calendar_slots == False:
+        if google_calendar_slots == False:  # noqa: E712
             return False
 
         cal_slots = cal_slots + google_calendar_slots
@@ -93,9 +79,7 @@ def get_google_calendar_slots_member(
     if not member:
         return None
 
-    google_calendar_id = frappe.get_value(
-        "User Appointment Availability", member, "google_calendar"
-    )
+    google_calendar_id = frappe.get_value("User Appointment Availability", member, "google_calendar")
 
     if not google_calendar_id:
         return None
@@ -121,11 +105,22 @@ def get_google_calendar_slots_member(
             )
             .execute()
         )
+
+        # Fetch availability
+        availability = (
+            google_calendar_api_obj.freebusy()
+            .query(
+                body={
+                    "timeMin": time_min,
+                    "timeMax": time_max,
+                    "items": [{"id": google_calendar.google_calendar_id}],
+                }
+            )
+            .execute()
+        )
     except Exception as err:
         frappe.throw(
-            _(
-                "Google Calendar - Could not fetch event from Google Calendar, error code {0}."
-            ).format(err.resp.status)
+            _("Google Calendar - Could not fetch event from Google Calendar, error code {0}.").format(err.resp.status)
         )
 
     events_items = events["items"]
@@ -135,11 +130,8 @@ def get_google_calendar_slots_member(
         try:
             creator = event.get("creator", {}).get("email")
             if creator != member:
-
                 attendees = event.get("attendees", [])
-                filtered_attendees = [
-                    attendee for attendee in attendees if attendee.get("self", False)
-                ]
+                filtered_attendees = [attendee for attendee in attendees if attendee.get("self", False)]
 
                 if len(filtered_attendees) > 0:
                     attendee = filtered_attendees[0]
@@ -149,22 +141,18 @@ def get_google_calendar_slots_member(
                 else:
                     continue
 
+            elif not is_busy_event(event, availability, member):
+                continue
+
             if check_if_datetime_in_range(
-                convert_timezone_to_utc(
-                    event["start"]["dateTime"], event["start"]["timeZone"]
-                ),
-                convert_timezone_to_utc(
-                    event["end"]["dateTime"], event["end"]["timeZone"]
-                ),
+                convert_timezone_to_utc(event["start"]["dateTime"], event["start"]["timeZone"]),
+                convert_timezone_to_utc(event["end"]["dateTime"], event["end"]["timeZone"]),
                 starttime,
                 endtime,
             ):
                 range_events.append(event)
-        except Exception as e:
-            if (
-                "timeZone" not in event["start"]
-                and appointment_group.ignore_all_day_events
-            ):
+        except Exception:
+            if "timeZone" not in event["start"] and appointment_group.ignore_all_day_events:
                 pass
             else:
                 return False
@@ -191,12 +179,8 @@ def remove_duplicate_slots(cal_slots: list):
     remove_duplicate_time_slots.append(cal_slots[last])
 
     while current < len(cal_slots):
-        last_start = convert_timezone_to_utc(
-            cal_slots[last]["start"]["dateTime"], cal_slots[last]["start"]["timeZone"]
-        )
-        last_end = convert_timezone_to_utc(
-            cal_slots[last]["end"]["dateTime"], cal_slots[last]["end"]["timeZone"]
-        )
+        last_start = convert_timezone_to_utc(cal_slots[last]["start"]["dateTime"], cal_slots[last]["start"]["timeZone"])
+        last_end = convert_timezone_to_utc(cal_slots[last]["end"]["dateTime"], cal_slots[last]["end"]["timeZone"])
         current_start = convert_timezone_to_utc(
             cal_slots[current]["start"]["dateTime"],
             cal_slots[current]["start"]["timeZone"],
@@ -214,6 +198,27 @@ def remove_duplicate_slots(cal_slots: list):
         current += 1
 
     return remove_duplicate_time_slots
+
+
+def is_busy_event(event: object, availability: object, user: str):
+    if (
+        not availability.get("calendars")
+        or not availability["calendars"].get(user)
+        or availability["calendars"][user].get("errors")
+    ):
+        # If error then assume the slot as busy only
+        return True
+
+    busy_array = availability["calendars"][user]["busy"]
+
+    start_utc = convert_timezone_to_utc(event["start"]["dateTime"], event["start"]["timeZone"])
+    end_utc = convert_timezone_to_utc(event["end"]["dateTime"], event["end"]["timeZone"])
+
+    for busy in busy_array:
+        if datetime.fromisoformat(busy["start"]) == start_utc and datetime.fromisoformat(busy["end"]) == end_utc:
+            return True
+
+    return False
 
 
 def check_if_datetime_in_range(
