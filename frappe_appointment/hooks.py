@@ -122,23 +122,21 @@ override_doctype_class = {
 # Scheduled Tasks
 # ---------------
 
-# scheduler_events = {
-# 	"all": [
-# 		"frappe_appointment.tasks.all"
-# 	],
-# 	"daily": [
-# 		"frappe_appointment.tasks.daily"
-# 	],
-# 	"hourly": [
-# 		"frappe_appointment.tasks.hourly"
-# 	],
-# 	"weekly": [
-# 		"frappe_appointment.tasks.weekly"
-# 	],
-# 	"monthly": [
-# 		"frappe_appointment.tasks.monthly"
-# 	],
-# }
+scheduler_events = {
+    # "all": [
+    # 	"frappe_appointment.tasks.all"
+    # ],
+    "daily": ["frappe_appointment.tasks.reminder_google_calendar_auth.send_reminder_mail"],
+    # "hourly": [
+    # 	"frappe_appointment.tasks.hourly"
+    # ],
+    # "weekly": [
+    # 	"frappe_appointment.tasks.weekly"
+    # ],
+    # "monthly": [
+    # 	"frappe_appointment.tasks.monthly"
+    # ],
+}
 
 # Testing
 # -------
