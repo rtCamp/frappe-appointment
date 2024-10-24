@@ -1,8 +1,7 @@
 import uuid
 
 import frappe
-import pytz
-from frappe.utils.data import get_datetime, getdate
+from frappe.utils.data import get_datetime
 from ics import Calendar, Event
 from ics.grammar.parse import ContentLine
 
