@@ -26,15 +26,7 @@ const months = [
   "December",
 ];
 
-let days = [
-  "Sunday",
-  "Monday",
-  "Tuesday",
-  "Wednesday",
-  "Thursday",
-  "Friday",
-  "Saturday",
-];
+let days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 let todaySlotsData = {};
 
 // HTML Updates
@@ -69,18 +61,12 @@ const get_date_on_click = () => {
    * Add an onclick event to the dates of the current month based on valid start and end times
    */
   const vaild_start_date = new Date(todaySlotsData.valid_start_date);
-  const valid_end_date = todaySlotsData.valid_end_date
-    ? new Date(todaySlotsData.valid_end_date)
-    : "";
+  const valid_end_date = todaySlotsData.valid_end_date ? new Date(todaySlotsData.valid_end_date) : "";
 
   const dates = document.querySelectorAll(".date");
 
   dates.forEach((date) => {
-    const selected_date = new Date(
-      year,
-      month + get_day_increment(date),
-      parseInt(date.innerHTML),
-    );
+    const selected_date = new Date(year, month + get_day_increment(date), parseInt(date.innerHTML));
 
     // Weekend Check
     if (
@@ -120,9 +106,7 @@ const get_date_on_click = () => {
 function update_active_date() {
   const dates = document.querySelectorAll(".date");
   dates.forEach((d) => {
-    const selected_date = get_date_str(
-      new Date(year, month + get_day_increment(d), parseInt(d.innerHTML)),
-    );
+    const selected_date = get_date_str(new Date(year, month + get_day_increment(d), parseInt(d.innerHTML)));
 
     if (selected_date == getURLSearchParam("date")) {
       d.classList.add("active");
@@ -191,14 +175,11 @@ function update_calander() {
 function get_time_slots(re_call = true) {
   show_loader();
   frappe
-    .call(
-      "frappe_appointment.frappe_appointment.doctype.appointment_group.appointment_group.get_time_slots_for_day",
-      {
-        appointment_group_id: get_appointment_group(),
-        date: getURLSearchParam("date"),
-        user_timezone_offset: -new Date().getTimezoneOffset(),
-      },
-    )
+    .call("frappe_appointment.frappe_appointment.doctype.appointment_group.appointment_group.get_time_slots_for_day", {
+      appointment_group_id: get_appointment_group(),
+      date: getURLSearchParam("date"),
+      user_timezone_offset: -new Date().getTimezoneOffset(),
+    })
     .then((r) => {
       if (!r?.message) {
         return setdaySlotsData();
@@ -216,6 +197,25 @@ function get_time_slots(re_call = true) {
           setdaySlotsData();
         }
         return;
+      }
+
+      if (!r.message.enable_scheduling_on_weekends) {
+        let date = new Date(getURLSearchParam("date"));
+        let is_weekend = false;
+        if (date.getDay() === 6) {
+          // Saturday
+          date.setDate(date.getDate() + 2);
+          is_weekend = true;
+        } else if (date.getDay() === 0) {
+          // Sunday
+          date.setDate(date.getDate() + 1);
+          is_weekend = true;
+        }
+        if (is_weekend) {
+          setURLSearchParam("date", get_date_str(date));
+          get_time_slots(true);
+          return;
+        }
       }
 
       setdaySlotsData(r.message);
@@ -240,29 +240,21 @@ function setdaySlotsData(daySlotsData = false) {
 function add_event_slots(time_slots) {
   show_loader();
   frappe
-    .call(
-      "frappe_appointment.overrides.event_override.create_event_for_appointment_group",
-      {
-        appointment_group_id: get_appointment_group(),
-        start_time: time_slots.start_time,
-        end_time: time_slots.end_time,
-        subject: getURLSearchParam("subject"),
-        date: getURLSearchParam("date"),
-        user_timezone_offset: -new Date().getTimezoneOffset(),
-        ...get_all_query_param(),
-        event_participants: !getURLSearchParam("event_participants")
-          ? []
-          : getURLSearchParam("event_participants").replaceAll("\\", ""),
-        custom_doctype_link_with_event: !getURLSearchParam(
-          "custom_doctype_link_with_event",
-        )
-          ? []
-          : getURLSearchParam("custom_doctype_link_with_event").replaceAll(
-              "\\",
-              "",
-            ),
-      },
-    )
+    .call("frappe_appointment.overrides.event_override.create_event_for_appointment_group", {
+      appointment_group_id: get_appointment_group(),
+      start_time: time_slots.start_time,
+      end_time: time_slots.end_time,
+      subject: getURLSearchParam("subject"),
+      date: getURLSearchParam("date"),
+      user_timezone_offset: -new Date().getTimezoneOffset(),
+      ...get_all_query_param(),
+      event_participants: !getURLSearchParam("event_participants")
+        ? []
+        : getURLSearchParam("event_participants").replaceAll("\\", ""),
+      custom_doctype_link_with_event: !getURLSearchParam("custom_doctype_link_with_event")
+        ? []
+        : getURLSearchParam("custom_doctype_link_with_event").replaceAll("\\", ""),
+    })
     .then((r) => {
       let url = new URL(window.location.href);
       params = get_all_query_param();
@@ -297,9 +289,7 @@ function get_day_increment(date) {
 
 function change_month_active_state(value, icon) {
   const vaild_start_date = new Date(todaySlotsData.valid_start_date);
-  const valid_end_date = todaySlotsData.valid_end_date
-    ? new Date(todaySlotsData.valid_end_date)
-    : "";
+  const valid_end_date = todaySlotsData.valid_end_date ? new Date(todaySlotsData.valid_end_date) : "";
 
   if (icon.id === "calendar-prev") {
     const last_date = new Date(year, month, 0);
@@ -394,20 +384,12 @@ function set_month_arrow_state() {
 function check_one_time_schedule() {
   show_loader();
   frappe
-    .call(
-      "frappe_appointment.overrides.event_override.check_one_time_schedule",
-      {
-        appointment_group_id: get_appointment_group(),
-        custom_doctype_link_with_event: !getURLSearchParam(
-          "custom_doctype_link_with_event",
-        )
-          ? []
-          : getURLSearchParam("custom_doctype_link_with_event").replaceAll(
-              "\\",
-              "",
-            ),
-      },
-    )
+    .call("frappe_appointment.overrides.event_override.check_one_time_schedule", {
+      appointment_group_id: get_appointment_group(),
+      custom_doctype_link_with_event: !getURLSearchParam("custom_doctype_link_with_event")
+        ? []
+        : getURLSearchParam("custom_doctype_link_with_event").replaceAll("\\", ""),
+    })
     .then((r) => {
       get_time_slots();
       manipulate();
@@ -450,10 +432,7 @@ cancel_button.addEventListener("click", function () {
 prenexIcons.forEach((icon) => {
   icon.addEventListener("click", () => {
     month = icon.id === "calendar-prev" ? month - 1 : month + 1;
-    date =
-      icon.id === "calendar-prev"
-        ? new Date(year, month + 1, 0)
-        : new Date(year, month, 1);
+    date = icon.id === "calendar-prev" ? new Date(year, month + 1, 0) : new Date(year, month, 1);
     year = date.getFullYear();
     month = date.getMonth();
     setURLSearchParam("date", get_date_str(date));
