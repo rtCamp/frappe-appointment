@@ -2,11 +2,11 @@ import frappe
 
 
 def before_uninstall():
-	remove_role()
+    remove_role()
 
 
 def remove_role():
-	roles = ["Appointment Manager"]
+    roles = ["Appointment Manager"]
 
-	for role in roles:
-		frappe.db.delete("Role", {"name": role})
+    for role in roles:
+        frappe.db.delete("Role", {"name": role})

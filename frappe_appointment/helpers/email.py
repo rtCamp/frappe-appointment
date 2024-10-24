@@ -7,9 +7,7 @@ from frappe.email.email_body import get_message_id
 from frappe.utils import add_to_date, get_string_between, now, nowdate, time_diff
 
 
-def send_email_template_mail(
-    doc, args, email_template, recipients=None, attachments=None
-):
+def send_email_template_mail(doc, args, email_template, recipients=None, attachments=None):
     """Send Email for Job Applicants"""
 
     email_template = frappe.get_doc("Email Template", email_template)
@@ -92,9 +90,7 @@ def get_send_after(doc):
     if doc.custom_time_to_send_email <= 0 or doc.custom_time_to_send_email > 24:
         return None
 
-    hours_value = (
-        doc.custom_time_to_send_email if doc.custom_time_to_send_email != 24 else 0
-    )
+    hours_value = doc.custom_time_to_send_email if doc.custom_time_to_send_email != 24 else 0
 
     hours_value = f"0{hours_value}" if hours_value < 10 else hours_value
 
@@ -102,17 +98,17 @@ def get_send_after(doc):
     reference_datetime = reference_date + f" {hours_value}:00:00.000000"
 
     """
-	Example:
-	Case 1:
-		now = 12/01/2023 12:00:00
-		reference_datetime = 12/01/2023 13:00:00
-		The time_difference will be a positive value in this case, so there's no need to change it.
+    Example:
+    Case 1:
+        now = 12/01/2023 12:00:00
+        reference_datetime = 12/01/2023 13:00:00
+        The time_difference will be a positive value in this case, so there's no need to change it.
 
-	Case 2:
-		now = 12/01/2023 13:00:00
-		reference_datetime = 12/01/2023 12:00:00
-		The time_difference will be a negative value in this case, so update the time to the next day with the given time.
- 	"""
+    Case 2:
+        now = 12/01/2023 13:00:00
+        reference_datetime = 12/01/2023 12:00:00
+        The time_difference will be a negative value in this case, so update the time to the next day with the given time.
+     """
     time_differnce = time_diff(reference_datetime, now()).total_seconds()
 
     if time_differnce <= 0:
