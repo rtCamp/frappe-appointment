@@ -1,7 +1,5 @@
 import frappe
 
-from frappe_appointment.helpers.role import add_permission_doctype
-
 
 def add_event_creator():
     appointment_groups = frappe.get_all("Appointment Group")
@@ -37,9 +35,7 @@ def add_event_creator():
 
 
 def add_google_calendar_in_user_availability():
-    user_availabilities = frappe.get_all(
-        "User Appointment Availability", fields=["name", "user"]
-    )
+    user_availabilities = frappe.get_all("User Appointment Availability", fields=["name", "user"])
 
     for user_availability in user_availabilities:
         calendar = frappe.get_all(

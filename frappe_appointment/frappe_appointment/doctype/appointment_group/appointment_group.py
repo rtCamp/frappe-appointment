@@ -180,8 +180,8 @@ def get_time_slots_for_given_date(appointment_group: object, datetime: str):
             appointment_group=appointment_group,
             date=date,
             date_validation_obj=date_validation_obj,
+            is_invalid_date=not date_validation_obj["is_valid"],
         )
-
 
     if weekend_availability["is_invalid_date"]:
         return get_response_body(
@@ -582,6 +582,7 @@ def get_max_min_time_slot(appointmen_time_slots: list, max_start_time: str, min_
 
     return [max_start_time, min_end_time]
 
+
 def is_member_on_leave_or_is_holiday(appointment_group, date):
     """
     Check if the given date is marked as invalid due to user leaves or holiday of mandatory members.
@@ -594,12 +595,15 @@ def is_member_on_leave_or_is_holiday(appointment_group, date):
     bool: True if the date is invalid due to mandatory member leaves or holiday, False otherwise
     """
     date_str = date.strftime("%Y-%m-%d")
-    
+
     for member in appointment_group.members:
         if member.is_mandatory:  # Only check for mandatory members
             employee = frappe.get_all(
                 "Employee", filters={"company_email": member.user}, fields=["name", "holiday_list"]
             )
+            if not employee:
+                return False  # If we don't have the employee, we can't check for leaves or holidays
+
             leaves = frappe.get_all(
                 "Leave Application",
                 filters={
@@ -616,8 +620,7 @@ def is_member_on_leave_or_is_holiday(appointment_group, date):
             if employee and employee[0].holiday_list:
                 holidays = frappe.get_doc("Holiday List", employee[0].holiday_list)
                 for holiday in holidays.holidays:
-                        if holiday.holiday_date.strftime("%Y-%m-%d") == date_str:
-                            return True
+                    if holiday.holiday_date.strftime("%Y-%m-%d") == date_str:
+                        return True
 
     return False
-
