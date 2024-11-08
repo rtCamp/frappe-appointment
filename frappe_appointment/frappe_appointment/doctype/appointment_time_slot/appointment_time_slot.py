@@ -107,17 +107,18 @@ def get_google_calendar_slots_member(
         )
 
         # Fetch availability
-        availability = (
-            google_calendar_api_obj.freebusy()
-            .query(
-                body={
-                    "timeMin": time_min,
-                    "timeMax": time_max,
-                    "items": [{"id": google_calendar.google_calendar_id}],
-                }
-            )
-            .execute()
-        )
+        # ref: https://github.com/rtCamp/frappe-appointment/issues/67
+        # availability = (
+        #     google_calendar_api_obj.freebusy()
+        #     .query(
+        #         body={
+        #             "timeMin": time_min,
+        #             "timeMax": time_max,
+        #             "items": [{"id": google_calendar.google_calendar_id}],
+        #         }
+        #     )
+        #     .execute()
+        # )
     except Exception as err:
         frappe.throw(
             _("Google Calendar - Could not fetch event from Google Calendar, error code {0}.").format(err.resp.status)
@@ -140,9 +141,6 @@ def get_google_calendar_slots_member(
                         continue
                 else:
                     continue
-
-            elif not is_busy_event(event, availability, member):
-                continue
 
             if check_if_datetime_in_range(
                 convert_timezone_to_utc(event["start"]["dateTime"], event["start"]["timeZone"]),
