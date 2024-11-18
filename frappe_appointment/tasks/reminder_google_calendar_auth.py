@@ -14,7 +14,7 @@ def send_reminder_mail():
         if not setup_reminder_template():
             return
 
-        google_calendars = frappe.get_all("Google Calendar")
+        google_calendars = frappe.get_all("Google Calendar", {"enable": 1})
 
         for google_calendar in google_calendars:
             google_calendar = frappe.get_doc("Google Calendar", google_calendar.name)
