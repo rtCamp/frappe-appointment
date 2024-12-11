@@ -36,3 +36,6 @@ def google_callback(code=None):
 
     if refresh_token:
         frappe.db.set_value("Google Calendar", google_calendar, "custom_is_google_calendar_authorized", True)
+
+    # nosemgrep
+    frappe.db.commit()  # Make sure to commit the changes to the database as for same cased it do not update custom_is_google_calendar_authorized
