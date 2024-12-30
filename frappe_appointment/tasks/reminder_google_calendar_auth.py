@@ -20,6 +20,10 @@ def send_reminder_mail():
             google_calendar = frappe.get_doc("Google Calendar", google_calendar.name)
             if google_calendar.user == google_calendar.google_calendar_id:
                 if not google_calendar_authorized(google_calendar):
+                    frappe.db.set_value(
+                        "Google Calendar", google_calendar.name, "custom_is_google_calendar_authorized", False
+                    )
+
                     send_email_template_mail(
                         google_calendar,
                         args={"google_calendar": google_calendar},
