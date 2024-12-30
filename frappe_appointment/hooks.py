@@ -6,6 +6,21 @@ app_email = "sys@rtcamp.com"
 app_license = "GNU AFFERO GENERAL PUBLIC LICENSE (v3)"
 # required_apps = []
 
+fixtures = [
+    {
+        "dt": "Custom Field",
+        "filters": [
+            [
+                "module",
+                "in",
+                [
+                    "Frappe Appointment",
+                ],
+            ],
+        ],
+    },
+]
+
 # Includes in <head>
 # ------------------
 
@@ -118,6 +133,14 @@ override_doctype_class = {
 # Document Events
 # ---------------
 # Hook on document methods and events
+
+doc_events = {
+    "Leave Application": {
+        "on_submit": "frappe_appointment.overrides.leave_application_override.on_submit",
+        "on_cancel": "frappe_appointment.overrides.leave_application_override.on_cancel_and_on_trash",
+        "on_trash": "frappe_appointment.overrides.leave_application_override.on_cancel_and_on_trash",
+    },
+}
 
 # Scheduled Tasks
 # ---------------
