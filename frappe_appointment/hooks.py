@@ -149,7 +149,10 @@ scheduler_events = {
     # "all": [
     # 	"frappe_appointment.tasks.all"
     # ],
-    "daily": ["frappe_appointment.tasks.reminder_google_calendar_auth.send_reminder_mail"],
+    "daily": [
+        "frappe_appointment.tasks.reminder_google_calendar_auth.send_reminder_mail",
+        "frappe_appointment.tasks.verify_availability.verify_appointment_group_members_availabililty"
+        ],
     # "hourly": [
     # 	"frappe_appointment.tasks.hourly"
     # ],
