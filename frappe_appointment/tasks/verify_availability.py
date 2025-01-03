@@ -85,6 +85,8 @@ def verify_appointment_group_members_availabililty():
     data = {}
     for appointment_group in appointment_groups:
         appointment_group = frappe.get_doc("Appointment Group", appointment_group.name)
+        if not appointment_group.verify_availability:
+            continue
         event_availability_window = int(appointment_group.event_availability_window) if appointment_group.event_availability_window else 0
         scheduling_on_weekends = appointment_group.enable_scheduling_on_weekends
         members = appointment_group.members
@@ -152,4 +154,7 @@ def send_availability_email(data):
                 </ul>
                 """
         doc = frappe.get_doc("Appointment Group", appointment_group)
-        send_email_template_mail(doc, {"data": html}, "Appointment Group Availability", ["hr@rt.gw"], None)
+        if not doc.email_template or not doc.email_address_to_send:
+            frappe.log_error("Error sending email for appointment group", f"Email template or email address not set for appointment group {appointment_group}", "Appointment Group", appointment_group)
+            continue
+        send_email_template_mail(doc, {"data": html}, doc.email_template, [doc.email_address_to_send], None)

@@ -33,7 +33,11 @@
   "meet_link",
   "response_email_template",
   "section_break_ovbf",
-  "webhook"
+  "webhook",
+  "section_break_pudv",
+  "verify_availability",
+  "email_template",
+  "email_address_to_send"
  ],
  "fields": [
   {
@@ -182,12 +186,35 @@
    "fieldtype": "Link",
    "label": "Event Organizer",
    "options": "User"
+  },
+  {
+   "fieldname": "section_break_pudv",
+   "fieldtype": "Section Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "verify_availability",
+   "fieldtype": "Check",
+   "label": "Verify members' availability everyday"
+  },
+  {
+   "fieldname": "email_template",
+   "fieldtype": "Link",
+   "label": "Email Template for Availability",
+   "mandatory_depends_on": "eval:doc.verify_availability == true;",
+   "options": "Email Template"
+  },
+  {
+   "fieldname": "email_address_to_send",
+   "fieldtype": "Data",
+   "label": "Email Address to send availability details",
+   "mandatory_depends_on": "eval:doc.verify_availability == true;"
   }
  ],
  "has_web_view": 1,
  "is_published_field": "publish_on_website",
  "links": [],
- "modified": "2024-10-17 17:12:58.741993",
+ "modified": "2025-01-02 11:43:20.251886",
  "modified_by": "Administrator",
  "module": "Frappe Appointment",
  "name": "Appointment Group",
