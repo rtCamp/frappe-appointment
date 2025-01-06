@@ -164,7 +164,7 @@ def is_valid_time_slots(
     return False
 
 
-def get_time_slots_for_given_date(appointment_group: object, datetime: str):
+def get_time_slots_for_given_date(appointment_group: object, datetime: datetime):
     date = datetime.date()
     weekday = get_weekday(datetime)
 
