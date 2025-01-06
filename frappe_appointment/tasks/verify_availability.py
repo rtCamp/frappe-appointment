@@ -86,7 +86,7 @@ def send_availability_email(data):
             continue
         min_slot_threshold = doc.min_slot_threshold
         total_slots = sum(data[appointment_group].values())
-        if total_slots > min_slot_threshold:
+        if min_slot_threshold >= 0 and total_slots > min_slot_threshold:
             continue
         job_opening = doc.group_name
         if not doc.email_template or not doc.email_address_to_send:
