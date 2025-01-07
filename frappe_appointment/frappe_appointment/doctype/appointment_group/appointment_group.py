@@ -594,6 +594,14 @@ def is_member_on_leave_or_is_holiday(appointment_group, date):
     Returns:
     bool: True if the date is invalid due to mandatory member leaves or holiday, False otherwise
     """
+
+    # check if erpnext and hrms are installed or not
+    installed_apps = frappe.get_installed_apps()
+    if "erpnext" not in installed_apps:
+        return False
+    if "hrms" not in installed_apps:
+        return False
+
     date_str = date.strftime("%Y-%m-%d")
 
     for member in appointment_group.members:

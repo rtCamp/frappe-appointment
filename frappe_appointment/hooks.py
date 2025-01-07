@@ -162,7 +162,7 @@ override_doctype_class = {
 # Hook on document methods and events
 
 doc_events = {
-    "Leave Application": {
+    "Leave Application": {  # Leave Application is a doctype in HR module, which is not a requirement for this app
         "on_submit": "frappe_appointment.overrides.leave_application_override.on_submit",
         "on_cancel": "frappe_appointment.overrides.leave_application_override.on_cancel_and_on_trash",
         "on_trash": "frappe_appointment.overrides.leave_application_override.on_cancel_and_on_trash",

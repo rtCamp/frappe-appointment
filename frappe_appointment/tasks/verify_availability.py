@@ -10,25 +10,6 @@ from frappe_appointment.frappe_appointment.doctype.appointment_group.appointment
 from frappe_appointment.helpers.email import send_email_template_mail
 
 
-class AvailabilityStatus:
-    HOLIDAY = "Holiday"
-    LEAVE = "Leave"
-    BUSY = "Busy"
-    AVAILABLE = "Available"
-
-    def __init__(self, status, start_time=None, end_time=None):
-        self.status = status
-        self.start_time = start_time
-        self.end_time = end_time
-
-    def __dict__(self):
-        return {
-            "status": self.status,
-            "start_time": self.start_time.isoformat() if isinstance(self.start_time, datetime) else self.start_time,
-            "end_time": self.end_time.isoformat() if isinstance(self.end_time, datetime) else self.end_time,
-        }
-
-
 @frappe.whitelist()
 def update_availability_status_for_appointment_group(appointment_group):
     if isinstance(appointment_group, str):
@@ -96,7 +77,7 @@ def send_availability_email(data):
         total_slots = sum(data[appointment_group].values())
         if min_slot_threshold >= 0 and total_slots > min_slot_threshold:
             continue
-        job_opening = doc.group_name
+        group_name = doc.group_name
         if not doc.email_template or not doc.email_address_to_send:
             frappe.log_error(
                 "Error sending email for appointment group",
@@ -122,7 +103,7 @@ def send_availability_email(data):
             doc,
             {
                 "total_slots": total_slots,
-                "job_opening": job_opening,
+                "group_name": group_name,
                 "daywise_slots_data": daywise_slots_data,
                 "appointment_group_url": appointment_group_url,
                 "min_threshold": min_slot_threshold,
