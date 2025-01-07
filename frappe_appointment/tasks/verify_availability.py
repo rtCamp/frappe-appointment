@@ -110,6 +110,14 @@ def send_availability_email(data):
         for date, slots in data[appointment_group].items():
             daywise_slots_data += f"<li><b>{date}</b>: {slots}</li>"
         daywise_slots_data += "</ul>"
+
+        email_addresses = [doc.email_address_to_send]
+        for member in doc.members:
+            if member.is_mandatory:
+                user = frappe.get_doc("User", member.user)
+                if user.email:
+                    email_addresses.append(user.email)
+
         send_email_template_mail(
             doc,
             {
@@ -120,6 +128,6 @@ def send_availability_email(data):
                 "min_threshold": min_slot_threshold,
             },
             doc.email_template,
-            [doc.email_address_to_send],
+            email_addresses,
             None,
         )
