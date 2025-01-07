@@ -78,6 +78,9 @@ def get_availability_status_for_all_appointment_groups():
 
 
 def verify_appointment_group_members_availabililty():
+    skip_availability_cron = frappe.conf.get("frappe_appointments", {}).get("skip_availability_cron", False)
+    if skip_availability_cron:
+        return
     data = get_availability_status_for_all_appointment_groups()
     send_availability_email(data)
 
