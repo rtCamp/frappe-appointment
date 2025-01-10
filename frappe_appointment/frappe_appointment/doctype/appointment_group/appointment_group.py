@@ -4,6 +4,7 @@
 import datetime
 
 import frappe
+import frappe.utils
 from frappe.utils import (
     add_days,
     add_to_date,
@@ -632,3 +633,52 @@ def is_member_on_leave_or_is_holiday(appointment_group, date):
                         return True
 
     return False
+
+
+@frappe.whitelist()
+def get_appointment_groups_from_doctype(doctype: str) -> str:
+    """Get the appointment group for a given doctype, based on the linked_doctype field.
+
+    Args:
+    doctype (str): Doctype name
+
+    Returns:
+    str: Appointment Group ID
+    """
+    try:
+        appointment_groups = frappe.get_all(
+            APPOINTMENT_GROUP,
+            filters={"linked_doctype": doctype},
+            fields=["name", "route"],
+        )
+    except frappe.DoesNotExistError:
+        return None
+
+    return [
+        {
+            "name": appointment_group.name,
+            "route": frappe.utils.get_url(appointment_group.route, full_address=True),
+        }
+        for appointment_group in appointment_groups
+    ]
+
+
+@frappe.whitelist()
+def get_appointment_group_from_id(appointment_group_id: str) -> object:
+    """Get the appointment group for a given ID.
+
+    Args:
+    appointment_group_id (str): Appointment Group ID
+
+    Returns:
+    object: Appointment Group
+    """
+    try:
+        appointment_group = frappe.get_doc(APPOINTMENT_GROUP, appointment_group_id)
+    except frappe.DoesNotExistError:
+        return None
+
+    return {
+        "name": appointment_group.name,
+        "route": frappe.utils.get_url(appointment_group.route, full_address=True),
+    }

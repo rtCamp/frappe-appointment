@@ -41,7 +41,9 @@
   "email_address_to_send",
   "slots_data_updated_at",
   "section_break_ovbf",
-  "webhook"
+  "webhook",
+  "column_break_lyio",
+  "linked_doctype"
  ],
  "fields": [
   {
@@ -242,12 +244,23 @@
    "hidden": 1,
    "label": "Slots data updated at",
    "read_only": 1
+  },
+  {
+   "fieldname": "column_break_lyio",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "A button to manage appointments with this group will be shown on documents of this doctype.",
+   "fieldname": "linked_doctype",
+   "fieldtype": "Link",
+   "label": "Link with Doctype",
+   "options": "DocType"
   }
  ],
  "has_web_view": 1,
  "is_published_field": "publish_on_website",
  "links": [],
- "modified": "2025-01-07 23:42:51.847927",
+ "modified": "2025-01-09 09:32:31.852514",
  "modified_by": "Administrator",
  "module": "Frappe Appointment",
  "name": "Appointment Group",

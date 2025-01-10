@@ -2,6 +2,7 @@ import datetime
 import json
 
 import frappe
+import frappe.utils
 import requests
 from frappe import _, clear_messages
 from frappe.desk.doctype.event.event import Event
@@ -58,7 +59,7 @@ class EventOverride(Event):
                     queue="long",
                     doc=self,
                     appointment_group=self.appointment_group,
-                    metadata=self.event_info,
+                    metadata=self.event_info if hasattr(self, "event_info") else {},
                 )
 
     def after_insert(self):
@@ -144,10 +145,17 @@ class EventOverride(Event):
             return {"status": True, "message": ""}
 
         try:
-            api_res = requests.post(
-                appointment_group.webhook,
-                data=json.dumps(body, default=datetime_serializer),
-            ).json()
+            try:
+                webhook_function = frappe.get_attr(appointment_group.webhook)
+                if webhook_function:
+                    api_res = webhook_function(body)
+                else:
+                    raise Exception
+            except Exception:
+                api_res = requests.post(
+                    appointment_group.webhook,
+                    data=json.dumps(body, default=datetime_serializer),
+                ).json()
 
             is_exc = False
 
@@ -332,3 +340,83 @@ def check_one_time_schedule(
         )
         if scheduled_events:
             return frappe.throw(_("Event can be scheduled only once."))
+
+
+@frappe.whitelist()
+def get_events_from_doc(doctype, docname, past_events=False):
+    """Get the event details from the given doc
+
+    Args:
+    doctype (str): Doctype name
+    docname (str): Docname
+
+    Returns:
+    dict: Event details
+    """
+    events = set()
+    event_doctype_links = frappe.get_all(
+        "Event DocType Link",
+        filters={"reference_doctype": doctype, "reference_docname": docname},
+        fields=["parent"],
+    )
+    for event_doctype_link in event_doctype_links:
+        events.add(event_doctype_link.parent)
+    events = list(events)
+
+    if not events:
+        return None
+
+    cur_datetime = frappe.utils.now_datetime()
+    filters = {
+        "name": ["in", events],
+    }
+    if not past_events:
+        filters["ends_on"] = [">=", cur_datetime]
+    events_data = frappe.get_all(
+        "Event",
+        filters=filters,
+        fields=["name", "subject", "starts_on", "ends_on", "status"],
+        order_by="starts_on",
+    )
+
+    all_events = {
+        "upcoming": [],
+        "ongoing": [],
+        "past": [],
+    }
+
+    for event in events_data:
+        starts_on = event.get("starts_on")
+        ends_on = event.get("ends_on")
+
+        event["state"] = "upcoming"
+        if event["status"] == "Open":
+            if ends_on < cur_datetime:
+                event["state"] = "past"
+            elif starts_on < cur_datetime:
+                event["state"] = "ongoing"
+        else:
+            event["state"] = "past"
+
+        # if difference between start time and current time is less than 1 day, show the difference in minutes and hours
+        diff = starts_on - cur_datetime
+
+        if diff.days == 0:
+            hours, remainder = divmod(diff.seconds, 3600)
+            minutes, _ = divmod(remainder, 60)
+            if hours == 0:
+                event["starts_on"] = f"in {minutes} minute" + ("s" if minutes > 1 else "")
+        if isinstance(starts_on, datetime.datetime):
+            if cur_datetime.year == starts_on.year:
+                event["starts_on"] = frappe.utils.format_datetime(starts_on, "MMM dd, HH:mm")
+            else:
+                event["starts_on"] = frappe.utils.format_datetime(starts_on, "MMM dd, yyyy, HH:mm")
+
+        if cur_datetime.year == ends_on.year:
+            event["ends_on"] = frappe.utils.format_datetime(ends_on, "MMM dd, HH:mm")
+        else:
+            event["ends_on"] = frappe.utils.format_datetime(ends_on, "MMM dd, yyyy, HH:mm")
+
+        event["url"] = "/app/event/" + event["name"]
+        all_events[event["state"]].append(event)
+    return all_events
