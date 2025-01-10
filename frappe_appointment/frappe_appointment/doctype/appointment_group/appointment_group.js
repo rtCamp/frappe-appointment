@@ -14,7 +14,6 @@ frappe.ui.form.on("Appointment Group", {
   refresh: function (frm) {
     if (!frm.doc.available_slots_data) {
       $(".available-slots-section").remove();
-      return;
     }
     addAvailableSlotsInfo(frm);
     frm.add_custom_button(__("Update Slots Availability"), function () {
@@ -42,8 +41,8 @@ function update_slots_availability(frm) {
 
 function addAvailableSlotsInfo(frm) {
   data = frm.doc.available_slots_data;
-  last_updated = frm.doc.slots_data_updated_at;
   if (!data) return;
+  last_updated = frm.doc.slots_data_updated_at;
   data = JSON.parse(data);
   if (data.length == 0) {
     return;
