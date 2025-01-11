@@ -53,8 +53,16 @@ def get_availability_status_for_all_appointment_groups():
     appointment_groups = frappe.get_all("Appointment Group")
     data = {}
     for appointment_group in appointment_groups:
-        appointment_group = frappe.get_doc("Appointment Group", appointment_group.name)
-        data[appointment_group.name] = get_availability_status_for_appointment_group(appointment_group)
+        try:
+            appointment_group = frappe.get_doc("Appointment Group", appointment_group.name)
+            data[appointment_group.name] = get_availability_status_for_appointment_group(appointment_group)
+        except Exception as e:
+            frappe.log_error(
+                "Error in getting availability status for appointment group",
+                f"Error: {e}",
+                "Appointment Group",
+                appointment_group.name,
+            )
     return data
 
 
