@@ -72,8 +72,8 @@ function addAvailableSlotsInfo(frm) {
     const last_updated_str = frappe.datetime.str_to_user(last_updated);
     html += "<h6>Last Updated: " + last_updated_str + "</h6>";
   }
-  html += "<div class='available-slots-section'>";
+  html += "<div class='available-slots-table overflow-x-scroll'>";
   html += table.prop("outerHTML");
   html += "</div>";
-  frm.dashboard.add_section(html, __("Available Slots"), "available-slots-section overflow-x-scroll");
+  frm.dashboard.add_section(html, __("Available Slots"), "available-slots-section");
 }
