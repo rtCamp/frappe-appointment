@@ -27,6 +27,8 @@ from frappe_appointment.helpers.utils import (
     utc_to_given_time_zone,
 )
 
+ALL_DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+
 
 class AppointmentGroup(WebsiteGenerator):
     website = frappe._dict(
@@ -171,9 +173,9 @@ def get_time_slots_for_given_date(appointment_group: object, datetime: datetime)
 
     date_validation_obj = vaild_date(datetime, appointment_group)
 
-    weekend_availability = check_weekend_availability(
-        appointment_group.enable_scheduling_on_weekends, weekday, date_validation_obj
-    )
+    weekend_availability = check_availability(date_validation_obj, weekday, appointment_group)
+
+    date_validation_obj["available_days"] = weekend_availability["available_days"]
 
     if is_member_on_leave_or_is_holiday(appointment_group, date):
         return get_response_body(
@@ -181,7 +183,7 @@ def get_time_slots_for_given_date(appointment_group: object, datetime: datetime)
             appointment_group=appointment_group,
             date=date,
             date_validation_obj=date_validation_obj,
-            is_invalid_date=not date_validation_obj["is_valid"],
+            is_invalid_date=weekend_availability["is_invalid_date"],
         )
 
     if weekend_availability["is_invalid_date"]:
@@ -251,14 +253,13 @@ def get_time_slots_for_given_date(appointment_group: object, datetime: datetime)
     )
 
 
-def check_weekend_availability(enable_scheduling_on_weekends: bool, weekday: str, date_validation_obj: object):
+def check_availability(date_validation_obj: object, weekday: str, appointment_group: object) -> object:
     """
-    Check if data is valid with a weekend check. If enable_scheduling_on_weekends is True, then the date will be the next available date except on weekends.
+    Check if data is valid based on weekdays in user availability.
 
     Args:
-    enable_scheduling_on_weekends (bool): Boolean to check if scheduling is enabled on weekends.
-    weekday (str): Weekday Name
     date_validation_obj (object): Date Object
+    appointment_group (object): Appointment Group
 
     Returns:
     Object: Object with a valid start date
@@ -268,26 +269,85 @@ def check_weekend_availability(enable_scheduling_on_weekends: bool, weekday: str
         "date_validation_obj": date_validation_obj,
     }
 
-    if enable_scheduling_on_weekends:
+    mandatory_members = [member for member in appointment_group.members if member.is_mandatory]
+    available_days = set(ALL_DAYS)
+
+    for member in mandatory_members:
+        availability = frappe.get_doc("User Appointment Availability", member.user)
+        user_available_days = [day.day for day in availability.appointment_time_slot]
+        available_days = available_days.intersection(set(user_available_days))
+
+    res["available_days"] = available_days
+
+    if not date_validation_obj["is_valid"]:
         return res
 
-    if not res["is_invalid_date"]:
-        res["is_invalid_date"] = weekday == "Saturday" or weekday == "Sunday"
+    if not available_days:
+        res["is_slots_available"] = False
+        res["is_invalid_date"] = True
+        return res
 
-    start_day_week_day = get_weekday(date_validation_obj["valid_start_date"])
-
-    day_to_add = 0
-
-    if start_day_week_day == "Saturday":
-        day_to_add = 2
-    elif start_day_week_day == "Sunday":
-        day_to_add = 1
-
-    date_validation_obj["valid_start_date"] = add_days(date_validation_obj["valid_start_date"], day_to_add)
-
-    res["date_validation_obj"] = date_validation_obj
+    if weekday not in available_days:
+        res["is_invalid_date"] = True
+        next_available_day = get_next_available_day(weekday, available_days)
+        prev_available_day = get_previous_available_day(weekday, available_days)
+        if not next_available_day:
+            res["is_slots_available"] = False
+            return res
+        next_available_date = add_days(date_validation_obj["next_valid_date"], next_available_day)
+        if next_available_date > date_validation_obj["valid_end_date"]:
+            next_available_date = date_validation_obj["valid_end_date"]
+        prev_available_date = add_days(date_validation_obj["prev_valid_date"], -prev_available_day)
+        if prev_available_date < date_validation_obj["valid_start_date"]:
+            prev_available_date = date_validation_obj["valid_start_date"]
+        date_validation_obj["next_valid_date"] = next_available_date
+        date_validation_obj["prev_valid_date"] = prev_available_date
 
     return res
+
+
+def get_next_available_day(weekday: str, available_days: list) -> datetime:
+    """
+    Get the next available day from the given day.
+
+    Args:
+    weekday (str): Weekday
+    available_days (list): List of available days
+
+    Returns:
+    int: Number of days to the next available day
+    """
+    days = ALL_DAYS
+    current_day = days.index(weekday)
+
+    for i in range(1, 7):
+        next_day = days[(current_day + i) % 7]
+        if next_day in available_days:
+            return i
+
+    return None
+
+
+def get_previous_available_day(weekday: str, available_days: list) -> datetime:
+    """
+    Get the previous available day from the given day.
+
+    Args:
+    weekday (str): Weekday
+    available_days (list): List of available days
+
+    Returns:
+    int: Number of days to the previous available day
+    """
+    days = ALL_DAYS
+    current_day = days.index(weekday)
+
+    for i in range(1, 7):
+        previous_day = days[(current_day - i) % 7]
+        if previous_day in available_days:
+            return i
+
+    return None
 
 
 def get_response_body(
@@ -327,7 +387,9 @@ def get_response_body(
         "total_slots_for_day": len(avaiable_time_slot_for_day),
         "valid_start_date": date_validation_obj["valid_start_date"],
         "valid_end_date": date_validation_obj["valid_end_date"],
-        "enable_scheduling_on_weekends": appointment_group.enable_scheduling_on_weekends,
+        "next_valid_date": date_validation_obj["next_valid_date"],
+        "prev_valid_date": date_validation_obj["prev_valid_date"],
+        "available_days": date_validation_obj["available_days"] if "available_days" in date_validation_obj else [],
         "is_invalid_date": is_invalid_date,
     }
 
@@ -403,6 +465,8 @@ def vaild_date(date: datetime, appointment_group: object) -> object:
             "is_valid": False,
             "valid_start_date": start_date,
             "valid_end_date": end_date,
+            "next_valid_date": start_date,
+            "prev_valid_date": start_date,
         }
 
     if int(appointment_group.event_availability_window) > 0 and end_date < date:
@@ -410,12 +474,16 @@ def vaild_date(date: datetime, appointment_group: object) -> object:
             "is_valid": False,
             "valid_start_date": start_date,
             "valid_end_date": end_date,
+            "next_valid_date": end_date,
+            "prev_valid_date": start_date,
         }
 
     return {
         "is_valid": True,
         "valid_start_date": start_date,
         "valid_end_date": end_date,
+        "next_valid_date": date,
+        "prev_valid_date": date,
     }
 
 
