@@ -72,6 +72,12 @@ def get_employee_google_calendar(employee: str):
     """
     Get Google Calendar for the employee.
     """
+    installed_apps = frappe.get_installed_apps()
+    if "erpnext" not in installed_apps:
+        return
+    if "hrms" not in installed_apps:
+        return
+
     user_email = frappe.db.get_value("Employee", employee, "user_id")
 
     if not user_email:

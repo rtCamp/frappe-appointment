@@ -26,7 +26,7 @@ fixtures = [
 
 # include js, css files in header of desk.html
 # app_include_css = "/assets/frappe_appointment/css/frappe_appointment.css"
-# app_include_js = "/assets/frappe_appointment/js/frappe_appointment.js"
+app_include_js = "/assets/frappe_appointment/js/appointment_link.js"
 
 # include js, css files in header of web template
 # web_include_css = "/assets/frappe_appointment/css/frappe_appointment.css"
@@ -73,6 +73,33 @@ fixtures = [
 # 	"methods": "frappe_appointment.utils.jinja_methods",
 # 	"filters": "frappe_appointment.utils.jinja_filters"
 # }
+
+fixtures = [
+    {
+        "dt": "Custom Field",
+        "filters": [
+            [
+                "module",
+                "in",
+                {
+                    "Frappe Appointment",
+                },
+            ]
+        ],
+    },
+    {
+        "dt": "Property Setter",
+        "filters": [
+            [
+                "module",
+                "in",
+                {
+                    "Frappe Appointment",
+                },
+            ]
+        ],
+    },
+]
 
 # Installation
 # ------------
@@ -127,7 +154,7 @@ fixtures = [
 override_doctype_class = {
     "Event": "frappe_appointment.overrides.event_override.EventOverride",
     "Google Calendar": "frappe_appointment.overrides.google_calendar_override.GoogleCalendarOverride",
-    "Customize Form": "frappe_appointment.overrides.customize_form_override.CareersOverrideCustomizeForm",
+    "Customize Form": "frappe_appointment.overrides.customize_form_override.AppointmentOverrideCustomizeForm",
 }
 
 # Document Events
@@ -135,7 +162,7 @@ override_doctype_class = {
 # Hook on document methods and events
 
 doc_events = {
-    "Leave Application": {
+    "Leave Application": {  # Leave Application is a doctype in HR module, which is not a requirement for this app
         "on_submit": "frappe_appointment.overrides.leave_application_override.on_submit",
         "on_cancel": "frappe_appointment.overrides.leave_application_override.on_cancel_and_on_trash",
         "on_trash": "frappe_appointment.overrides.leave_application_override.on_cancel_and_on_trash",
@@ -149,7 +176,10 @@ scheduler_events = {
     # "all": [
     # 	"frappe_appointment.tasks.all"
     # ],
-    "daily": ["frappe_appointment.tasks.reminder_google_calendar_auth.send_reminder_mail"],
+    "daily": [
+        "frappe_appointment.tasks.reminder_google_calendar_auth.send_reminder_mail",
+        "frappe_appointment.tasks.verify_availability.verify_appointment_group_members_availabililty",
+    ],
     # "hourly": [
     # 	"frappe_appointment.tasks.hourly"
     # ],

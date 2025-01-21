@@ -12,13 +12,19 @@ from googleapiclient.errors import HttpError
 
 
 def insert_event_in_google_calendar_override(
-    doc, method=None, mute_message=False, success_msg="Event Synced with Google Calendar."
+    doc,
+    method=None,
+    mute_message=False,
+    success_msg=None,
 ):
     """
     Insert Events in Google Calendar if sync_with_google_calendar is checked.
     """
     if not doc.sync_with_google_calendar or not frappe.db.exists("Google Calendar", {"name": doc.google_calendar}):
         return
+
+    if not success_msg:
+        success_msg = _("Event Synced with Google Calendar.")
 
     google_calendar, account = get_google_calendar_object(doc.google_calendar)
 

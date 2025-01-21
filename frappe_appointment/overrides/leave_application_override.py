@@ -7,6 +7,12 @@ from frappe_appointment.helpers.out_of_office import (
 
 
 def on_submit(doc, method=None):
+    installed_apps = frappe.get_installed_apps()
+    if "erpnext" not in installed_apps:
+        return
+    if "hrms" not in installed_apps:
+        return
+
     if doc.status == "Approved":
         frappe.enqueue(
             create_out_of_office_google_calander_event,
@@ -19,6 +25,12 @@ def on_submit(doc, method=None):
 
 
 def on_cancel_and_on_trash(doc, method=None):
+    installed_apps = frappe.get_installed_apps()
+    if "erpnext" not in installed_apps:
+        return
+    if "hrms" not in installed_apps:
+        return
+
     frappe.enqueue(
         delete_out_of_office_google_calendar_event,
         queue="long",
