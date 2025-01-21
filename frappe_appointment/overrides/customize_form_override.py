@@ -1,7 +1,7 @@
 from frappe.custom.doctype.customize_form.customize_form import CustomizeForm
 
 
-class CareersOverrideCustomizeForm(CustomizeForm):
+class AppointmentOverrideCustomizeForm(CustomizeForm):
     """Need of override
         1. Frappe, by default, does not allow updating the core doctype properties(Like req,hidden etc). Given overwrite allows importing the defined profile in customization.
 

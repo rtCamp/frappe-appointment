@@ -18,7 +18,6 @@
   "publish_on_website",
   "route",
   "column_break_4pgb",
-  "enable_scheduling_on_weekends",
   "ignore_all_day_events",
   "section_break_3djy",
   "duration_for_event",
@@ -32,8 +31,18 @@
   "section_break_jbhn",
   "meet_link",
   "response_email_template",
+  "section_break_pudv",
+  "send_email_alerts",
+  "min_slot_threshold",
+  "available_slots_data",
+  "column_break_hpry",
+  "email_template",
+  "email_address_to_send",
+  "slots_data_updated_at",
   "section_break_ovbf",
-  "webhook"
+  "webhook",
+  "column_break_lyio",
+  "linked_doctype"
  ],
  "fields": [
   {
@@ -132,12 +141,6 @@
    "options": "Email Template"
   },
   {
-   "default": "0",
-   "fieldname": "enable_scheduling_on_weekends",
-   "fieldtype": "Check",
-   "label": "Enable Scheduling on Weekends"
-  },
-  {
    "fieldname": "section_break_v4rw",
    "fieldtype": "Section Break"
   },
@@ -182,12 +185,75 @@
    "fieldtype": "Link",
    "label": "Event Organizer",
    "options": "User"
+  },
+  {
+   "fieldname": "section_break_pudv",
+   "fieldtype": "Section Break",
+   "label": "Availability Alerts"
+  },
+  {
+   "description": "The template which should be used to send alerts. The following variables will be available:\n<br><br>\n<pre>- total_slots: Number of slots available throughout the event availability window.\n- group_name: The name of the appointment group.\n- daywise_slots_data: A dictionary containing the number of slots available for each day in the event availability window.\n- appointment_group_url: The URL to the appointment group.\n- min_threshold: The minimum number of slots that must be available to send this alert.</pre>",
+   "fieldname": "email_template",
+   "fieldtype": "Link",
+   "label": "Email Template",
+   "mandatory_depends_on": "eval:doc.verify_availability == true;",
+   "options": "Email Template"
+  },
+  {
+   "description": "Alerts will be sent to this email address along with email addresses of all mandatory members.",
+   "fieldname": "email_address_to_send",
+   "fieldtype": "Data",
+   "label": "Email Address",
+   "mandatory_depends_on": "eval:doc.verify_availability == true;"
+  },
+  {
+   "default": "2",
+   "description": "Emails will only be sent if total available slots are less than this value. Setting to -1 will always send alerts.  (Defaults to 2)",
+   "fieldname": "min_slot_threshold",
+   "fieldtype": "Int",
+   "label": "Minimum Threshold",
+   "mandatory_depends_on": "eval:doc.verify_availability == true;"
+  },
+  {
+   "default": "0",
+   "fieldname": "send_email_alerts",
+   "fieldtype": "Check",
+   "label": "Send email alerts"
+  },
+  {
+   "fieldname": "available_slots_data",
+   "fieldtype": "JSON",
+   "hidden": 1,
+   "label": "Available slots data",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_hpry",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "slots_data_updated_at",
+   "fieldtype": "Datetime",
+   "hidden": 1,
+   "label": "Slots data updated at",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_lyio",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "A button to manage appointments with this group will be shown on documents of this doctype.",
+   "fieldname": "linked_doctype",
+   "fieldtype": "Link",
+   "label": "Link with Doctype",
+   "options": "DocType"
   }
  ],
  "has_web_view": 1,
  "is_published_field": "publish_on_website",
  "links": [],
- "modified": "2024-10-17 17:12:58.741993",
+ "modified": "2025-01-20 11:38:43.494879",
  "modified_by": "Administrator",
  "module": "Frappe Appointment",
  "name": "Appointment Group",

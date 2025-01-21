@@ -26,17 +26,26 @@ const months = [
   "December",
 ];
 
-let days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+let days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 let todaySlotsData = {};
+
+function getDay(date) {
+  // get day of the week from date, considering Monday as the first day of the week
+  let day = date.getDay() - 1;
+  if (day == -1) {
+    day = 6;
+  }
+  return day;
+}
 
 // HTML Updates
 const manipulate = () => {
   /**
    * This function will generate the date element of the given month based on the year and month values.
    */
-  let dayone = new Date(year, month, 1).getDay();
+  let dayone = getDay(new Date(year, month, 1));
   let lastdate = new Date(year, month + 1, 0).getDate();
-  let dayend = new Date(year, month, lastdate).getDay();
+  let dayend = getDay(new Date(year, month, lastdate));
 
   let monthlastdate = new Date(year, month, 0).getDate();
 
@@ -68,11 +77,10 @@ const get_date_on_click = () => {
   dates.forEach((date) => {
     const selected_date = new Date(year, month + get_day_increment(date), parseInt(date.innerHTML));
 
-    // Weekend Check
-    if (
-      !todaySlotsData.enable_scheduling_on_weekends &&
-      (selected_date.getDay() == "0" || selected_date.getDay() == "6")
-    ) {
+    const available_days = todaySlotsData.available_days.map((day) => days.indexOf(day));
+
+    // Check is day is available
+    if (!available_days.includes(getDay(selected_date))) {
       date.classList.add("inactive");
       return;
     }
@@ -168,11 +176,11 @@ function update_calander() {
   set_month_arrow_state();
 
   const date = new Date(todaySlotsData.date);
-  today_day.innerHTML = `${days[date.getDay()]} ${date.getDate()}`;
+  today_day.innerHTML = `${days[getDay(date)]} ${date.getDate()}`;
 }
 
 // API Calls
-function get_time_slots(re_call = true) {
+function get_time_slots(re_call = true, date_change_behavior = "next") {
   show_loader();
   frappe
     .call("frappe_appointment.frappe_appointment.doctype.appointment_group.appointment_group.get_time_slots_for_day", {
@@ -186,7 +194,11 @@ function get_time_slots(re_call = true) {
       }
 
       if (r.message.is_invalid_date) {
-        date = new Date(r.message.valid_start_date);
+        if (date_change_behavior == "next") {
+          date = new Date(r.message.next_valid_date);
+        } else {
+          date = new Date(r.message.prev_valid_date);
+        }
         setURLSearchParam("date", get_date_str(date));
         year = date.getFullYear();
         month = date.getMonth();
@@ -199,25 +211,6 @@ function get_time_slots(re_call = true) {
         return;
       }
 
-      if (!r.message.enable_scheduling_on_weekends) {
-        let date = new Date(getURLSearchParam("date"));
-        let is_weekend = false;
-        if (date.getDay() === 6) {
-          // Saturday
-          date.setDate(date.getDate() + 2);
-          is_weekend = true;
-        } else if (date.getDay() === 0) {
-          // Sunday
-          date.setDate(date.getDate() + 1);
-          is_weekend = true;
-        }
-        if (is_weekend) {
-          setURLSearchParam("date", get_date_str(date));
-          get_time_slots(true);
-          return;
-        }
-      }
-
       setdaySlotsData(r.message);
     });
 }
@@ -228,8 +221,9 @@ function setdaySlotsData(daySlotsData = false) {
       all_available_slots_for_data: [],
       appointment_group_id: get_appointment_group(),
       date: getURLSearchParam("date"),
-      valid_start_date: new Date().toUTCString(),
-      valid_end_date: new Date().toUTCString(),
+      valid_start_date: todaySlotsData?.valid_start_date || new Date().toUTCString(),
+      valid_end_date: todaySlotsData?.valid_end_date || new Date().toUTCString(),
+      available_days: todaySlotsData?.available_days || [],
     };
   }
   todaySlotsData = daySlotsData;
@@ -436,7 +430,7 @@ prenexIcons.forEach((icon) => {
     year = date.getFullYear();
     month = date.getMonth();
     setURLSearchParam("date", get_date_str(date));
-    get_time_slots();
+    get_time_slots(true, icon.id === "calendar-prev" ? "prev" : "next");
     cancel_button.click();
   });
 });
