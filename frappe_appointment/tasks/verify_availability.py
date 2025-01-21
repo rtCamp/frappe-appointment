@@ -29,7 +29,7 @@ def get_availability_status_for_appointment_group(appointment_group, publish_rea
     event_availability_window = (
         int(appointment_group.event_availability_window) if appointment_group.event_availability_window else 1
     )
-    for _i in range(event_availability_window):
+    for _ in range(event_availability_window):
         if appointment_group.enable_scheduling_on_weekends or current_date.weekday() < 5:
             available_slots = get_time_slots_for_given_date(appointment_group, current_date)
             data[current_date.date().isoformat()] = available_slots["total_slots_for_day"]

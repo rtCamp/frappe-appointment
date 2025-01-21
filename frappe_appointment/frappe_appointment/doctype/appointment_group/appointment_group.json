@@ -208,7 +208,7 @@
   },
   {
    "default": "2",
-   "description": "Emails will only be send if total available slots are less than this value. Setting to -1 will always send alerts.  (Defaults to 2)",
+   "description": "Emails will only be sent if total available slots are less than this value. Setting to -1 will always send alerts.  (Defaults to 2)",
    "fieldname": "min_slot_threshold",
    "fieldtype": "Int",
    "label": "Minimum Threshold",
@@ -253,7 +253,7 @@
  "has_web_view": 1,
  "is_published_field": "publish_on_website",
  "links": [],
- "modified": "2025-01-14 18:21:58.070404",
+ "modified": "2025-01-20 11:38:43.494879",
  "modified_by": "Administrator",
  "module": "Frappe Appointment",
  "name": "Appointment Group",
