@@ -152,6 +152,9 @@ class EventOverride(Event):
                 else:
                     raise Exception
             except Exception:
+                # clear all previous logs
+                clear_messages()
+
                 api_res = requests.post(
                     appointment_group.webhook,
                     data=json.dumps(body, default=datetime_serializer),
