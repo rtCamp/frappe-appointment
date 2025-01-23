@@ -152,6 +152,9 @@ class EventOverride(Event):
                 else:
                     raise Exception
             except Exception:
+                # clear all previous logs
+                clear_messages()
+
                 api_res = requests.post(
                     appointment_group.webhook,
                     data=json.dumps(body, default=datetime_serializer),
@@ -240,9 +243,6 @@ def create_event_for_appointment_group(
 
     if not is_valid_time_slots(appointment_group_id, date, user_timezone_offset, start_time, end_time):
         return frappe.throw(_("The slot is not available. Please try to book again!"))
-
-    starts_on = utc_to_sys_time(start_time)
-    ends_on = utc_to_sys_time(end_time)
 
     starts_on = utc_to_sys_time(start_time)
     ends_on = utc_to_sys_time(end_time)
