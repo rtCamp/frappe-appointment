@@ -1,6 +1,8 @@
 import uuid
 
 import frappe
+import pytz
+from frappe.boot import get_system_timezone
 from frappe.utils.data import get_datetime
 from ics import Calendar, Event
 from ics.grammar.parse import ContentLine
@@ -16,9 +18,12 @@ def add_ics_file_in_attachment(event):
     event_object = Event()
     event_object.name = event.subject
 
+    system_timezone = pytz.timezone(get_system_timezone())
+
     # Convert strings to datetime objects
-    event_object.begin = convert_datetime_to_utc(get_datetime(event.starts_on))
-    event_object.end = convert_datetime_to_utc(get_datetime(event.ends_on))
+    event_object.begin = convert_datetime_to_utc(system_timezone.localize(get_datetime(event.starts_on)))
+    event_object.end = convert_datetime_to_utc(system_timezone.localize(get_datetime(event.ends_on)))
+
     event_object.uid = str(uuid.uuid4())
     event_object.description = event.description
 
@@ -39,8 +44,7 @@ def add_ics_file_in_attachment(event):
     # Convert the calendar to a string
     ics_content = calendar_object.serialize()
     ics_content = ics_content.replace(
-        "PRODID:ics.py - http://git.io/lLljaA",
-        "PRODID:-//Frappe Appointment//Frappe Appointments Events//EN",
+        "PRODID:ics.py - http://git.io/lLljaA", "PRODID:-//Frappe Appointment//Frappe Appointments Events//EN"
     )
 
     attached_file = frappe.get_doc(

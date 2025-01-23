@@ -243,9 +243,6 @@ def create_event_for_appointment_group(
 
     starts_on = utc_to_sys_time(start_time)
     ends_on = utc_to_sys_time(end_time)
-
-    starts_on = utc_to_sys_time(start_time)
-    ends_on = utc_to_sys_time(end_time)
     reschedule = event_info.get("reschedule", False)
 
     appointment_group = frappe.get_last_doc(APPOINTMENT_GROUP, filters={"route": "appointment/" + appointment_group_id})
