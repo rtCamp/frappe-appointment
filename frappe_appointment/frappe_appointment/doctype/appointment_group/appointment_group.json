@@ -256,13 +256,13 @@
    "fieldname": "meet_provider",
    "fieldtype": "Select",
    "label": "Meet Provider",
-   "options": "Custom\nZoom"
+   "options": "None\nCustom\nZoom\nGoogle Meet"
   }
  ],
  "has_web_view": 1,
  "is_published_field": "publish_on_website",
  "links": [],
- "modified": "2025-01-22 11:15:23.326734",
+ "modified": "2025-01-27 17:35:17.949395",
  "modified_by": "Administrator",
  "module": "Frappe Appointment",
  "name": "Appointment Group",
