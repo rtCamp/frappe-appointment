@@ -18,6 +18,11 @@ class GoogleCalendarOverride(GoogleCalendar):
         else:
             self.custom_is_google_calendar_authorized = False
 
+        if self.custom_zoom_authorization_code and self.custom_zoom_refresh_token:
+            self.custom_is_zoom_authorized = True
+        else:
+            self.custom_is_zoom_authorized = False
+
 
 @frappe.whitelist()
 def google_callback(code=None):

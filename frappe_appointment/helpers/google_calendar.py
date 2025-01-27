@@ -1,3 +1,5 @@
+import json
+
 import frappe
 from frappe import _
 from frappe.integrations.doctype.google_calendar.google_calendar import (
@@ -47,15 +49,32 @@ def insert_event_in_google_calendar_override(
     if doc.repeat_on:
         event.update({"recurrence": repeat_on_to_google_calendar_recurrence_rule(doc)})
 
-    if doc.appointment_group and doc.appointment_group.meet_link:
-        event.update({"location": doc.appointment_group.meet_link})
+    if doc.appointment_group and doc.custom_meet_link:
+        event.update({"location": doc.custom_meet_link})
 
     event.update({"attendees": get_attendees(doc)})
 
     conference_data_version = 0
 
-    if doc.add_video_conferencing:
+    if doc.custom_meeting_provider == "Google Meet":
         event.update({"conferenceData": get_conference_data(doc)})
+        conference_data_version = 1
+    elif doc.custom_meeting_provider == "Zoom":
+        password = json.loads(doc.custom_meet_data).get("password")
+        event.update(
+            {
+                "conferenceData": {
+                    "conferenceSolution": {"key": {"type": "addOn"}, "name": "Zoom"},
+                    "entryPoints": [
+                        {
+                            "entryPointType": "video",
+                            "passcode": password,
+                            "uri": doc.custom_meet_link,
+                        }
+                    ],
+                }
+            }
+        )
         conference_data_version = 1
 
     try:
@@ -75,10 +94,23 @@ def insert_event_in_google_calendar_override(
             doc.name,
             {
                 "google_calendar_event_id": event.get("id"),
-                "google_meet_link": event.get("hangoutLink"),
             },
             update_modified=False,
         )
+
+        if doc.custom_meeting_provider == "Google Calendar":
+            frappe.db.set_value(
+                "Event",
+                doc.name,
+                {
+                    "google_meet_link": event.get("hangoutLink"),
+                    "custom_meeting_provider": "Google Meet",
+                    "custom_meet_link": event.get("hangoutLink"),
+                    "custom_meet_data": json.dumps(event.get("conferenceData", {}), indent=4),
+                    "description": f"{doc.description or ''}\nMeet Link: {event.get('hangoutLink')}",
+                },
+                update_modified=False,
+            )
 
         if not mute_message:
             frappe.msgprint(success_msg)

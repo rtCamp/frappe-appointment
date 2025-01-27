@@ -1,0 +1,66 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2025-01-22 10:24:15.252171",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "zoom_settings_section",
+  "enable_zoom",
+  "zoom_client_id",
+  "zoom_client_secret",
+  "column_break_wtbw"
+ ],
+ "fields": [
+  {
+   "fieldname": "zoom_settings_section",
+   "fieldtype": "Section Break",
+   "label": "Zoom Settings"
+  },
+  {
+   "default": "0",
+   "fieldname": "enable_zoom",
+   "fieldtype": "Check",
+   "label": "Enable Zoom"
+  },
+  {
+   "fieldname": "column_break_wtbw",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "zoom_client_id",
+   "fieldtype": "Data",
+   "label": "Client ID",
+   "mandatory_depends_on": "enable_zoom"
+  },
+  {
+   "fieldname": "zoom_client_secret",
+   "fieldtype": "Password",
+   "label": "Client Secret",
+   "mandatory_depends_on": "enable_zoom"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "issingle": 1,
+ "links": [],
+ "modified": "2025-01-22 10:31:44.550321",
+ "modified_by": "Administrator",
+ "module": "Frappe Appointment",
+ "name": "Appointment Settings",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}
