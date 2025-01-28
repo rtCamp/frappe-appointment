@@ -81,7 +81,7 @@ def create_meeting(
     if not user_email:
         frappe.throw(
             frappe._(
-                "Please set Zoom User Email in <a href='/app/google-calendar/{google_calendar}'>Google Calendar</a>."
+                f"Please set Zoom User Email in <a href='/app/google-calendar/{google_calendar}'>Google Calendar</a>."
             )
         )
 
