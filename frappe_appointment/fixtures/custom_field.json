@@ -179,7 +179,7 @@
   "columns": 0,
   "default": null,
   "depends_on": null,
-  "description": null,
+  "description": "Zoom meetings will be scheduled using the zoom account for this email address.",
   "docstatus": 0,
   "doctype": "Custom Field",
   "dt": "Google Calendar",
