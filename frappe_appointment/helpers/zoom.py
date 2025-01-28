@@ -36,7 +36,6 @@ def reauthorize_zoom():
         frappe.throw(response["error"], response["reason"])
 
     access_token = response["access_token"]
-    # refresh_token = response["refresh_token"]
 
     zoom_settings.reload()
     zoom_settings.access_token = access_token
@@ -140,7 +139,7 @@ def update_meeting(
         return True
     res = response.json()
     if "code" in res and res["code"] == 124:
-        access_token = reauthorize_zoom(google_calendar)
+        access_token = reauthorize_zoom()
         headers = {"Authorization": f"Bearer {access_token}"}
         response = requests.patch(f"https://api.zoom.us/v2/meetings/{meeting_id}", json=data, headers=headers)
         if response.ok:

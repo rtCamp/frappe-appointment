@@ -55,6 +55,13 @@ class AppointmentGroup(WebsiteGenerator):
                         "Please set Zoom Account ID, Client ID and Secret in <a href='/app/zoom-settings'>Zoom Settings</a>."
                     )
                 )
+            g_calendar = frappe.get_doc("Google Calendar", self.event_creator)
+            if not g_calendar.custom_zoom_user_email:
+                return frappe.throw(
+                    frappe._(
+                        f"Please set Zoom User Email in <a href='/app/google-calendar/{self.event_creator}'>Google Calendar</a>."
+                    )
+                )
 
     def validate(self):
         self.validate_zoom()
