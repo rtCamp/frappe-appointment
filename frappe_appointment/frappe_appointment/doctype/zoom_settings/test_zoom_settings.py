@@ -5,5 +5,5 @@
 from frappe.tests.utils import FrappeTestCase
 
 
-class TestAppointmentSettings(FrappeTestCase):
+class TestZoomSettings(FrappeTestCase):
     pass

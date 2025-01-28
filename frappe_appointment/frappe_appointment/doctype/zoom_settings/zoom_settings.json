@@ -7,9 +7,12 @@
  "field_order": [
   "zoom_settings_section",
   "enable_zoom",
-  "zoom_client_id",
-  "zoom_client_secret",
-  "column_break_wtbw"
+  "account_id",
+  "client_id",
+  "client_secret",
+  "column_break_wtbw",
+  "section_break_xzxx",
+  "access_token"
  ],
  "fields": [
   {
@@ -28,13 +31,29 @@
    "fieldtype": "Column Break"
   },
   {
-   "fieldname": "zoom_client_id",
+   "fieldname": "section_break_xzxx",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "access_token",
+   "fieldtype": "Password",
+   "hidden": 1,
+   "label": "Access Token"
+  },
+  {
+   "fieldname": "account_id",
+   "fieldtype": "Data",
+   "label": "Account ID",
+   "mandatory_depends_on": "enable_zoom"
+  },
+  {
+   "fieldname": "client_id",
    "fieldtype": "Data",
    "label": "Client ID",
    "mandatory_depends_on": "enable_zoom"
   },
   {
-   "fieldname": "zoom_client_secret",
+   "fieldname": "client_secret",
    "fieldtype": "Password",
    "label": "Client Secret",
    "mandatory_depends_on": "enable_zoom"
@@ -43,10 +62,10 @@
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2025-01-22 10:31:44.550321",
+ "modified": "2025-01-28 13:09:43.959790",
  "modified_by": "Administrator",
  "module": "Frappe Appointment",
- "name": "Appointment Settings",
+ "name": "Zoom Settings",
  "owner": "Administrator",
  "permissions": [
   {

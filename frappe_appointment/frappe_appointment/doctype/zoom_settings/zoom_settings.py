@@ -5,5 +5,5 @@
 from frappe.model.document import Document
 
 
-class AppointmentSettings(Document):
+class ZoomSettings(Document):
     pass

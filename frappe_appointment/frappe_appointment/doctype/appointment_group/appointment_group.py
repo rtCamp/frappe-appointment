@@ -42,21 +42,21 @@ class AppointmentGroup(WebsiteGenerator):
 
     def validate_zoom(self):
         if self.meet_provider == "Zoom":
-            ap_settings = frappe.get_single("Appointment Settings")
+            ap_settings = frappe.get_single("Zoom Settings")
             if not ap_settings.enable_zoom:
                 return frappe.throw(
                     frappe._(
-                        "Zoom is not enabled. Please enable it from <a href='/app/appointment-settings'>Appointment Settings</a>."
+                        "Zoom is not enabled. Please enable it from <a href='/app/zoom-settings'>Zoom Settings</a>."
                     )
                 )
-            if not ap_settings.zoom_client_id or not ap_settings.get_password("zoom_client_secret"):
+            if not ap_settings.client_id or not ap_settings.get_password("client_secret") or not ap_settings.account_id:
                 return frappe.throw(
                     frappe._(
-                        "Please set Zoom Client ID and Secret in <a href='/app/appointment-settings'>Appointment Settings</a>."
+                        "Please set Zoom Account ID, Client ID and Secret in <a href='/app/zoom-settings'>Zoom Settings</a>."
                     )
                 )
             g_calendar = frappe.get_doc("Google Calendar", self.event_creator)
-            if not g_calendar.custom_zoom_authorization_code or not g_calendar.custom_zoom_refresh_token:
+            if not g_calendar.custom_is_zoom_authorized:
                 return frappe.throw(frappe._("Please authorize Zoom first for the Google Calendar."))
 
     def validate(self):
