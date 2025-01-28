@@ -171,4 +171,6 @@ def delete_meeting(google_calendar: str, meeting_id):
         if response.ok:
             return True
         res = response.json()
+    if "code" in res and res["code"] == 3001:  # Meeting not found
+        return True
     raise Exception(res)
