@@ -18,6 +18,7 @@ def insert_event_in_google_calendar_override(
     method=None,
     mute_message=False,
     success_msg=None,
+    update_doc=True,
 ):
     """
     Insert Events in Google Calendar if sync_with_google_calendar is checked.
@@ -64,7 +65,11 @@ def insert_event_in_google_calendar_override(
         event.update(
             {
                 "conferenceData": {
-                    "conferenceSolution": {"key": {"type": "addOn"}, "name": "Zoom"},
+                    "conferenceSolution": {
+                        "key": {"type": "addOn"},
+                        "name": "Zoom Meeting",
+                        "iconUri": "https://lh3.googleusercontent.com/pw/AM-JKLUkiyTEgH-6DiQP85RGtd_BORvAuFnS9katNMgwYQBJUTiDh12qtQxMJFWYH2Dj30hNsNUrr-kzKMl7jX-Qd0FR7JmVSx-Fhruf8xTPPI-wdsMYez6WJE7tz7KmqsORKBEnBTiILtMJXuMvphqKdB9X=s128-no",
+                    },
                     "entryPoints": [
                         {
                             "entryPointType": "video",
@@ -89,33 +94,48 @@ def insert_event_in_google_calendar_override(
             .execute()
         )
 
-        frappe.db.set_value(
-            "Event",
-            doc.name,
-            {
-                "google_calendar_event_id": event.get("id"),
-            },
-            update_modified=False,
-        )
-
-        if doc.custom_meeting_provider == "Google Calendar":
+        if update_doc:
             frappe.db.set_value(
                 "Event",
                 doc.name,
                 {
-                    "google_meet_link": event.get("hangoutLink"),
-                    "custom_meeting_provider": "Google Meet",
-                    "custom_meet_link": event.get("hangoutLink"),
-                    "custom_meet_data": json.dumps(event.get("conferenceData", {}), indent=4),
-                    "description": f"{doc.description or ''}\nMeet Link: {event.get('hangoutLink')}",
+                    "google_calendar_event_id": event.get("id"),
                 },
                 update_modified=False,
             )
 
+            if doc.custom_meeting_provider == "Google Meet":
+                frappe.db.set_value(
+                    "Event",
+                    doc.name,
+                    {
+                        "google_meet_link": event.get("hangoutLink"),
+                        "custom_meet_link": event.get("hangoutLink"),
+                        "custom_meet_data": json.dumps(event.get("conferenceData", {}), indent=4),
+                        "description": f"{doc.description or ''}\nMeet Link: {event.get('hangoutLink')}",
+                    },
+                    update_modified=False,
+                )
+        else:
+            rtn_dict = {
+                "google_calendar_event_id": event.get("id"),
+            }
+            if doc.custom_meeting_provider == "Google Meet":
+                rtn_dict.update(
+                    {
+                        "google_meet_link": event.get("hangoutLink"),
+                        "custom_meet_link": event.get("hangoutLink"),
+                        "custom_meet_data": json.dumps(event.get("conferenceData", {}), indent=4),
+                        "description": f"{doc.description or ''}\nMeet Link: {event.get('hangoutLink')}",
+                    }
+                )
+
         if not mute_message:
             frappe.msgprint(success_msg)
 
-        return event.get("id")
+        if update_doc:
+            return event.get("id")
+        return event.get("id"), rtn_dict
     except HttpError as err:
         frappe.throw(
             _("Google Calendar - Could not insert event in Google Calendar {0}, error code {1}.").format(

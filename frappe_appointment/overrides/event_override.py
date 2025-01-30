@@ -63,22 +63,27 @@ class EventOverride(Event):
 
     def before_save(self):
         super().before_save()
+        if self.is_new():
+            _, updates = insert_event_in_google_calendar_override(self, update_doc=False)
+            for key, value in updates.items():
+                self.set(key, value)
         self.pulled_from_google_calendar = True
         if self.custom_appointment_group:
             self.appointment_group = frappe.get_doc(APPOINTMENT_GROUP, self.custom_appointment_group)
             if self.has_value_changed("starts_on"):
-                if self.custom_meeting_provider == "Zoom":
-                    meet_data = json.loads(self.custom_meet_data)
-                    meet_id = meet_data.get("id")
-                    duration = frappe.utils.time_diff(self.ends_on, self.starts_on).seconds // 60
-                    update_meeting(
-                        self.appointment_group.event_creator,
-                        meet_id,
-                        self.subject,
-                        self.starts_on,
-                        duration,
-                        self.description,
-                    )
+                if not self.is_new():
+                    if self.custom_meeting_provider == "Zoom":
+                        meet_data = json.loads(self.custom_meet_data)
+                        meet_id = meet_data.get("id")
+                        duration = frappe.utils.time_diff(self.ends_on, self.starts_on).seconds // 60
+                        update_meeting(
+                            self.appointment_group.event_creator,
+                            meet_id,
+                            self.subject,
+                            self.starts_on,
+                            duration,
+                            self.description,
+                        )
                 frappe.enqueue(
                     send_meet_email,
                     timeout=600,
@@ -89,9 +94,6 @@ class EventOverride(Event):
                     appointment_group=self.appointment_group,
                     metadata=self.event_info if hasattr(self, "event_info") else {},
                 )
-
-    def after_insert(self):
-        insert_event_in_google_calendar_override(self)
 
     def on_trash(self):
         if self.custom_meeting_provider == "Zoom":
@@ -228,7 +230,7 @@ def send_meet_email(doc, appointment_group, metadata):
             ag_dict["meet_link"] = doc.custom_meet_link  # For backward compatibility
 
             args = dict(
-                appointment_group=appointment_group.as_dict(),
+                appointment_group=ag_dict,
                 meet_link=doc.custom_meet_link,
                 event=doc.as_dict(),
                 metadata=metadata,
