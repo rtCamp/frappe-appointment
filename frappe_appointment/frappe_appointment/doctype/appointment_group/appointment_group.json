@@ -18,7 +18,6 @@
   "publish_on_website",
   "route",
   "column_break_4pgb",
-  "ignore_all_day_events",
   "section_break_3djy",
   "duration_for_event",
   "column_break_xzbw",
@@ -155,12 +154,6 @@
    "fieldtype": "Section Break"
   },
   {
-   "default": "0",
-   "fieldname": "ignore_all_day_events",
-   "fieldtype": "Check",
-   "label": "Ignore All Day Events"
-  },
-  {
    "fieldname": "column_break_kcm2",
    "fieldtype": "Column Break"
   },
@@ -262,7 +255,7 @@
  "has_web_view": 1,
  "is_published_field": "publish_on_website",
  "links": [],
- "modified": "2025-01-27 17:35:17.949395",
+ "modified": "2025-01-31 09:26:55.298534",
  "modified_by": "Administrator",
  "module": "Frappe Appointment",
  "name": "Appointment Group",

@@ -1,6 +1,7 @@
 # Copyright (c) 2023, rtCamp and contributors
 # For license information, please see license.txt
 
+import re
 from datetime import datetime
 
 import frappe
@@ -16,12 +17,38 @@ from frappe_appointment.helpers.utils import (
     update_time_of_datetime,
 )
 
+SLUG_REGEX = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
+
 
 class UserAppointmentAvailability(Document):
     def validate(self):
         calendar = frappe.get_doc("Google Calendar", self.google_calendar)
         if not calendar.custom_is_google_calendar_authorized:
             frappe.throw(frappe._("Please authorize Google Calendar before creating appointment availability."))
+        if self.enable_scheduling and not self.slug:
+            frappe.throw(frappe._("Please set a slug before enabling scheduling."))
+        if self.slug:
+            if not SLUG_REGEX.match(self.slug):
+                frappe.throw(frappe._("Slug can only contain lowercase alphanumeric characters and hyphens."))
+            if frappe.db.exists("User Appointment Availability", {"slug": self.slug, "name": ["!=", self.name]}):
+                frappe.throw(frappe._("Slug already exists. Please set a unique slug."))
+
+
+def suggest_slug(og_slug: str):
+    for i in range(1, 100):
+        slug = f"{og_slug}{i}"
+        if not frappe.db.exists("User Appointment Availability", {"slug": slug}):
+            return slug
+    return None
+
+
+@frappe.whitelist()
+def is_slug_available(slug: str):
+    is_available = not frappe.db.exists("User Appointment Availability", {"slug": slug})
+    suggested_slug = None
+    if not is_available:
+        suggested_slug = suggest_slug(slug)
+    return {"is_available": is_available, "suggested_slug": suggested_slug}
 
 
 def get_user_appointment_availability_slots(

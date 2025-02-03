@@ -277,11 +277,30 @@ def create_event_for_appointment_group(
     Returns:
     res (object): Result object
     """
+
+    appointment_group = frappe.get_last_doc(APPOINTMENT_GROUP, filters={"route": "appointment/" + appointment_group_id})
+    return _create_event_for_appointment_group(
+        appointment_group,
+        date,
+        start_time,
+        end_time,
+        user_timezone_offset,
+        event_participants,
+        **args,
+    )
+
+
+def _create_event_for_appointment_group(
+    appointment_group: object,
+    date: str,
+    start_time: str,
+    end_time: str,
+    user_timezone_offset: str,
+    event_participants,
+    **args,
+):
     # query parameters
     event_info = args
-
-    if not is_valid_time_slots(appointment_group_id, date, user_timezone_offset, start_time, end_time):
-        return frappe.throw(_("The slot is not available. Please try to book again!"))
 
     starts_on = utc_to_sys_time(start_time)
     ends_on = utc_to_sys_time(end_time)
@@ -289,11 +308,16 @@ def create_event_for_appointment_group(
     starts_on = utc_to_sys_time(start_time)
     ends_on = utc_to_sys_time(end_time)
     reschedule = event_info.get("reschedule", False)
+    personal = event_info.get("personal", False)
 
-    appointment_group = frappe.get_last_doc(APPOINTMENT_GROUP, filters={"route": "appointment/" + appointment_group_id})
+    if not is_valid_time_slots(appointment_group, date, user_timezone_offset, start_time, end_time):
+        return frappe.throw(_("The slot is not available. Please try to book again!"))
 
     if not event_info.get("subject"):
-        event_info["subject"] = appointment_group.name + " " + now()
+        if personal:
+            event_info["subject"] = "Personal Meeting " + now()
+        else:
+            event_info["subject"] = appointment_group.name + " " + now()
 
     if not vaild_date(get_datetime(date), appointment_group)["is_valid"]:
         return frappe.throw(_("Invalid Date"))
@@ -305,7 +329,7 @@ def create_event_for_appointment_group(
 
     google_calendar_api_obj, account = get_google_calendar_object(appointment_group.event_creator)
 
-    if reschedule:
+    if reschedule and not personal:
         event = frappe.get_last_doc("Event", filters={"custom_appointment_group": appointment_group.name})
         event.starts_on = starts_on
         event.ends_on = ends_on

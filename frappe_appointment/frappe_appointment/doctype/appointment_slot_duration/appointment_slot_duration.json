@@ -1,0 +1,82 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2025-01-31 08:39:53.694770",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "title",
+  "duration",
+  "minimum_buffer_time",
+  "availability_window",
+  "limit_booking_frequency",
+  "minimum_notice_before_event"
+ ],
+ "fields": [
+  {
+   "columns": 2,
+   "fieldname": "duration",
+   "fieldtype": "Duration",
+   "hide_days": 1,
+   "hide_seconds": 1,
+   "in_list_view": 1,
+   "label": "Duration",
+   "reqd": 1
+  },
+  {
+   "columns": 1,
+   "fieldname": "minimum_buffer_time",
+   "fieldtype": "Duration",
+   "hide_days": 1,
+   "hide_seconds": 1,
+   "in_list_view": 1,
+   "label": "Minimum Buffer Time"
+  },
+  {
+   "columns": 1,
+   "description": "Number of days from the start day to show the available dates.",
+   "fieldname": "availability_window",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Availability Window"
+  },
+  {
+   "columns": 1,
+   "default": "-1",
+   "description": "Limit how many times this event can be booked in a day\n\n",
+   "fieldname": "limit_booking_frequency",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Limit Booking Frequency"
+  },
+  {
+   "columns": 2,
+   "fieldname": "title",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Title",
+   "reqd": 1
+  },
+  {
+   "columns": 1,
+   "default": "0",
+   "fieldname": "minimum_notice_before_event",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Minimum Notice Before Event"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2025-02-03 16:20:47.812684",
+ "modified_by": "Administrator",
+ "module": "Frappe Appointment",
+ "name": "Appointment Slot Duration",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

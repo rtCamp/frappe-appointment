@@ -108,6 +108,16 @@ def get_time_slots_for_day(appointment_group_id: str, date: str, user_timezone_o
             APPOINTMENT_GROUP, filters={"route": "appointment/" + appointment_group_id}
         )
 
+        if not appointment_group:
+            return {"result": []}
+
+        return _get_time_slots_for_day(appointment_group, date, user_timezone_offset)
+    except Exception:
+        return None
+
+
+def _get_time_slots_for_day(appointment_group: object, date: str, user_timezone_offset: str) -> object:
+    try:
         datetime_today = get_datetime(date)
         datetime_tomorrow = add_days(datetime_today, 1)
         datetime_yesterday = add_days(datetime_today, -1)
@@ -145,7 +155,6 @@ def get_time_slots_for_day(appointment_group_id: str, date: str, user_timezone_o
         time_slots_today_object["all_available_slots_for_data"] = filtered_slots
 
         return time_slots_today_object
-
     except Exception:
         return None
 
@@ -168,13 +177,13 @@ def get_user_time_slots(all_time_slots_global_object: list, date: str, user_time
 
 
 def is_valid_time_slots(
-    appointment_group_id: str,
+    appointment_group: object,
     date: str,
     user_timezone_offset: str,
     start_time: str,
     end_time: str,
 ):
-    today_time_slots = get_time_slots_for_day(appointment_group_id, date, user_timezone_offset)
+    today_time_slots = _get_time_slots_for_day(appointment_group, date, user_timezone_offset)
 
     if not today_time_slots:
         return False
@@ -436,6 +445,9 @@ def get_booking_frequency_reached(datetime: datetime, appointment_group: object)
 
     # Get today's data and the range for the next day to fetch events.
     start_datetime, end_datetime = get_datetime_str(datetime), get_datetime_str(add_days(datetime, 1))
+
+    if not appointment_group.name:
+        return res
 
     all_events = frappe.get_list(
         "Event",
