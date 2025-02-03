@@ -19,6 +19,7 @@ def add_ics_file_in_attachment(event):
     # Convert strings to datetime objects
     event_object.begin = convert_datetime_to_utc(get_datetime(event.starts_on))
     event_object.end = convert_datetime_to_utc(get_datetime(event.ends_on))
+
     event_object.uid = str(uuid.uuid4())
     event_object.description = event.description
 
@@ -39,8 +40,7 @@ def add_ics_file_in_attachment(event):
     # Convert the calendar to a string
     ics_content = calendar_object.serialize()
     ics_content = ics_content.replace(
-        "PRODID:ics.py - http://git.io/lLljaA",
-        "PRODID:-//Frappe Appointment//Frappe Appointments Events//EN",
+        "PRODID:ics.py - http://git.io/lLljaA", "PRODID:-//Frappe Appointment//Frappe Appointments Events//EN"
     )
 
     attached_file = frappe.get_doc(

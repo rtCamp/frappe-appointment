@@ -190,6 +190,9 @@ class EventOverride(Event):
                 else:
                     raise Exception
             except Exception:
+                # clear all previous logs
+                clear_messages()
+
                 api_res = requests.post(
                     appointment_group.webhook,
                     data=json.dumps(body, default=datetime_serializer),
@@ -301,9 +304,6 @@ def _create_event_for_appointment_group(
 ):
     # query parameters
     event_info = args
-
-    starts_on = utc_to_sys_time(start_time)
-    ends_on = utc_to_sys_time(end_time)
 
     starts_on = utc_to_sys_time(start_time)
     ends_on = utc_to_sys_time(end_time)

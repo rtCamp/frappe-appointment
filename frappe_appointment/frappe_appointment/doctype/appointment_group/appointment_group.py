@@ -590,7 +590,7 @@ def get_avaiable_time_slot_for_day(
         if index >= len(all_slots) and current_end_time <= endtime:
             available_slots.append({"start_time": current_start_time, "end_time": current_end_time})
 
-            current_start_time = get_next_round_value(minimum_buffer_time, current_end_time)
+            current_start_time = get_next_round_value(minimum_buffer_time, current_end_time, False)
             current_end_time = add_to_date(current_start_time, hours=hour, minutes=minute, seconds=second)
 
             continue
@@ -606,7 +606,7 @@ def get_avaiable_time_slot_for_day(
             currernt_slot["is_frappe_event"],
         ):
             available_slots.append({"start_time": current_start_time, "end_time": current_end_time})
-            current_start_time = get_next_round_value(minimum_buffer_time, current_end_time)
+            current_start_time = get_next_round_value(minimum_buffer_time, current_end_time, False)
         else:
             current_start_time = get_next_round_value(
                 minimum_buffer_time,
