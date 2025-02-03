@@ -64,8 +64,17 @@ def convert_timezone_to_utc(date_time: str, time_zone: str) -> datetime:
 
 
 def convert_datetime_to_utc(date_time: datetime) -> datetime:
-    """Converts the given datetime object to a UTC timezone datetime object."""
-    return date_time.astimezone(pytz.utc)
+    """Converts the given datetime object to a UTC timezone datetime object.
+
+    Args:
+    date_time (datetime): Datetime Object
+
+    Returns:
+    datetime: Updated Object
+    """
+    system_timezone = pytz.timezone(get_system_timezone())
+    local_datetime = system_timezone.localize(date_time)
+    return local_datetime.astimezone(pytz.utc)
 
 
 def convert_utc_datetime_to_timezone(date_time: datetime, timezone: str) -> datetime:
