@@ -214,6 +214,8 @@ class EventOverride(Event):
 
         google_calendar_api_obj, account = get_google_calendar_object(self.appointment_group.event_creator)
 
+        idx = len(self.event_participants) + 1
+
         for member in members:
             try:
                 if member.user == account.user:
@@ -221,7 +223,7 @@ class EventOverride(Event):
 
                 user = frappe.get_doc(
                     {
-                        "idx": len(self.event_participants),
+                        "idx": idx,
                         "doctype": "Event Participants",
                         "parent": self.name,
                         "reference_doctype": USER_APPOINTMENT_AVAILABILITY,
@@ -232,12 +234,13 @@ class EventOverride(Event):
                     }
                 )
                 self.event_participants.append(user)
+                idx += 1
             except Exception:
                 pass
 
         user = frappe.get_doc(
             {
-                "idx": len(self.event_participants),
+                "idx": idx,
                 "doctype": "Event Participants",
                 "parent": self.name,
                 "reference_doctype": "Google Calendar",
