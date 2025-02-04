@@ -406,7 +406,7 @@ def _create_event_for_appointment_group(
     personal = event_info.get("personal", False)
 
     if not is_valid_time_slots(appointment_group, date, user_timezone_offset, start_time, end_time):
-        return frappe.throw(_("The slot is not available. Please try to book again!"))
+        return frappe.throw(_("This slot is not available, please book another slot."))
 
     if not event_info.get("subject"):
         if personal:
