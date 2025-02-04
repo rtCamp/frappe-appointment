@@ -15,6 +15,7 @@ import Booking from "./components/booking";
 import SocialProfiles, { Profile } from "./components/socialProfiles";
 import { useAppContext } from "@/context/app";
 import { useFrappeGetCall } from "frappe-react-sdk";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const Appointment = () => {
   const { meetId } = useParams();
@@ -106,14 +107,21 @@ const Appointment = () => {
 
               {/* Meeting Options */}
               <div className="space-y-6">
-                <div>
-                  <h2 className="text-xl font-semibold mb-2">
-                    Select Meeting Duration
-                  </h2>
-                  <p className="text-muted-foreground">
-                    You will receive a calendar invite with meeting link.
-                  </p>
-                </div>
+                {isLoading ? (
+                  <>
+                    <Skeleton className="h-6 md:w-56" />
+                    <Skeleton className="h-4 md:w-72" />
+                  </>
+                ) : (
+                  <div>
+                    <h2 className="text-xl font-semibold mb-2">
+                      Select Meeting Duration
+                    </h2>
+                    <p className="text-muted-foreground">
+                      You will receive a calendar invite with meeting link.
+                    </p>
+                  </div>
+                )}
 
                 <div className="grid sm:grid-cols-2 gap-4">
                   {isLoading ? (

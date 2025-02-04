@@ -7,6 +7,7 @@ import z from "zod";
 import { useFrappePostCall } from "frappe-react-sdk";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ChevronLeft, X } from "lucide-react";
+import { formatDate } from "date-fns";
 
 /**
  * Internal dependencies.
@@ -105,8 +106,9 @@ const MeetingForm = ({ onBack }: MeetingFormProps) => {
 
     bookMeeting(meetingData)
       .then(() => {
-        toast("Event has been created", {
-          description: selectedDate.toLocaleDateString(),
+        onBack();
+        toast("Appointment has been scheduled", {
+          description: formatDate(new Date(selectedDate), "d MMM, yyyy"),
           action: {
             label: "OK",
             onClick: () => toast.dismiss(),
@@ -146,6 +148,7 @@ const MeetingForm = ({ onBack }: MeetingFormProps) => {
                   </FormLabel>
                   <FormControl>
                     <Input
+                      disabled={loading}
                       className="active:ring-blue-400 focus-visible:ring-blue-400"
                       placeholder="John Doe"
                       {...field}
@@ -166,6 +169,7 @@ const MeetingForm = ({ onBack }: MeetingFormProps) => {
                   </FormLabel>
                   <FormControl>
                     <Input
+                      disabled={loading}
                       className="active:ring-blue-400 focus-visible:ring-blue-400"
                       placeholder="john.Doe@gmail.com"
                       {...field}
@@ -182,6 +186,7 @@ const MeetingForm = ({ onBack }: MeetingFormProps) => {
                 variant="ghost"
                 className="h-auto hover:bg-blue-50 text-blue-500 hover:text-blue-600 "
                 onClick={() => setIsGuestsOpen(!isGuestsOpen)}
+                disabled={loading}
               >
                 + Add Guests
               </Button>
@@ -195,6 +200,7 @@ const MeetingForm = ({ onBack }: MeetingFormProps) => {
                     onChange={(e) => setGuestInput(e.target.value)}
                     onKeyDown={handleGuestKeyDown}
                     onBlur={addGuest}
+                    disabled={loading}
                   />
                   <div className="flex flex-wrap gap-2">
                     {form.watch("guests").map((guest) => (
@@ -221,7 +227,7 @@ const MeetingForm = ({ onBack }: MeetingFormProps) => {
           <div className="flex justify-between pt-4">
             <Button
               type="button"
-              className="text-blue-500 hover:text-blue-400 hover:bg-blue-50"
+              className="text-blue-500 hover:text-blue-600 hover:bg-blue-50"
               onClick={onBack}
               variant="ghost"
               disabled={loading}
