@@ -2,6 +2,7 @@
 # For license information, please see license.txt
 
 import re
+import urllib.parse
 from datetime import datetime
 
 import frappe
@@ -32,6 +33,26 @@ class UserAppointmentAvailability(Document):
                 frappe.throw(frappe._("Slug can only contain lowercase alphanumeric characters and hyphens."))
             if frappe.db.exists("User Appointment Availability", {"slug": self.slug, "name": ["!=", self.name]}):
                 frappe.throw(frappe._("Slug already exists. Please set a unique slug."))
+        if self.enable_scheduling and self.meeting_provider == "Zoom":
+            ap_settings = frappe.get_single("Zoom Settings")
+            if not ap_settings.enable_zoom:
+                return frappe.throw(
+                    frappe._(
+                        "Zoom is not enabled. Please enable it from <a href='/app/zoom-settings'>Zoom Settings</a>."
+                    )
+                )
+            if not ap_settings.client_id or not ap_settings.get_password("client_secret") or not ap_settings.account_id:
+                return frappe.throw(
+                    frappe._(
+                        "Please set Zoom Account ID, Client ID and Secret in <a href='/app/zoom-settings'>Zoom Settings</a>."
+                    )
+                )
+            if not calendar.custom_zoom_user_email:
+                return frappe.throw(
+                    frappe._(
+                        f"Please set Zoom User Email in <a href='/app/google-calendar/{urllib.parse.quote(calendar.name)}'>Google Calendar</a>."
+                    )
+                )
 
 
 def suggest_slug(og_slug: str):
