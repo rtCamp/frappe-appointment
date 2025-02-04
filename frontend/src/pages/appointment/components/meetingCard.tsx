@@ -18,12 +18,13 @@ import Typography from "@/components/ui/typography";
 import { useAppContext } from "@/context/app";
 
 interface MeetingCardProps {
+  id:string;
   title: string;
-  duration: string;
+  duration: number;
   onClick: VoidFunction;
 }
 
-const MeetingCard = ({ title, duration, onClick }: MeetingCardProps) => {
+const MeetingCard = ({ id,title, duration, onClick }: MeetingCardProps) => {
   const { userInfo } = useAppContext();
   return (
     <Card className="group relative overflow-hidden transition-all hover:shadow-lg">

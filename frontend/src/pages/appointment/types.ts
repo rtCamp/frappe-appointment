@@ -11,11 +11,3 @@ export interface DayAvailability {
   slots: AvailabilitySlot[];
 }
 
-export interface UserProfile {
-  name: string;
-  title: string;
-  company: string;
-  location: string;
-  avatar: string;
-  meetingDuration: number;
-}

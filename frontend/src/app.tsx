@@ -18,6 +18,7 @@ import { getSiteName } from "./lib/utils";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import ErrorFallback from "@/components/errorFallback";
 import { AppProvider } from "./context/app";
+import { Toaster } from "./components/ui/sonner";
 
 const App = () => {
   const router = createBrowserRouter(createRoutesFromElements(Router()), {
@@ -38,6 +39,7 @@ const App = () => {
             <Suspense fallback={<></>}>
               <ErrorFallback>
                 <RouterProvider router={router} />
+                <Toaster />
               </ErrorFallback>
             </Suspense>
           </TooltipProvider>

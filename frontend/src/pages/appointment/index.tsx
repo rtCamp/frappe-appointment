@@ -1,8 +1,8 @@
 /**
  * External dependencies
  */
-import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useEffect } from "react";
+import { Navigate, useNavigate, useParams } from "react-router-dom";
 
 /**
  * Internal dependencies
@@ -14,9 +14,11 @@ import MeetingCard from "./components/meetingCard";
 import Booking from "./components/booking";
 import SocialProfiles, { Profile } from "./components/socialProfiles";
 import { useAppContext } from "@/context/app";
+import { useFrappeGetCall } from "frappe-react-sdk";
 
 const Appointment = () => {
   const { meetId } = useParams();
+  const navigate = useNavigate();
   const {
     setMeetingId,
     setUserInfo,
@@ -24,35 +26,48 @@ const Appointment = () => {
     setDuration,
     duration,
     setTimeZone,
+    meetingDurationCards,
+    setMeetingDurationCards,
+    setDurationId,
   } = useAppContext();
-  const [isLoading, setIsLoading] = useState(true);
+
+  const { data, isLoading, error } = useFrappeGetCall(
+    "frappe_appointment.api.personal_meet.get_meeting_windows",
+    {
+      slug: meetId,
+    },
+    undefined
+  );
+
   const profiles: Profile[] = [
     { LinkedIn: "https://www.linkedin.com/in/example" },
     { X: "https://x.com/example" },
     { GitHub: "https://github.com/example" },
   ];
 
-  // Simulate loading state
   useEffect(() => {
     if (meetId) {
       setMeetingId(meetId);
     }
-    setUserInfo({
-      name: "Rahul Bansal",
-      designation: "Founder & CEO",
-      organizationName: "rtCamp",
-      userImage:
-        "https://lh3.googleusercontent.com/a/AAcHTtd8ByLnu5DhRjHiVrIc_mpqzO5PflSbAyv_kuYW6B8=s150-c",
-      socialProfiles: profiles,
-      meetingProvider: "Zoom",
-    });
     setTimeZone("Asia/Calcutta");
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 2000);
-
-    return () => clearTimeout(timer);
   }, []);
+
+  useEffect(() => {
+    if (data) {
+      setUserInfo({
+        name: data?.message?.full_name,
+        designation: data?.message?.position,
+        organizationName: data?.message?.company,
+        userImage: data?.message?.profile_pic,
+        socialProfiles: profiles,
+        meetingProvider: data?.message?.meeting_provider,
+      });
+      setMeetingDurationCards(data?.message?.durations);
+    }
+    if (error) {
+      navigate("/");
+    }
+  }, [data, error]);
 
   return (
     <>
@@ -72,7 +87,7 @@ const Appointment = () => {
                         alt="Profile picture"
                       />
                       <AvatarFallback className="text-4xl">
-                        {userInfo.name?.toString()[0].toUpperCase()}
+                        {userInfo?.name?.toString()[0]?.toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
                     <div className="space-y-2">
@@ -84,7 +99,7 @@ const Appointment = () => {
                         <p>{userInfo.organizationName}</p>
                       </div>
                     </div>
-                    <SocialProfiles profiles={profiles} />
+                    <SocialProfiles profiles={userInfo.socialProfiles} />
                   </CardContent>
                 </Card>
               )}
@@ -107,23 +122,18 @@ const Appointment = () => {
                       <MeetingCardSkeleton />
                     </>
                   ) : (
-                    <>
+                    meetingDurationCards.map((card) => (
                       <MeetingCard
-                        title="quick"
-                        duration="30"
-                        onClick={() => setDuration("30")}
+                        key={card.id}
+                        id={card.id}
+                        title={card.label}
+                        duration={card.duration / 60}
+                        onClick={() => {
+                          setDuration((card.duration / 60)?.toString());
+                          setDurationId(card.id);
+                        }}
                       />
-                      <MeetingCard
-                        title="standard"
-                        duration="60"
-                        onClick={() => setDuration("60")}
-                      />
-                      <MeetingCard
-                        title="standard"
-                        duration="45"
-                        onClick={() => setDuration("45")}
-                      />
-                    </>
+                    ))
                   )}
                 </div>
               </div>

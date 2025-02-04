@@ -4,6 +4,7 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import z from "zod";
+import { useFrappePostCall } from "frappe-react-sdk";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ChevronLeft, X } from "lucide-react";
 
@@ -21,6 +22,13 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import Typography from "@/components/ui/typography";
+import { useAppContext } from "@/context/app";
+import { toast } from "sonner";
+import {
+  getTimeZoneOffsetFromTimeZoneString,
+  parseFrappeErrorMsg,
+} from "@/lib/utils";
+import Spinner from "@/components/ui/spinner";
 
 const contactFormSchema = z.object({
   fullName: z.string().min(2, "Name must be at least 2 characters"),
@@ -37,6 +45,11 @@ interface MeetingFormProps {
 const MeetingForm = ({ onBack }: MeetingFormProps) => {
   const [isGuestsOpen, setIsGuestsOpen] = useState(false);
   const [guestInput, setGuestInput] = useState("");
+  const { call: bookMeeting, loading } = useFrappePostCall(
+    `frappe_appointment.api.personal_meet.book_time_slot`
+  );
+
+  const { selectedDate, selectedSlot, durationId, timeZone } = useAppContext();
 
   const form = useForm<ContactFormValues>({
     resolver: zodResolver(contactFormSchema),
@@ -72,16 +85,52 @@ const MeetingForm = ({ onBack }: MeetingFormProps) => {
       currentGuests.filter((guest) => guest !== email)
     );
   };
-
   const onSubmit = (data: ContactFormValues) => {
-    console.log("Form submitted:", data);
-    // Handle form submission
+    const meetingData = {
+      duration_id: durationId,
+      date: new Intl.DateTimeFormat("en-CA", {
+        year: "numeric",
+        month: "numeric",
+        day: "numeric",
+      }).format(selectedDate),
+      user_timezone_offset: String(
+        getTimeZoneOffsetFromTimeZoneString(timeZone)
+      ),
+      start_time: selectedSlot.start_time,
+      end_time: selectedSlot.end_time,
+      user_name: data.fullName,
+      user_email: data.email,
+      other_participants: data.guests.join(", "),
+    };
+
+    bookMeeting(meetingData)
+      .then(() => {
+        toast("Event has been created", {
+          description: selectedDate.toLocaleDateString(),
+          action: {
+            label: "OK",
+            onClick: () => toast.dismiss(),
+          },
+        });
+      })
+      .catch((err) => {
+        const error = parseFrappeErrorMsg(err);
+        toast(error || "Something went wrong", {
+          action: {
+            label: "OK",
+            onClick: () => toast.dismiss(),
+          },
+        });
+      });
   };
 
   return (
     <div className={`w-full md:h-[30rem] md:w-[41rem] shrink-0 md:p-6 px-4 `}>
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 h-full flex justify-between flex-col">
+        <form
+          onSubmit={form.handleSubmit(onSubmit)}
+          className="space-y-6 h-full flex justify-between flex-col"
+        >
           <div className="space-y-4">
             <Typography variant="p" className="text-2xl">
               Your contact info
@@ -170,11 +219,21 @@ const MeetingForm = ({ onBack }: MeetingFormProps) => {
           </div>
 
           <div className="flex justify-between pt-4">
-            <Button type="button" className="text-blue-500 hover:text-blue-400 hover:bg-blue-50" onClick={onBack} variant="ghost">
+            <Button
+              type="button"
+              className="text-blue-500 hover:text-blue-400 hover:bg-blue-50"
+              onClick={onBack}
+              variant="ghost"
+              disabled={loading}
+            >
               <ChevronLeft /> Back
             </Button>
-            <Button className="bg-blue-400 hover:bg-blue-500" type="submit">
-              Schedule Meeting
+            <Button
+              disabled={loading}
+              className="bg-blue-400 hover:bg-blue-500"
+              type="submit"
+            >
+              {loading && <Spinner />} Schedule Meeting
             </Button>
           </div>
         </form>

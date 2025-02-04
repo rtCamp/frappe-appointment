@@ -20,19 +20,34 @@ interface UserInfo {
   meetingProvider: MeetingProviderTypes;
 }
 
+type durationCard = {
+  id: string;
+  label: string;
+  duration: number;
+};
+
+interface slotType {
+  start_time: string;
+  end_time: string;
+}
+
 interface AppContextType {
   meetingId: string;
   duration: string;
   userInfo: UserInfo;
   selectedDate: Date;
-  selectedSlot: string;
+  selectedSlot: slotType;
   timeZone: string;
+  meetingDurationCards: durationCard[];
+  durationId: string;
+  setDurationId: (id: string) => void;
   setMeetingId: (id: string) => void;
   setDuration: (duration: string) => void;
   setUserInfo: (userInfo: UserInfo) => void;
   setSelectedDate: (date: Date) => void;
-  setSelectedSlot: (date: string) => void;
+  setSelectedSlot: (slot: slotType) => void;
   setTimeZone: (tz: string) => void;
+  setMeetingDurationCards: (duration_card: durationCard[]) => void;
 }
 
 // Initial context values
@@ -40,8 +55,10 @@ const initialAppContextType: AppContextType = {
   meetingId: "",
   duration: "",
   selectedDate: new Date(),
-  selectedSlot: "",
+  selectedSlot: {end_time:"",start_time:""},
   timeZone: "",
+  meetingDurationCards: [],
+  durationId: "",
   userInfo: {
     name: "",
     designation: "",
@@ -56,6 +73,8 @@ const initialAppContextType: AppContextType = {
   setSelectedDate: () => {},
   setSelectedSlot: () => {},
   setTimeZone: () => {},
+  setMeetingDurationCards: () => {},
+  setDurationId: () => {},
 };
 
 // Create the context
@@ -74,7 +93,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
   const [userInfo, setUserInfo] = useState<UserInfo>(
     initialAppContextType.userInfo
   );
-  const [selectedSlot, setSelectedSlot] = useState<string>(
+  const [selectedSlot, setSelectedSlot] = useState<slotType>(
     initialAppContextType.selectedSlot
   );
   const [selectedDate, setSelectedDate] = useState<Date>(
@@ -82,6 +101,13 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
   );
   const [timeZone, setTimeZone] = useState<string>(
     initialAppContextType.timeZone
+  );
+  const [meetingDurationCards, setMeetingDurationCards] = useState<
+    durationCard[]
+  >(initialAppContextType.meetingDurationCards);
+
+  const [durationId, setDurationId] = useState<string>(
+    initialAppContextType.durationId
   );
 
   return (
@@ -99,6 +125,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
         setSelectedSlot,
         timeZone,
         setTimeZone,
+        meetingDurationCards,
+        setMeetingDurationCards,
+        durationId,
+        setDurationId,
       }}
     >
       {children}
