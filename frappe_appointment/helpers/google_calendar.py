@@ -50,7 +50,7 @@ def insert_event_in_google_calendar_override(
     if doc.repeat_on:
         event.update({"recurrence": repeat_on_to_google_calendar_recurrence_rule(doc)})
 
-    if doc.appointment_group and doc.custom_meet_link:
+    if doc.custom_meet_link:
         event.update({"location": doc.custom_meet_link})
 
     event.update({"attendees": get_attendees(doc)})

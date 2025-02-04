@@ -1,5 +1,6 @@
 import datetime
 import json
+import re
 
 import frappe
 import frappe.utils
@@ -109,7 +110,7 @@ def book_time_slot(
     user_timezone_offset: str,
     user_name: str,
     user_email: str,
-    other_participants: str,
+    other_participants: str = None,
     **args,
 ):
     duration = frappe.get_doc("Appointment Slot Duration", duration_id)
@@ -145,11 +146,39 @@ def book_time_slot(
 
     appointment_group = frappe.get_doc(appointment_group_obj)
 
-    event_participants = [user_email]
-    if other_participants:
-        event_participants += other_participants.split(",")
+    event_participants = [
+        {
+            "reference_doctype": "User Appointment Availability",
+            "reference_docname": ap_availability.get("name"),
+            "email": ap_availability.get("user"),
+        },
+        {
+            "reference_doctype": "User Appointment Availability",
+            "reference_docname": ap_availability.get("name"),
+            "email": user_email,
+        },
+    ]
 
-    custom_doctype_link_with_event = [{"doctype": "User Appointment Availability", "name": ap_availability.get("name")}]
+    if other_participants:
+        other_participants = other_participants.split(",")
+        for participant in other_participants:
+            if not re.match(r"[^@]+@[^@]+\.[^@]+", participant):
+                continue
+            event_participants.append(
+                {
+                    "reference_doctype": "User Appointment Availability",
+                    "reference_docname": ap_availability.get("name"),
+                    "email": participant.strip(),
+                }
+            )
+
+    custom_doctype_link_with_event = [
+        {
+            "reference_doctype": "User Appointment Availability",
+            "reference_docname": ap_availability.get("name"),
+            "value": ap_availability.get("user"),
+        }
+    ]
 
     if not args.get("custom_doctype_link_with_event", None):
         args["custom_doctype_link_with_event"] = json.dumps(custom_doctype_link_with_event)
@@ -174,7 +203,8 @@ def book_time_slot(
         if minutes % 60:
             duration_str += f" {minutes % 60} minute{'s' if minutes % 60 > 1 else ''}"
 
-        args["Subject"] = f"Meet: {name} <> {user_name} ({duration_str})"
+        args["subject"] = f"Meet: {name} <> {user_name} ({duration_str})"
+    args["personal"] = True
 
     data = _create_event_for_appointment_group(
         appointment_group,

@@ -177,6 +177,9 @@ class EventOverride(Event):
             if isinstance(obj, datetime.datetime):
                 return obj.isoformat()
 
+        if not self.custom_appointment_group:
+            return {"status": True, "message": ""}
+
         appointment_group = frappe.get_doc(APPOINTMENT_GROUP, self.custom_appointment_group)
 
         if not appointment_group.webhook:
