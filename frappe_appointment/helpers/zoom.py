@@ -39,7 +39,7 @@ def reauthorize_zoom():
 
     zoom_settings.reload()
     zoom_settings.access_token = access_token
-    zoom_settings.save()
+    zoom_settings.save(ignore_permissions=True)
 
     return access_token
 

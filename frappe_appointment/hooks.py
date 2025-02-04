@@ -6,20 +6,6 @@ app_email = "sys@rtcamp.com"
 app_license = "GNU AFFERO GENERAL PUBLIC LICENSE (v3)"
 # required_apps = []
 
-fixtures = [
-    {
-        "dt": "Custom Field",
-        "filters": [
-            [
-                "module",
-                "in",
-                [
-                    "Frappe Appointment",
-                ],
-            ],
-        ],
-    },
-]
 
 # Includes in <head>
 # ------------------
