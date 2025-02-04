@@ -60,6 +60,57 @@ class EventOverride(Event):
                     self.description = f"Meet Link: {self.appointment_group.meet_link}"
                 self.custom_meet_link = self.appointment_group.meet_link
             self.update_attendees_for_appointment_group()
+        elif self.custom_user_calendar:
+            self.user_calendar = frappe.get_doc(USER_APPOINTMENT_AVAILABILITY, self.custom_user_calendar)
+            self.custom_meeting_provider = self.user_calendar.meeting_provider
+            if not self.custom_appointment_slot_duration:
+                raise frappe.ValidationError(_("Appointment Slot Duration is required"))
+            self.appointment_slot_duration = frappe.get_doc(
+                "Appointment Slot Duration", self.custom_appointment_slot_duration
+            )
+
+            if self.user_calendar.meeting_provider == "Zoom":
+                meet_url, meet_data = create_meeting(
+                    self.user_calendar.google_calendar,
+                    self.subject,
+                    self.starts_on,
+                    self.appointment_slot_duration.duration // 60,
+                    self.description,
+                )
+                self.description = f"{self.description or ''}\nMeet Link: {meet_url}"
+                self.custom_meet_link = meet_url
+                self.custom_meet_data = json.dumps(meet_data, indent=4)
+            elif self.user_calendar.meeting_provider == "Google Meet":
+                self.add_video_conferencing = 1
+            elif self.user_calendar.meeting_provider == "Custom" and self.user_calendar.meeting_link:
+                if self.description:
+                    self.description = f"\nMeet Link: {self.user_calendar.meeting_link}"
+                else:
+                    self.description = f"Meet Link: {self.user_calendar.meeting_link}"
+                self.custom_meet_link = self.user_calendar.meeting_link
+            self.appointment_group = frappe.get_doc(
+                {
+                    "doctype": "Appointment Group",
+                    "group_name": "Personal Meeting",
+                    "event_creator": self.user_calendar.get("google_calendar"),
+                    "event_organizer": self.user_calendar.get("user"),
+                    "members": [{"user": self.user_calendar.get("name"), "is_mandatory": 1}],
+                    "duration_for_event": datetime.timedelta(seconds=self.appointment_slot_duration.duration),
+                    "minimum_buffer_time": datetime.timedelta(
+                        seconds=self.appointment_slot_duration.minimum_buffer_time
+                    )
+                    if self.appointment_slot_duration.minimum_buffer_time
+                    else None,
+                    "minimum_notice_before_event": self.appointment_slot_duration.minimum_notice_before_event,
+                    "event_availability_window": self.appointment_slot_duration.availability_window,
+                    "meet_provider": self.user_calendar.get("meeting_provider"),
+                    "meet_link": self.user_calendar.get("meeting_link"),
+                    "response_email_template": self.user_calendar.get("response_email_template"),
+                    "linked_doctype": self.user_calendar.get("name"),
+                    "limit_booking_frequency": -1,
+                }
+            )
+            self.update_attendees_for_appointment_group()
 
     def before_save(self):
         super().before_save()
@@ -68,8 +119,14 @@ class EventOverride(Event):
             for key, value in updates.items():
                 self.set(key, value)
         self.pulled_from_google_calendar = True
-        if self.custom_appointment_group:
-            self.appointment_group = frappe.get_doc(APPOINTMENT_GROUP, self.custom_appointment_group)
+        if self.custom_appointment_group or self.custom_user_calendar:
+            self.appointment_group = self.custom_appointment_group and frappe.get_doc(
+                APPOINTMENT_GROUP, self.custom_appointment_group
+            )
+            self.user_calendar = self.custom_user_calendar and frappe.get_doc(
+                USER_APPOINTMENT_AVAILABILITY, self.custom_user_calendar
+            )
+
             if self.has_value_changed("starts_on"):
                 if not self.is_new():
                     if self.custom_meeting_provider == "Zoom":
@@ -77,7 +134,7 @@ class EventOverride(Event):
                         meet_id = meet_data.get("id")
                         duration = frappe.utils.time_diff(self.ends_on, self.starts_on).seconds // 60
                         update_meeting(
-                            self.appointment_group.event_creator,
+                            self.appointment_group.event_creator or self.user_calendar.google_calendar,
                             meet_id,
                             self.subject,
                             self.starts_on,
@@ -92,6 +149,7 @@ class EventOverride(Event):
                     queue="long",
                     doc=self,
                     appointment_group=self.appointment_group,
+                    user_calendar=self.user_calendar,
                     metadata=self.event_info if hasattr(self, "event_info") else {},
                 )
 
@@ -102,6 +160,29 @@ class EventOverride(Event):
             self.appointment_group = frappe.get_doc(APPOINTMENT_GROUP, self.custom_appointment_group)
             delete_meeting(self.appointment_group.event_creator, meet_id)
         super().on_trash()
+
+    def on_update(self):
+        self.sync_communication()
+
+    def sync_communication(self):
+        if self.event_participants:
+            for participant in self.event_participants:
+                if not participant.reference_doctype or not participant.reference_docname:
+                    continue
+                filters = [
+                    ["Communication", "reference_doctype", "=", self.doctype],
+                    ["Communication", "reference_name", "=", self.name],
+                    ["Communication Link", "link_doctype", "=", participant.reference_doctype],
+                    ["Communication Link", "link_name", "=", participant.reference_docname],
+                ]
+                if comms := frappe.get_all("Communication", filters=filters, fields=["name"], distinct=True):
+                    for comm in comms:
+                        communication = frappe.get_doc("Communication", comm.name)
+                        self.update_communication(participant, communication)
+                else:
+                    meta = frappe.get_meta(participant.reference_doctype)
+                    if hasattr(meta, "allow_events_in_timeline") and meta.allow_events_in_timeline == 1:
+                        self.create_communication(participant)
 
     def get_recipients_event(self):
         """Get the list of recipients as per event_participants
@@ -126,9 +207,14 @@ class EventOverride(Event):
 
     def update_attendees_for_appointment_group(self):
         """Insert Appointment Group Member as Event participants"""
+        if not self.appointment_group:
+            return
+
         members = self.appointment_group.members
 
         google_calendar_api_obj, account = get_google_calendar_object(self.appointment_group.event_creator)
+
+        idx = len(self.event_participants) + 1
 
         for member in members:
             try:
@@ -137,7 +223,7 @@ class EventOverride(Event):
 
                 user = frappe.get_doc(
                     {
-                        "idx": len(self.event_participants),
+                        "idx": idx,
                         "doctype": "Event Participants",
                         "parent": self.name,
                         "reference_doctype": USER_APPOINTMENT_AVAILABILITY,
@@ -148,12 +234,13 @@ class EventOverride(Event):
                     }
                 )
                 self.event_participants.append(user)
+                idx += 1
             except Exception:
                 pass
 
         user = frappe.get_doc(
             {
-                "idx": len(self.event_participants),
+                "idx": idx,
                 "doctype": "Event Participants",
                 "parent": self.name,
                 "reference_doctype": "Google Calendar",
@@ -221,18 +308,21 @@ class EventOverride(Event):
             return {"status": False, "message": "Unable to create an event"}
 
 
-def send_meet_email(doc, appointment_group, metadata):
+def send_meet_email(doc, appointment_group, user_calendar, metadata):
     """Sent the meeting link email to the given user using the provided Email Template"""
     doc.reload()
 
     try:
         if (
             doc.custom_meet_link
-            and appointment_group.response_email_template
+            and (
+                (appointment_group and appointment_group.response_email_template)
+                or (user_calendar and user_calendar.response_email_template)
+            )
             and doc.event_participants
             and doc.custom_doctype_link_with_event
         ):
-            ag_dict = appointment_group.as_dict()
+            ag_dict = appointment_group.as_dict() if appointment_group else user_calendar.as_dict()
             ag_dict["meet_link"] = doc.custom_meet_link  # For backward compatibility
 
             args = dict(
@@ -250,7 +340,9 @@ def send_meet_email(doc, appointment_group, metadata):
             send_email_template_mail(
                 send_doc,
                 args,
-                appointment_group.response_email_template,
+                appointment_group.response_email_template
+                if appointment_group
+                else user_calendar.response_email_template,
                 recipients=doc.get_recipients_event(),
                 attachments=[{"fid": add_ics_file_in_attachment(doc)}],
             )
@@ -370,6 +462,10 @@ def _create_event_for_appointment_group(
         "custom_appointment_group": appointment_group.name,
         "event_info": event_info,
     }
+
+    if personal:
+        calendar_event["custom_user_calendar"] = event_info.get("user_calendar")
+        calendar_event["custom_appointment_slot_duration"] = event_info.get("appointment_slot_duration")
 
     event = frappe.get_doc(calendar_event)
 

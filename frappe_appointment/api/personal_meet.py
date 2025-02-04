@@ -153,8 +153,6 @@ def book_time_slot(
             "email": ap_availability.get("user"),
         },
         {
-            "reference_doctype": "User Appointment Availability",
-            "reference_docname": ap_availability.get("name"),
             "email": user_email,
         },
     ]
@@ -166,8 +164,6 @@ def book_time_slot(
                 continue
             event_participants.append(
                 {
-                    "reference_doctype": "User Appointment Availability",
-                    "reference_docname": ap_availability.get("name"),
                     "email": participant.strip(),
                 }
             )
@@ -194,17 +190,24 @@ def book_time_slot(
     if not args.get("Subject", None):
         name = frappe.get_value("User", ap_availability.get("user"), "full_name")
 
-        seconds = duration.duration
+        seconds = int(duration.duration)
         minutes = seconds // 60
         hours = minutes // 60
+        rest_minutes = minutes % 60
+
         duration_str = ""
         if hours:
             duration_str += f"{hours} hour{'s' if hours > 1 else ''}"
-        if minutes % 60:
-            duration_str += f" {minutes % 60} minute{'s' if minutes % 60 > 1 else ''}"
+        if rest_minutes:
+            duration_str += f" {rest_minutes} minute{'s' if rest_minutes > 1 else ''}"
+
+        duration_str = duration_str.strip()
 
         args["subject"] = f"Meet: {name} <> {user_name} ({duration_str})"
+
     args["personal"] = True
+    args["user_calendar"] = ap_availability.name
+    args["appointment_slot_duration"] = duration.name
 
     data = _create_event_for_appointment_group(
         appointment_group,

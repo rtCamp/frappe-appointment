@@ -23,10 +23,19 @@ def add_ics_file_in_attachment(event):
     event_object.uid = str(uuid.uuid4())
     event_object.description = event.description
 
-    if event.appointment_group.event_organizer:
+    if event.appointment_group and event.appointment_group.event_organizer:
         user_name, user_email = frappe.db.get_value(
             "User", event.appointment_group.event_organizer, ["full_name", "email"]
         )
+        event_object.extra.append(
+            ContentLine(
+                name="ORGANIZER",
+                params={"CN": [user_name]},
+                value=f"MAILTO:{user_email}",
+            )
+        )
+    elif event.user_calendar and event.user_calendar.user:
+        user_name, user_email = frappe.db.get_value("User", event.user_calendar.user, ["full_name", "email"])
         event_object.extra.append(
             ContentLine(
                 name="ORGANIZER",
