@@ -64,6 +64,7 @@
   font-weight: 500;
   font-size: 1.45rem;
   margin-bottom: 0.3rem;
+  color: #000;
 }
 .cal-main-container .timeslot-container {
   overflow: scroll;
@@ -99,6 +100,7 @@
   display: flex;
   justify-content: center;
   align-items: center;
+  color: #000;
 }
 
 .timeslot-empty{
@@ -160,6 +162,7 @@ header .calendar-navigation span:hover {
 header .calendar-current-date {
   font-weight: 500;
   font-size: 1.45rem;
+  color: #000;
 }
 
 .calendar-body {
@@ -181,7 +184,7 @@ header .calendar-current-date {
   width: calc(100% / 7);
   height: 45px;
   font-size: 1.07rem;
-  color: #414141;
+  color: #000;
   align-items: center;
   justify-content: center;
   display: flex;
@@ -189,7 +192,7 @@ header .calendar-current-date {
 
 .calendar-body .calendar-weekdays li {
   cursor: default;
-  font-weight: 500;
+  font-weight: 700;
 }
 .applicant-detail p{
     margin-bottom: 0.1rem;
