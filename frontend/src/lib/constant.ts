@@ -1,1 +1,1 @@
-export const BASE_ROUTE = "/frappe-appointment";
+export const BASE_ROUTE = "/schedule";

@@ -87,3 +87,13 @@ export function getTimeZoneOffsetFromTimeZoneString(timezone: string) {
 
   return offsetInMinutes;
 }
+
+
+export const convertToMinutes = (duration:string) => {
+  const [hours, minutes, seconds] = duration.split(":").map(Number);
+  return String(hours * 60 + minutes + seconds / 60);
+};
+
+export const getLocalTimezone = (): string => {
+  return Intl.DateTimeFormat().resolvedOptions().timeZone;
+};

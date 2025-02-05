@@ -39,8 +39,6 @@ interface AppContextType {
   selectedSlot: slotType;
   timeZone: string;
   meetingDurationCards: durationCard[];
-  durationId: string;
-  setDurationId: (id: string) => void;
   setMeetingId: (id: string) => void;
   setDuration: (duration: string) => void;
   setUserInfo: (userInfo: UserInfo) => void;
@@ -55,10 +53,9 @@ const initialAppContextType: AppContextType = {
   meetingId: "",
   duration: "",
   selectedDate: new Date(),
-  selectedSlot: {end_time:"",start_time:""},
+  selectedSlot: { end_time: "", start_time: "" },
   timeZone: "",
   meetingDurationCards: [],
-  durationId: "",
   userInfo: {
     name: "",
     designation: "",
@@ -74,7 +71,6 @@ const initialAppContextType: AppContextType = {
   setSelectedSlot: () => {},
   setTimeZone: () => {},
   setMeetingDurationCards: () => {},
-  setDurationId: () => {},
 };
 
 // Create the context
@@ -106,10 +102,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
     durationCard[]
   >(initialAppContextType.meetingDurationCards);
 
-  const [durationId, setDurationId] = useState<string>(
-    initialAppContextType.durationId
-  );
-
   return (
     <AppContext.Provider
       value={{
@@ -127,8 +119,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
         setTimeZone,
         meetingDurationCards,
         setMeetingDurationCards,
-        durationId,
-        setDurationId,
       }}
     >
       {children}

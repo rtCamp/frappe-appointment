@@ -13,8 +13,7 @@ const NotFound = lazy(() => import("@/pages/notFound"));
 const Router = () => {
   return (
     <>
-      <Route path="/:meetId" element={<Appointment />}>
-      </Route>
+      <Route path="/in/:meetId" element={<Appointment />}></Route>
       <Route path="*" element={<NotFound />} />
     </>
   );

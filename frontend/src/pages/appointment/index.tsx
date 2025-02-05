@@ -2,7 +2,7 @@
  * External dependencies
  */
 import { useEffect } from "react";
-import { Navigate, useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 
 /**
  * Internal dependencies
@@ -16,20 +16,28 @@ import SocialProfiles, { Profile } from "./components/socialProfiles";
 import { useAppContext } from "@/context/app";
 import { useFrappeGetCall } from "frappe-react-sdk";
 import { Skeleton } from "@/components/ui/skeleton";
+import { getLocalTimezone } from "@/lib/utils";
+import PoweredBy from "@/components/poweredBy";
 
 const Appointment = () => {
   const { meetId } = useParams();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const type = searchParams.get("type");
+
+  const updateTypeQuery = (type: string) => {
+    setSearchParams({ type });
+  };
+
   const navigate = useNavigate();
   const {
     setMeetingId,
     setUserInfo,
     userInfo,
     setDuration,
-    duration,
     setTimeZone,
     meetingDurationCards,
     setMeetingDurationCards,
-    setDurationId,
   } = useAppContext();
 
   const { data, isLoading, error } = useFrappeGetCall(
@@ -37,7 +45,11 @@ const Appointment = () => {
     {
       slug: meetId,
     },
-    undefined
+    undefined,
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+    }
   );
 
   const profiles: Profile[] = [
@@ -50,7 +62,7 @@ const Appointment = () => {
     if (meetId) {
       setMeetingId(meetId);
     }
-    setTimeZone("Asia/Calcutta");
+    setTimeZone(getLocalTimezone());
   }, []);
 
   useEffect(() => {
@@ -60,7 +72,7 @@ const Appointment = () => {
         designation: data?.message?.position,
         organizationName: data?.message?.company,
         userImage: data?.message?.profile_pic,
-        socialProfiles: profiles,
+        socialProfiles: [],
         meetingProvider: data?.message?.meeting_provider,
       });
       setMeetingDurationCards(data?.message?.durations);
@@ -72,10 +84,10 @@ const Appointment = () => {
 
   return (
     <>
-      {!duration ? (
+      {!type || isLoading ? (
         <div className="w-full h-full max-md:h-fit flex justify-center">
           <div className="container max-w-6xl mx-auto p-4 py-8 md:py-16 grid gap-10 md:gap-12">
-            <div className="grid md:grid-cols-[300px,1fr] gap-8 items-start relative">
+            <div className="grid lg:grid-cols-[300px,1fr] gap-8 items-start relative">
               {/* Profile Section */}
               {isLoading ? (
                 <ProfileSkeleton />
@@ -122,8 +134,8 @@ const Appointment = () => {
                     </p>
                   </div>
                 )}
-
-                <div className="grid sm:grid-cols-2 gap-4">
+                {/* meeting cards */}
+                <div className="grid sm:grid-cols-2 gap-4 h-full overflow-y-auto">
                   {isLoading ? (
                     <>
                       <MeetingCardSkeleton />
@@ -138,7 +150,7 @@ const Appointment = () => {
                         duration={card.duration / 60}
                         onClick={() => {
                           setDuration((card.duration / 60)?.toString());
-                          setDurationId(card.id);
+                          updateTypeQuery(card.id);
                         }}
                       />
                     ))
@@ -149,8 +161,9 @@ const Appointment = () => {
           </div>
         </div>
       ) : (
-        <Booking />
+        <Booking type={type} />
       )}
+      <PoweredBy />
     </>
   );
 };

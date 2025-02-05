@@ -16,20 +16,32 @@ import {
 } from "@/components/ui/card";
 import Typography from "@/components/ui/typography";
 import { useAppContext } from "@/context/app";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface MeetingCardProps {
-  id:string;
+  id: string;
   title: string;
   duration: number;
   onClick: VoidFunction;
 }
 
-const MeetingCard = ({ id,title, duration, onClick }: MeetingCardProps) => {
+const MeetingCard = ({ id, title, duration, onClick }: MeetingCardProps) => {
   const { userInfo } = useAppContext();
   return (
     <Card className="group relative overflow-hidden transition-all hover:shadow-lg">
       <CardHeader className="space-y-1">
-        <CardTitle className="text-xl py-2">{title}</CardTitle>
+        <CardTitle className="text-xl py-2">
+          <Tooltip>
+            <TooltipTrigger>
+              {title}
+            </TooltipTrigger>
+            <TooltipContent>{title}</TooltipContent>
+          </Tooltip>
+        </CardTitle>
         <CardDescription className="flex items-center gap-1">
           <Clock className="w-4 h-4" />
           <Typography>{duration} min</Typography>

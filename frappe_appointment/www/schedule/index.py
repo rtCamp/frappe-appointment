@@ -43,6 +43,6 @@ def get_context(context):
         }
     )
 
-    context["app_name"] = "Frappe Appointment"
+    context["app_name"] = "Scheduler"
 
     return context

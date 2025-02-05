@@ -1,19 +1,35 @@
 
 
 // Helper function to format the timezone offset
-export function getTimeZoneOffset(timeZone: string) {
+export function getTimeZoneOffset(timeZone: string): string {
   try {
     const now = new Date();
-    const tzString = new Date(now.toLocaleString("en-US", { timeZone }));
-    const offsetMinutes = (tzString.getTime() - now.getTime()) / (1000 * 60);
-    const offsetHours = Math.abs(Math.floor(offsetMinutes / 60));
-    const remainingMinutes = Math.abs(Math.floor(offsetMinutes % 60));
-    const sign = offsetMinutes >= 0 ? "+" : "-";
-    return `GMT${sign}${String(offsetHours).padStart(2, "0")}:${String(
-      remainingMinutes
-    ).padStart(2, "0")}`;
+    const formatter = new Intl.DateTimeFormat("en-US", {
+      timeZone,
+      timeZoneName: "shortOffset",
+    });
+
+    const parts = formatter.formatToParts(now);
+    let offsetPart = parts.find((part) => part.type === "timeZoneName")?.value;
+
+    if (!offsetPart) return "";
+
+    // Ensure "GMT" has an explicit offset (e.g., "GMT+00:00")
+    if (offsetPart === "GMT") {
+      offsetPart = "GMT+00:00";
+    }
+
+    // Extract offset sign and numbers using regex
+    const match = offsetPart.match(/GMT([+-]?)(\d+)?(?::(\d+))?/);
+    if (!match) return "";
+
+    const sign = match[1] || "+";
+    const hours = match[2] ? match[2].padStart(2, "0") : "00";
+    const minutes = match[3] ? match[3].padStart(2, "0") : "00";
+
+    return `GMT${sign}${hours}:${minutes}`;
   } catch (e) {
-    console.log(e);
+    console.error(e);
     return "";
   }
 }
@@ -33,20 +49,3 @@ export function getCurrentTime(timeZone: string) {
   }
 }
 
-export const timeZones = [
-  "Asia/Tbilisi",
-  "Asia/Yerevan",
-  "Asia/Kabul",
-  "Asia/Tashkent",
-  "Asia/Yekaterinburg",
-  "Asia/Karachi",
-  "Asia/Almaty",
-  "Asia/Calcutta",
-  "Asia/Colombo",
-  "Asia/Katmandu",
-  "Asia/Dhaka",
-  "Asia/Omsk",
-  "Asia/Rangoon",
-  "Asia/Bangkok",
-  "Asia/Barnaul",
-];
