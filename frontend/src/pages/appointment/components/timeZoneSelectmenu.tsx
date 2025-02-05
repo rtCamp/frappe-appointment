@@ -58,7 +58,7 @@ export default function TimeZoneSelect({ timeZones, timeZone, setTimeZone }) {
                   <div className="flex w-full items-center gap-4">
                     <div className="w-40 truncate">
                       <div className="font-medium truncate">
-                        {tz.split("/")[1].replace("_", " ")}
+                        {tz?.split("/")[1]?.replace("_", " ")}
                       </div>
                       <div className="text-sm text-muted-foreground truncate">
                         {getTimeZoneOffset(tz)}

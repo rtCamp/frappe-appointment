@@ -3,24 +3,12 @@
  */
 import { useEffect, useRef, useState } from "react";
 import { format, formatDate } from "date-fns";
-import {
-  Clock,
-  Globe,
-  Calendar as CalendarIcon,
-  ArrowLeft,
-} from "lucide-react";
+import { Clock, Calendar as CalendarIcon, ArrowLeft } from "lucide-react";
 
 /**
  * Internal dependencies.
  */
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import type { TimeFormat, DayAvailability, MeetingData } from "../types";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -30,23 +18,16 @@ import {
   cn,
   convertToMinutes,
   getTimeZoneOffsetFromTimeZoneString,
+  parseFrappeErrorMsg,
 } from "@/lib/utils";
 import MeetingForm from "./meetingForm";
-import { getCurrentTime, getTimeZoneOffset } from "../utils";
 import { useAppContext } from "@/context/app";
 import { useFrappeGetCall } from "frappe-react-sdk";
 import { useNavigate } from "react-router-dom";
 import TimeSlotSkeleton from "./timeSlotSkeleton";
 import TimeZoneSelect from "./timeZoneSelectmenu";
-
-const timeZones = [
-  "America/New_York",
-  "America/Los_Angeles",
-  "Europe/London",
-  "Asia/Dubai",
-  "Asia/Calcutta",
-  "Asia/Tokyo",
-];
+import { toast } from "sonner";
+import { Skeleton } from "@/components/ui/skeleton";
 
 // Map days to numbers (0 = Sunday, 1 = Monday, ..., 6 = Saturday)
 const dayMapping: Record<string, number> = {
@@ -146,6 +127,7 @@ const Booking = ({ type }: BookingProp) => {
   const [expanded, setExpanded] = useState(true);
   const [isMobileView, setIsMobileView] = useState(false);
   const [showMeetingForm, setShowMeetingForm] = useState(false);
+  const [timeZones, setTimeZones] = useState<Array<string>>([]);
   const [meetingData, setMeetingData] = useState<MeetingData>({
     all_available_slots_for_data: [],
     available_days: [],
@@ -163,7 +145,7 @@ const Booking = ({ type }: BookingProp) => {
   });
   const navigate = useNavigate();
   const { data, isLoading, error } = useFrappeGetCall(
-    "frappe_appointment.api.personal_meet.get_time_slots?=330",
+    "frappe_appointment.api.personal_meet.get_time_slots",
     {
       duration_id: type,
       date: new Intl.DateTimeFormat("en-CA", {
@@ -177,6 +159,29 @@ const Booking = ({ type }: BookingProp) => {
     },
     undefined
   );
+
+  const {
+    data: timeZoneData,
+    isLoading: timeZoneLoading,
+    error: timeZoneError,
+  } = useFrappeGetCall(
+    "frappe_appointment.api.personal_meet.get_all_timezones"
+  );
+
+  useEffect(() => {
+    if (timeZoneData) {
+      setTimeZones(timeZoneData?.message || []);
+    }
+    if (timeZoneError) {
+      const error = parseFrappeErrorMsg(timeZoneError);
+      toast(error || "Something went wrong", {
+        action: {
+          label: "OK",
+          onClick: () => toast.dismiss(),
+        },
+      });
+    }
+  }, [timeZoneData, timeZoneError]);
 
   useEffect(() => {
     if (data) {
@@ -357,11 +362,15 @@ const Booking = ({ type }: BookingProp) => {
                   />
                   <div className="mt-4 max-md:px-6 gap-5 flex max-md:flex-col md:justify-between md:items-center ">
                     {/* Timezone */}
-                    <TimeZoneSelect
-                      timeZones={timeZones}
-                      setTimeZone={setTimeZone}
-                      timeZone={timeZone}
-                    />
+                    {timeZoneLoading ? (
+                      <Skeleton className="w-full lg:w-32 h-10" />
+                    ) : (
+                      <TimeZoneSelect
+                        timeZones={timeZones}
+                        setTimeZone={setTimeZone}
+                        timeZone={timeZone}
+                      />
+                    )}
 
                     {/* Time Format Toggle */}
                     <div className="flex items-center gap-2">
