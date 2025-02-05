@@ -162,7 +162,7 @@ class EventOverride(Event):
         super().on_trash()
 
     def on_update(self):
-        self.sync_communication()
+        self.sync_communication()  # Overrided this because we have made reference doctype and name mandatory in Event Participants
 
     def sync_communication(self):
         if self.event_participants:
