@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { format, formatDate } from "date-fns";
 import { Clock, Calendar as CalendarIcon, ArrowLeft } from "lucide-react";
 import { useFrappeGetCall } from "frappe-react-sdk";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 
 /**
@@ -56,6 +56,16 @@ const Booking = ({ type }: BookingProp) => {
   const [isMobileView, setIsMobileView] = useState(false);
   const [showMeetingForm, setShowMeetingForm] = useState(false);
   const [timeZones, setTimeZones] = useState<Array<string>>([]);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const date = searchParams.get("date");
+
+  const updateDateQuery = (date: Date) => {
+    setSearchParams({
+      date: `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`,
+      type,
+    });
+  };
+
   const [meetingData, setMeetingData] = useState<MeetingData>({
     all_available_slots_for_data: [],
     available_days: [],
@@ -112,10 +122,21 @@ const Booking = ({ type }: BookingProp) => {
   }, [timeZoneData, timeZoneError]);
 
   useEffect(() => {
+    if (date) {
+      setSelectedDate(new Date(date));
+    }
+  }, [date]);
+
+  useEffect(() => {
     if (data) {
       setMeetingData(data.message);
       setDuration(convertToMinutes(data?.message?.duration).toString());
       setSelectedDate(
+        data.message.is_invalid_date
+          ? new Date(data.message.next_valid_date)
+          : selectedDate
+      );
+      updateDateQuery(
         data.message.is_invalid_date
           ? new Date(data.message.next_valid_date)
           : selectedDate
@@ -265,13 +286,36 @@ const Booking = ({ type }: BookingProp) => {
                     mode="single"
                     selected={selectedDate}
                     weekStartsOn={1}
+                    fromMonth={new Date(meetingData.valid_start_date)}
+                    toMonth={new Date(meetingData.valid_end_date)}
                     disabled={(date) => {
                       const disabledDaysList =
                         disabledDays(meetingData.available_days) || [];
-                      return disabledDaysList.includes(date.getDay());
+                      const isPastDate =
+                        date <
+                        new Date(meetingData.valid_start_date)?.setHours(
+                          0,
+                          0,
+                          0,
+                          0
+                        );
+                      const isNextDate =
+                        date >
+                        new Date(meetingData.valid_end_date)?.setHours(
+                          0,
+                          0,
+                          0,
+                          0
+                        );
+                      return (
+                        isPastDate ||
+                        disabledDaysList.includes(date.getDay()) ||
+                        isNextDate
+                      );
                     }}
                     onDayClick={(date) => {
                       setSelectedDate(date);
+                      updateDateQuery(date);
                       setExpanded(true);
                     }}
                     className="rounded-md md:border md:h-96 w-full flex md:px-6"
