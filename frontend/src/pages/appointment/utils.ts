@@ -49,3 +49,22 @@ export function getCurrentTime(timeZone: string) {
   }
 }
 
+// Map days to numbers (0 = Sunday, 1 = Monday, ..., 6 = Saturday)
+export const dayMapping: Record<string, number> = {
+  Sunday: 0,
+  Monday: 1,
+  Tuesday: 2,
+  Wednesday: 3,
+  Thursday: 4,
+  Friday: 5,
+  Saturday: 6,
+};
+
+// Convert available days to disabled days
+export const disabledDays = (availableDays?: string[]) => {
+  if (!availableDays) return []; // Return an empty array if data isn't loaded yet
+
+  return Object.values(dayMapping).filter(
+    (dayNumber) => !availableDays.includes(Object.keys(dayMapping)[dayNumber])
+  );
+};

@@ -1,4 +1,12 @@
+/**
+ * External dependencies
+ */
 import { useState } from "react";
+import { ChevronDown, Globe } from "lucide-react";
+
+/**
+ * Internal dependencies
+ */
 import {
   Command,
   CommandInput,
@@ -13,10 +21,19 @@ import {
   PopoverContent,
 } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
-import { ChevronDown, Globe } from "lucide-react";
 import { getCurrentTime, getTimeZoneOffset } from "../utils";
 
-export default function TimeZoneSelect({ timeZones, timeZone, setTimeZone }) {
+interface TimeZoneSelectProps {
+  timeZones: Array<string>;
+  timeZone: string;
+  setTimeZone: (tz: string) => void;
+}
+
+export default function TimeZoneSelect({
+  timeZones,
+  timeZone,
+  setTimeZone,
+}: TimeZoneSelectProps) {
   const [open, setOpen] = useState(false);
 
   return (

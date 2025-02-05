@@ -106,7 +106,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
     <AppContext.Provider
       value={{
         meetingId,
-        duration,
         userInfo,
         setMeetingId,
         setDuration,

@@ -4,13 +4,16 @@
 import { useEffect, useRef, useState } from "react";
 import { format, formatDate } from "date-fns";
 import { Clock, Calendar as CalendarIcon, ArrowLeft } from "lucide-react";
+import { useFrappeGetCall } from "frappe-react-sdk";
+import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 
 /**
  * Internal dependencies.
  */
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import type { TimeFormat, DayAvailability, MeetingData } from "../types";
+import type { TimeFormat, MeetingData } from "../types";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Calendar } from "@/components/ui/calendar";
 import Typography from "@/components/ui/typography";
@@ -22,90 +25,10 @@ import {
 } from "@/lib/utils";
 import MeetingForm from "./meetingForm";
 import { useAppContext } from "@/context/app";
-import { useFrappeGetCall } from "frappe-react-sdk";
-import { useNavigate } from "react-router-dom";
 import TimeSlotSkeleton from "./timeSlotSkeleton";
 import TimeZoneSelect from "./timeZoneSelectmenu";
-import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
-
-// Map days to numbers (0 = Sunday, 1 = Monday, ..., 6 = Saturday)
-const dayMapping: Record<string, number> = {
-  Sunday: 0,
-  Monday: 1,
-  Tuesday: 2,
-  Wednesday: 3,
-  Thursday: 4,
-  Friday: 5,
-  Saturday: 6,
-};
-
-// Convert available days to disabled days
-const disabledDays = (availableDays?: string[]) => {
-  if (!availableDays) return []; // Return an empty array if data isn't loaded yet
-
-  return Object.values(dayMapping).filter(
-    (dayNumber) => !availableDays.includes(Object.keys(dayMapping)[dayNumber])
-  );
-};
-
-export const mockAvailability: DayAvailability[] = [
-  {
-    date: "2025-01-31",
-    slots: [
-      {
-        startTime: "2025-01-31T06:30:00.000Z", // 12:00 PM IST
-        endTime: "2025-01-31T07:00:00.000Z", // 12:30 PM IST
-        isAvailable: true,
-      },
-      {
-        startTime: "2025-01-31T07:00:00.000Z", // 12:30 PM IST
-        endTime: "2025-01-31T07:30:00.000Z", // 1:00 PM IST
-        isAvailable: true,
-      },
-      {
-        startTime: "2025-01-31T07:30:00.000Z", // 1:00 PM IST
-        endTime: "2025-01-31T08:00:00.000Z", // 1:30 PM IST
-        isAvailable: true,
-      },
-      {
-        startTime: "2025-01-31T07:30:00.000Z", // 1:00 PM IST
-        endTime: "2025-01-31T08:00:00.000Z", // 1:30 PM IST
-        isAvailable: true,
-      },
-      {
-        startTime: "2025-01-31T07:30:00.000Z", // 1:00 PM IST
-        endTime: "2025-01-31T08:00:00.000Z", // 1:30 PM IST
-        isAvailable: true,
-      },
-      {
-        startTime: "2025-01-31T07:30:00.000Z", // 1:00 PM IST
-        endTime: "2025-01-31T08:00:00.000Z", // 1:30 PM IST
-        isAvailable: true,
-      },
-      {
-        startTime: "2025-01-31T07:30:00.000Z", // 1:00 PM IST
-        endTime: "2025-01-31T08:00:00.000Z", // 1:30 PM IST
-        isAvailable: true,
-      },
-      {
-        startTime: "2025-01-31T07:30:00.000Z", // 1:00 PM IST
-        endTime: "2025-01-31T08:00:00.000Z", // 1:30 PM IST
-        isAvailable: true,
-      },
-      {
-        startTime: "2025-01-31T07:30:00.000Z", // 1:00 PM IST
-        endTime: "2025-01-31T08:00:00.000Z", // 1:30 PM IST
-        isAvailable: true,
-      },
-      {
-        startTime: "2025-01-31T07:30:00.000Z", // 1:00 PM IST
-        endTime: "2025-01-31T08:00:00.000Z", // 1:30 PM IST
-        isAvailable: true,
-      },
-    ],
-  },
-];
+import { disabledDays } from "../utils";
 
 interface BookingProp {
   type: string;
@@ -191,20 +114,7 @@ const Booking = ({ type }: BookingProp) => {
     if (error) {
       navigate("/");
     }
-  }, [data, error, type, navigate]);
-
-  // Get availability for selected date
-  const dayAvailability = mockAvailability.find(
-    (day) => day.date === format(selectedDate, "yyyy-MM-dd")
-  );
-
-  // Convert availability slots to selected timezone
-  const convertedSlots =
-    dayAvailability?.slots.map((slot) => ({
-      ...slot,
-      startTime: new Date(slot.startTime),
-      endTime: new Date(slot.endTime),
-    })) || [];
+  }, [data, error, type, navigate, setDuration, setMeetingData]);
 
   const formatTimeSlot = (date: Date) => {
     return new Intl.DateTimeFormat("en-US", {
@@ -464,6 +374,7 @@ const Booking = ({ type }: BookingProp) => {
                 setShowMeetingForm(false);
                 setExpanded(false);
               }}
+              durationId={type}
             />
           )}
         </div>

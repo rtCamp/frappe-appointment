@@ -8,6 +8,7 @@ import { useFrappePostCall } from "frappe-react-sdk";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ChevronLeft, X } from "lucide-react";
 import { formatDate } from "date-fns";
+import { toast } from "sonner";
 
 /**
  * Internal dependencies.
@@ -24,7 +25,6 @@ import {
 import { Input } from "@/components/ui/input";
 import Typography from "@/components/ui/typography";
 import { useAppContext } from "@/context/app";
-import { toast } from "sonner";
 import {
   getTimeZoneOffsetFromTimeZoneString,
   parseFrappeErrorMsg,
@@ -41,16 +41,17 @@ type ContactFormValues = z.infer<typeof contactFormSchema>;
 
 interface MeetingFormProps {
   onBack: VoidFunction;
+  durationId: string;
 }
 
-const MeetingForm = ({ onBack }: MeetingFormProps) => {
+const MeetingForm = ({ onBack,durationId }: MeetingFormProps) => {
   const [isGuestsOpen, setIsGuestsOpen] = useState(false);
   const [guestInput, setGuestInput] = useState("");
   const { call: bookMeeting, loading } = useFrappePostCall(
     `frappe_appointment.api.personal_meet.book_time_slot`
   );
 
-  const { selectedDate, selectedSlot, durationId, timeZone } = useAppContext();
+  const { selectedDate, selectedSlot, timeZone } = useAppContext();
 
   const form = useForm<ContactFormValues>({
     resolver: zodResolver(contactFormSchema),
@@ -188,7 +189,7 @@ const MeetingForm = ({ onBack }: MeetingFormProps) => {
                 onClick={() => setIsGuestsOpen(!isGuestsOpen)}
                 disabled={loading}
               >
-                + Add Guests
+                {isGuestsOpen ? "Hide Guests" : "+ Add Guests"}
               </Button>
 
               {isGuestsOpen && (

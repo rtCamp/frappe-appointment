@@ -1,15 +1,5 @@
 export type TimeFormat = "12h" | "24h";
 
-export interface AvailabilitySlot {
-  startTime: string; // ISO string
-  endTime: string;
-  isAvailable: boolean;
-}
-
-export interface DayAvailability {
-  date: string; // YYYY-MM-DD
-  slots: AvailabilitySlot[];
-}
 
 export interface MeetingData {
   all_available_slots_for_data: any[]; // Define a more specific type if possible

@@ -3,6 +3,7 @@
  */
 import { useEffect } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { useFrappeGetCall } from "frappe-react-sdk";
 
 /**
  * Internal dependencies
@@ -14,7 +15,6 @@ import MeetingCard from "./components/meetingCard";
 import Booking from "./components/booking";
 import SocialProfiles, { Profile } from "./components/socialProfiles";
 import { useAppContext } from "@/context/app";
-import { useFrappeGetCall } from "frappe-react-sdk";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getLocalTimezone } from "@/lib/utils";
 import PoweredBy from "@/components/poweredBy";
