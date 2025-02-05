@@ -4,6 +4,7 @@ import re
 
 import frappe
 import frappe.utils
+import pytz
 
 from frappe_appointment.frappe_appointment.doctype.appointment_group.appointment_group import _get_time_slots_for_day
 from frappe_appointment.helpers.overrides import add_response_code
@@ -220,3 +221,8 @@ def book_time_slot(
     )
 
     return data
+
+
+@frappe.whitelist(allow_guest=True)
+def get_all_timezones():
+    return pytz.common_timezones
