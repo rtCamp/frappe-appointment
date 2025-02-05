@@ -18,6 +18,11 @@ import { useAppContext } from "@/context/app";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getLocalTimezone } from "@/lib/utils";
 import PoweredBy from "@/components/poweredBy";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 const Appointment = () => {
   const { meetId } = useParams();
@@ -92,7 +97,7 @@ const Appointment = () => {
               {isLoading ? (
                 <ProfileSkeleton />
               ) : (
-                <Card className="border">
+                <Card className="border max-lg:w-full max-lg:overflow-hidden">
                   <CardContent className="p-6 flex flex-col items-center text-center space-y-10">
                     <Avatar className="w-36 h-36 border-4 border-white shadow-lg">
                       <AvatarImage
@@ -103,13 +108,34 @@ const Appointment = () => {
                         {userInfo?.name?.toString()[0]?.toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
-                    <div className="space-y-2">
-                      <h1 className="text-2xl font-semibold tracking-tight">
-                        {userInfo.name}
+                    <div className="space-y-2 w-full">
+                      <h1 className="text-2xl font-semibold tracking-tight truncate cursor-pointer">
+                        <Tooltip>
+                          <TooltipTrigger>{userInfo.name}</TooltipTrigger>
+                          <TooltipContent>{userInfo.name}</TooltipContent>
+                        </Tooltip>
                       </h1>
                       <div className="text-muted-foreground">
-                        <p className="font-medium">{userInfo.designation}</p>
-                        <p>{userInfo.organizationName}</p>
+                        <p className="font-medium truncate cursor-pointer">
+                          <Tooltip>
+                            <TooltipTrigger>
+                              {userInfo.designation}
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              {userInfo.designation}
+                            </TooltipContent>
+                          </Tooltip>
+                        </p>
+                        <p className="cursor-pointer truncate">
+                          <Tooltip>
+                            <TooltipTrigger>
+                              {userInfo.organizationName}
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              {userInfo.organizationName}
+                            </TooltipContent>
+                          </Tooltip>
+                        </p>
                       </div>
                     </div>
                     <SocialProfiles profiles={userInfo.socialProfiles} />

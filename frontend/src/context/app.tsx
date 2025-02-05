@@ -107,6 +107,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
       value={{
         meetingId,
         userInfo,
+        duration,
         setMeetingId,
         setDuration,
         setUserInfo,
