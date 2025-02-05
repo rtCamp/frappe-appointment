@@ -6,7 +6,7 @@ const PoweredBy = () => {
       <div className="flexitems-center w-full justify-center shrink-0">
         <Typography
           variant="h5"
-          className="flex items-center py-5 justify-center gap-1"
+          className="flex items-center py-5 max-lg:py-2 justify-center gap-1"
         >
           <Typography variant="p"> Powered by</Typography>
           <Typography variant="p">

@@ -29,7 +29,11 @@ import TimeSlotSkeleton from "./timeSlotSkeleton";
 import TimeZoneSelect from "./timeZoneSelectmenu";
 import { Skeleton } from "@/components/ui/skeleton";
 import { disabledDays } from "../utils";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface BookingProp {
   type: string;
@@ -111,6 +115,11 @@ const Booking = ({ type }: BookingProp) => {
     if (data) {
       setMeetingData(data.message);
       setDuration(convertToMinutes(data?.message?.duration).toString());
+      setSelectedDate(
+        data.message.is_invalid_date
+          ? new Date(data.message.next_valid_date)
+          : selectedDate
+      );
     }
     if (error) {
       navigate("/");
@@ -157,12 +166,11 @@ const Booking = ({ type }: BookingProp) => {
               </AvatarFallback>
             </Avatar>
             <div className="w-full flex flex-col gap-1">
-              <Typography
-                variant="h2"
-                className="text-3xl font-semibold"
-              >
+              <Typography variant="h2" className="text-3xl font-semibold">
                 <Tooltip>
-                  <TooltipTrigger className="w-full truncate text-left">{userInfo.name}</TooltipTrigger>
+                  <TooltipTrigger className="w-full truncate text-left">
+                    {userInfo.name}
+                  </TooltipTrigger>
                   <TooltipContent>{userInfo.name}</TooltipContent>
                 </Tooltip>
               </Typography>
