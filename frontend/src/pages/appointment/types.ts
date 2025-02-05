@@ -1,6 +1,5 @@
 export type TimeFormat = "12h" | "24h";
 
-
 export interface MeetingData {
   all_available_slots_for_data: any[]; // Define a more specific type if possible
   available_days: string[]; // Array of weekdays

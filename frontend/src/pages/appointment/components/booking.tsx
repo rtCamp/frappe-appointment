@@ -13,7 +13,7 @@ import { toast } from "sonner";
  */
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import type { TimeFormat, MeetingData } from "../types";
+import { type TimeFormat, type MeetingData } from "../types";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Calendar } from "@/components/ui/calendar";
 import Typography from "@/components/ui/typography";
@@ -29,6 +29,7 @@ import TimeSlotSkeleton from "./timeSlotSkeleton";
 import TimeZoneSelect from "./timeZoneSelectmenu";
 import { Skeleton } from "@/components/ui/skeleton";
 import { disabledDays } from "../utils";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface BookingProp {
   type: string;
@@ -155,9 +156,15 @@ const Booking = ({ type }: BookingProp) => {
                 {userInfo.name?.toString()[0]?.toUpperCase()}
               </AvatarFallback>
             </Avatar>
-            <div className="w-full flex flex-col gap-1 ">
-              <Typography variant="h2" className="text-3xl font-semibold">
-                {userInfo.name}
+            <div className="w-full flex flex-col gap-1">
+              <Typography
+                variant="h2"
+                className="text-3xl font-semibold"
+              >
+                <Tooltip>
+                  <TooltipTrigger className="w-full truncate text-left">{userInfo.name}</TooltipTrigger>
+                  <TooltipContent>{userInfo.name}</TooltipContent>
+                </Tooltip>
               </Typography>
               <Typography className="text-base text-muted-foreground">
                 {userInfo.designation} at {userInfo.organizationName}
