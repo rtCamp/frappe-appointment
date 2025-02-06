@@ -103,6 +103,7 @@ const Appointment = () => {
                       <AvatarImage
                         src={userInfo.userImage}
                         alt="Profile picture"
+                        className="bg-blue-50"
                       />
                       <AvatarFallback className="text-4xl">
                         {userInfo?.name?.toString()[0]?.toUpperCase()}

@@ -166,8 +166,8 @@ const Booking = ({ type }: BookingProp) => {
         <div className="w-full rounded-lg flex max-lg:flex-col md:border gap-8 md:gap-28 items-start">
           {/* Profile */}
           <div className="w-full md:max-w-sm flex flex-col gap-4 md:p-6 px-4">
-            <Avatar className="md:h-32 md:w-32 h-24 w-24 object-cover mb-4 md:mb-0">
-              <AvatarImage src={userInfo.userImage} alt="Profile picture" />
+            <Avatar className="md:h-32 md:w-32 h-24 w-24 object-cover mb-4 md:mb-0 ">
+              <AvatarImage src={userInfo.userImage} alt="Profile picture" className="bg-blue-50"/>
               <AvatarFallback className="text-4xl">
                 {userInfo.name?.toString()[0]?.toUpperCase()}
               </AvatarFallback>
