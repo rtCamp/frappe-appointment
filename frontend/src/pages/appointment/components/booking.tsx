@@ -298,6 +298,7 @@ const Booking = ({ type }: BookingProp) => {
                   <Calendar
                     mode="single"
                     selected={selectedDate}
+                    month={selectedDate}
                     weekStartsOn={1}
                     fromMonth={new Date(meetingData.valid_start_date)}
                     toMonth={new Date(meetingData.valid_end_date)}
