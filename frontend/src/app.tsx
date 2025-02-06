@@ -16,7 +16,6 @@ import Router from "./route";
 import { BASE_ROUTE } from "./lib/constant";
 import { getSiteName } from "./lib/utils";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import ErrorFallback from "@/components/errorFallback";
 import { AppProvider } from "./context/app";
 import { Toaster } from "./components/ui/sonner";
 
