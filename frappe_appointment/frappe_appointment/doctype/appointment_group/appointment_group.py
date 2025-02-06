@@ -2,6 +2,7 @@
 # For license information, please see license.txt
 
 import datetime
+import urllib.parse
 
 import frappe
 import frappe.utils
@@ -59,7 +60,7 @@ class AppointmentGroup(WebsiteGenerator):
             if not g_calendar.custom_zoom_user_email:
                 return frappe.throw(
                     frappe._(
-                        f"Please set Zoom User Email in <a href='/app/google-calendar/{self.event_creator}'>Google Calendar</a>."
+                        f"Please set Zoom User Email in <a href='/app/google-calendar/{urllib.parse.quote(self.event_creator)}'>Google Calendar</a>."
                     )
                 )
 
