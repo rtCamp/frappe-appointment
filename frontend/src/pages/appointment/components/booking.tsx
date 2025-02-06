@@ -58,6 +58,7 @@ const Booking = ({ type }: BookingProp) => {
   const [timeZones, setTimeZones] = useState<Array<string>>([]);
   const [searchParams, setSearchParams] = useSearchParams();
   const date = searchParams.get("date");
+  const [displayMonth, setDisplayMonth] = useState(new Date(date || selectedDate));
 
   const updateDateQuery = (date: Date) => {
     setSearchParams({
@@ -83,7 +84,7 @@ const Booking = ({ type }: BookingProp) => {
     label: "",
   });
   const navigate = useNavigate();
-  const { data, isLoading, error,mutate } = useFrappeGetCall(
+  const { data, isLoading, error, mutate } = useFrappeGetCall(
     "frappe_appointment.api.personal_meet.get_time_slots",
     {
       duration_id: type,
@@ -132,16 +133,12 @@ const Booking = ({ type }: BookingProp) => {
     if (data) {
       setMeetingData(data.message);
       setDuration(convertToMinutes(data?.message?.duration).toString());
-      setSelectedDate(
-        data.message.is_invalid_date
-          ? new Date(data.message.next_valid_date)
-          : selectedDate
-      );
-      updateDateQuery(
-        data.message.is_invalid_date
-          ? new Date(data.message.next_valid_date)
-          : selectedDate
-      );
+      const validData = data.message.is_invalid_date
+        ? new Date(data.message.next_valid_date)
+        : selectedDate;
+      setSelectedDate(validData);
+      updateDateQuery(validData);
+      setDisplayMonth(validData);
     }
     if (error) {
       navigate("/");
@@ -205,7 +202,7 @@ const Booking = ({ type }: BookingProp) => {
                   {meetingData.label}
                 </Typography>
               ) : (
-                <Skeleton className="h-5 w-20"/>
+                <Skeleton className="h-5 w-20" />
               )}
               {duration ? (
                 <Typography className="text-sm mt-1">
@@ -213,7 +210,7 @@ const Booking = ({ type }: BookingProp) => {
                   {duration} Minute Meeting
                 </Typography>
               ) : (
-                <Skeleton className="h-5 w-24"/>
+                <Skeleton className="h-5 w-24" />
               )}
               <Typography className="text-sm  mt-1">
                 <CalendarIcon className="inline-block w-4 h-4 mr-1" />
@@ -298,7 +295,8 @@ const Booking = ({ type }: BookingProp) => {
                   <Calendar
                     mode="single"
                     selected={selectedDate}
-                    defaultMonth={selectedDate}
+                    month={displayMonth}
+                    onMonthChange={setDisplayMonth}
                     weekStartsOn={1}
                     fromMonth={new Date(meetingData.valid_start_date)}
                     toMonth={new Date(meetingData.valid_end_date)}
@@ -330,6 +328,7 @@ const Booking = ({ type }: BookingProp) => {
                     onDayClick={(date) => {
                       setSelectedDate(date);
                       updateDateQuery(date);
+                      setDisplayMonth(date);
                       setExpanded(true);
                     }}
                     className="rounded-md md:border md:h-96 w-full flex md:px-6"
