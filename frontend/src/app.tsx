@@ -26,25 +26,23 @@ const App = () => {
   });
   return (
     <>
-      <ErrorFallback>
-        <AppProvider>
-          <FrappeProvider
-            url={import.meta.env.VITE_BASE_URL ?? ""}
-            socketPort={import.meta.env.VITE_SOCKET_PORT}
-            enableSocket={
-              import.meta.env.VITE_ENABLE_SOCKET === "true" ? true : false
-            }
-            siteName={getSiteName()}
-          >
-            <TooltipProvider>
-              <Suspense fallback={<></>}>
-                <RouterProvider router={router} />
-                <Toaster />
-              </Suspense>
-            </TooltipProvider>
-          </FrappeProvider>
-        </AppProvider>
-      </ErrorFallback>
+      <AppProvider>
+        <FrappeProvider
+          url={import.meta.env.VITE_BASE_URL ?? ""}
+          socketPort={import.meta.env.VITE_SOCKET_PORT}
+          enableSocket={
+            import.meta.env.VITE_ENABLE_SOCKET === "true" ? true : false
+          }
+          siteName={getSiteName()}
+        >
+          <TooltipProvider>
+            <Suspense fallback={<></>}>
+              <RouterProvider router={router} />
+              <Toaster />
+            </Suspense>
+          </TooltipProvider>
+        </FrappeProvider>
+      </AppProvider>
     </>
   );
 };

@@ -3,6 +3,7 @@
  */
 import { lazy } from "react";
 import { Route } from "react-router-dom";
+import ErrorFallback from "./components/errorFallback";
 
 /**
  * Lazy load components.
@@ -13,7 +14,7 @@ const NotFound = lazy(() => import("@/pages/notFound"));
 const Router = () => {
   return (
     <>
-      <Route path="/in/:meetId" element={<Appointment />}></Route>
+      <Route path="/in/:meetId" element={<Appointment />} errorElement={<ErrorFallback/>}></Route>
       <Route path="*" element={<NotFound />} />
     </>
   );
