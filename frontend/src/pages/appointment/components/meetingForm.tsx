@@ -109,7 +109,7 @@ const MeetingForm = ({ onBack,durationId }: MeetingFormProps) => {
       .then(() => {
         onBack();
         toast("Appointment has been scheduled", {
-          description: formatDate(new Date(selectedDate), "d MMM, yyyy"),
+          description: `For ${formatDate(new Date(selectedDate), "d MMM, yyyy")} at ${formatDate(new Date(selectedSlot.start_time), "h a")}`,
           action: {
             label: "OK",
             onClick: () => toast.dismiss(),
