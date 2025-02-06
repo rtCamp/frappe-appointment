@@ -83,7 +83,7 @@ const Booking = ({ type }: BookingProp) => {
     label: "",
   });
   const navigate = useNavigate();
-  const { data, isLoading, error } = useFrappeGetCall(
+  const { data, isLoading, error,mutate } = useFrappeGetCall(
     "frappe_appointment.api.personal_meet.get_time_slots",
     {
       duration_id: type,
@@ -146,7 +146,7 @@ const Booking = ({ type }: BookingProp) => {
     if (error) {
       navigate("/");
     }
-  }, [data, error, type, navigate, setDuration, setMeetingData]);
+  }, [data, error, type, navigate, setDuration, setMeetingData, mutate]);
 
   const formatTimeSlot = (date: Date) => {
     return new Intl.DateTimeFormat("en-US", {
@@ -445,6 +445,7 @@ const Booking = ({ type }: BookingProp) => {
               onBack={() => {
                 setShowMeetingForm(false);
                 setExpanded(false);
+                mutate();
               }}
               durationId={type}
             />
