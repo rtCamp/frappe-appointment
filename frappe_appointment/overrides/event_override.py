@@ -276,19 +276,21 @@ def create_event_for_appointment_group(
             event.starts_on = starts_on
             event.ends_on = ends_on
             event.event_info = event_info
-            event.save(ignore_permissions=True)
 
-            # clear all previous logs
-            clear_messages()
-
-            if not event.handle_webhook(
+            webhook_call = event.handle_webhook(
                 {
                     "event": event.as_dict(),
                     "appointment_group": appointment_group.as_dict(),
                     "metadata": event_info,
                 }
-            ):
-                return frappe.throw(_("Unable to Update an event"))
+            )
+            if not webhook_call["status"]:
+                return frappe.throw(webhook_call["message"])
+
+            event.save(ignore_permissions=True)
+
+            # clear all previous logs
+            clear_messages()
 
             if success_message:
                 return frappe.msgprint(success_message)
