@@ -76,12 +76,11 @@ body {
   .no-scrollbar {
     overflow: auto; /* Always enable scrolling */
     padding-right: 5px; /* Adds space between content & scrollbar */
-    scrollbar-width: thin;
   }
 
   /* Reserve scrollbar space but hide it initially */
   .no-scrollbar::-webkit-scrollbar {
-    width: 10px; /* Reserve space */
+    width: 6px; /* Reserve space */
     height: 8px;
     background: transparent;
   }
@@ -95,7 +94,7 @@ body {
 
   /* Show scrollbar on hover */
   .no-scrollbar:hover::-webkit-scrollbar-thumb {
-    background: rgba(0, 0, 0, 0.4);
+    background: rgba(0, 0, 0, 0.2);
   }
 
   .no-scrollbar:hover::-webkit-scrollbar-track {
