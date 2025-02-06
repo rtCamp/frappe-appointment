@@ -76,6 +76,7 @@ body {
   .no-scrollbar {
     overflow: auto; /* Always enable scrolling */
     padding-right: 5px; /* Adds space between content & scrollbar */
+    scrollbar-width: thin;
   }
 
   /* Reserve scrollbar space but hide it initially */
