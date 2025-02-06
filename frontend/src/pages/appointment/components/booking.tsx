@@ -20,6 +20,7 @@ import Typography from "@/components/ui/typography";
 import {
   cn,
   convertToMinutes,
+  getAllSupportedTimeZones,
   getTimeZoneOffsetFromTimeZoneString,
   parseFrappeErrorMsg,
 } from "@/lib/utils";
@@ -55,10 +56,11 @@ const Booking = ({ type }: BookingProp) => {
   const [expanded, setExpanded] = useState(true);
   const [isMobileView, setIsMobileView] = useState(false);
   const [showMeetingForm, setShowMeetingForm] = useState(false);
-  const [timeZones, setTimeZones] = useState<Array<string>>([]);
   const [searchParams, setSearchParams] = useSearchParams();
   const date = searchParams.get("date");
-  const [displayMonth, setDisplayMonth] = useState(new Date(date || selectedDate));
+  const [displayMonth, setDisplayMonth] = useState(
+    new Date(date || selectedDate)
+  );
 
   const updateDateQuery = (date: Date) => {
     setSearchParams({
@@ -100,34 +102,20 @@ const Booking = ({ type }: BookingProp) => {
     undefined
   );
 
-  const {
-    data: timeZoneData,
-    isLoading: timeZoneLoading,
-    error: timeZoneError,
-  } = useFrappeGetCall(
-    "frappe_appointment.api.personal_meet.get_all_timezones"
-  );
-
   useEffect(() => {
-    if (timeZoneData) {
-      setTimeZones(timeZoneData?.message || []);
+    if (date) {
+      setSelectedDate(new Date(date));
     }
-    if (timeZoneError) {
-      const error = parseFrappeErrorMsg(timeZoneError);
-      toast(error || "Something went wrong", {
+    if (error) {
+      const err = parseFrappeErrorMsg(error);
+      toast(err || "Something went wrong", {
         action: {
           label: "OK",
           onClick: () => toast.dismiss(),
         },
       });
     }
-  }, [timeZoneData, timeZoneError]);
-
-  useEffect(() => {
-    if (date) {
-      setSelectedDate(new Date(date));
-    }
-  }, [date]);
+  }, [date, error]);
 
   useEffect(() => {
     if (data) {
@@ -304,7 +292,7 @@ const Booking = ({ type }: BookingProp) => {
                       const disabledDaysList =
                         disabledDays(meetingData.available_days) || [];
                       const isPastDate =
-                        date <
+                        date.getTime() <
                         new Date(meetingData.valid_start_date)?.setHours(
                           0,
                           0,
@@ -312,7 +300,7 @@ const Booking = ({ type }: BookingProp) => {
                           0
                         );
                       const isNextDate =
-                        date >
+                        date.getTime() >
                         new Date(meetingData.valid_end_date)?.setHours(
                           0,
                           0,
@@ -344,15 +332,12 @@ const Booking = ({ type }: BookingProp) => {
                   />
                   <div className="mt-4 max-md:px-6 gap-5 flex max-md:flex-col md:justify-between md:items-center ">
                     {/* Timezone */}
-                    {timeZoneLoading ? (
-                      <Skeleton className="w-full lg:w-32 h-10" />
-                    ) : (
-                      <TimeZoneSelect
-                        timeZones={[...timeZones, "Asia/Calcutta"]}
-                        setTimeZone={setTimeZone}
-                        timeZone={timeZone}
-                      />
-                    )}
+
+                    <TimeZoneSelect
+                      timeZones={getAllSupportedTimeZones()}
+                      setTimeZone={setTimeZone}
+                      timeZone={timeZone}
+                    />
 
                     {/* Time Format Toggle */}
                     <div className="flex items-center gap-2">

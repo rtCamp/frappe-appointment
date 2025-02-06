@@ -71,32 +71,41 @@ export function parseFrappeErrorMsg(error: Error) {
 }
 
 export function getTimeZoneOffsetFromTimeZoneString(timezone: string) {
-  // Create a date object
   const date = new Date();
-
-  // Use Intl.DateTimeFormat to get the timezone offset in the format "GMT+hh:mm" or "GMT-hh:mm"
-  const formatter = new Intl.DateTimeFormat('en-US', {
+  const formatter = new Intl.DateTimeFormat("en-US", {
     timeZone: timezone,
-    timeZoneName: 'longOffset',
+    timeZoneName: "longOffset",
   });
 
-  // Extract the timezone offset string (e.g., "GMT+05:30")
   const offsetString = formatter
     .formatToParts(date)
-    .find((part) => part.type === 'timeZoneName')?.value;
+    .find((part) => part.type === "timeZoneName")?.value;
 
   if (!offsetString) {
-    throw new Error('Unable to determine timezone offset');
+    throw new Error("Unable to determine timezone offset");
   }
 
-  // Parse the offset string to get the offset in minutes
-  const [_, sign, hours, minutes] = offsetString.match(/GMT([+-])(\d{2}):(\d{2})/) || [];
-  const offsetInMinutes = (sign === '+' ? 1 : -1) * (parseInt(hours, 10) * 60 + parseInt(minutes, 10));
+  // Handle cases where offsetString is just "GMT"
+  if (offsetString === "GMT") {
+    return 0;
+  }
 
-  return offsetInMinutes;
+  const match = offsetString.match(/GMT([+-])(\d{2}):(\d{2})/);
+  if (!match) {
+    throw new Error(`Unexpected timezone format: ${offsetString}`);
+  }
+
+  const [, sign, hours, minutes] = match;
+  return (
+    (sign === "+" ? 1 : -1) * (parseInt(hours, 10) * 60 + parseInt(minutes, 10))
+  );
 }
 
-export const convertToMinutes = (duration:string) => {
+export const getAllSupportedTimeZones = () => {
+  return Intl.supportedValuesOf("timeZone") || [];
+};
+
+export const convertToMinutes = (duration: string) => {
   const [hours, minutes, seconds] = duration.split(":").map(Number);
   return String(hours * 60 + minutes + seconds / 60);
 };
