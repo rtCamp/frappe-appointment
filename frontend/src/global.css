@@ -27,7 +27,7 @@
     --chart-3: 197 37% 24%;
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
-    --radius: 0.5rem
+    --radius: 0.5rem;
   }
   .dark {
     --background: 0 0% 3.9%;
@@ -53,7 +53,7 @@
     --chart-2: 160 60% 45%;
     --chart-3: 30 80% 55%;
     --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%
+    --chart-5: 340 75% 55%;
   }
 }
 @layer base {
@@ -65,20 +65,39 @@
   }
 }
 
-html,body{
+html,
+body {
   height: 100%;
   width: 100%;
 }
 
 @layer utilities {
-  /* Hide scrollbar for Chrome, Safari and Opera */
-  .no-scrollbar::-webkit-scrollbar {
-    display: none;
-  }
-  /* Hide scrollbar for IE, Edge and Firefox */
+  /* Ensure scrolling works */
   .no-scrollbar {
-    -ms-overflow-style: none; /* IE and Edge */
-    scrollbar-width: none; /* Firefox */
+    overflow: auto; /* Always enable scrolling */
+    padding-right: 5px; /* Adds space between content & scrollbar */
+  }
+
+  /* Reserve scrollbar space but hide it initially */
+  .no-scrollbar::-webkit-scrollbar {
+    width: 10px; /* Reserve space */
+    height: 8px;
+    background: transparent;
+  }
+
+  /* Hide scrollbar thumb by default */
+  .no-scrollbar::-webkit-scrollbar-thumb {
+    background: transparent;
+    border-radius: 4px;
+    margin: 2px; /* Adds gap between content & scrollbar */
+  }
+
+  /* Show scrollbar on hover */
+  .no-scrollbar:hover::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.4);
+  }
+
+  .no-scrollbar:hover::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.1 );
   }
 }
-
