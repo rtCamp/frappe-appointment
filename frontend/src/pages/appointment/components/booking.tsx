@@ -3,7 +3,7 @@
  */
 import { useEffect, useRef, useState } from "react";
 import { format, formatDate } from "date-fns";
-import { Clock, Calendar as CalendarIcon, ArrowLeft } from "lucide-react";
+import { Clock, Calendar as CalendarIcon, ArrowLeft, Tag } from "lucide-react";
 import { useFrappeGetCall } from "frappe-react-sdk";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
@@ -80,6 +80,7 @@ const Booking = ({ type }: BookingProp) => {
     user: "",
     valid_end_date: "",
     valid_start_date: "",
+    label: "",
   });
   const navigate = useNavigate();
   const { data, isLoading, error } = useFrappeGetCall(
@@ -198,10 +199,22 @@ const Booking = ({ type }: BookingProp) => {
               <Typography className="text-base text-muted-foreground">
                 {userInfo.designation} at {userInfo.organizationName}
               </Typography>
-              <Typography className="text-sm mt-1">
-                <Clock className="inline-block w-4 h-4 mr-1" />
-                {duration} Minute Meeting
-              </Typography>
+              {meetingData.label ? (
+                <Typography className="text-sm mt-1">
+                  <Tag className="inline-block w-4 h-4 mr-1" />
+                  {meetingData.label}
+                </Typography>
+              ) : (
+                <Skeleton className="h-5 w-20"/>
+              )}
+              {duration ? (
+                <Typography className="text-sm mt-1">
+                  <Clock className="inline-block w-4 h-4 mr-1" />
+                  {duration} Minute Meeting
+                </Typography>
+              ) : (
+                <Skeleton className="h-5 w-24"/>
+              )}
               <Typography className="text-sm  mt-1">
                 <CalendarIcon className="inline-block w-4 h-4 mr-1" />
                 {formatDate(new Date(), "d MMM, yyyy")}
@@ -335,7 +348,7 @@ const Booking = ({ type }: BookingProp) => {
                       <Skeleton className="w-full lg:w-32 h-10" />
                     ) : (
                       <TimeZoneSelect
-                        timeZones={[...timeZones,"Asia/Calcutta"]}
+                        timeZones={[...timeZones, "Asia/Calcutta"]}
                         setTimeZone={setTimeZone}
                         timeZone={timeZone}
                       />

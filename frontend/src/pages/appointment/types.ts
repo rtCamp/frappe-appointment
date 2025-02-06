@@ -14,4 +14,5 @@ export interface MeetingData {
   user: string;
   valid_end_date: string;
   valid_start_date: string;
+  label:string;
 }
