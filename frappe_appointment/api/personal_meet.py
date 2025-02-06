@@ -97,6 +97,7 @@ def get_time_slots(duration_id: str, date: str, user_timezone_offset: str):
 
     del data["appointment_group_id"]
     data["user"] = ap_availability.get("name")
+    data["label"] = duration.title
 
     return data
 
