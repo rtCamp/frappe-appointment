@@ -9,6 +9,7 @@ from frappe.desk.doctype.event.event import Event
 from frappe.integrations.doctype.google_calendar.google_calendar import (
     get_google_calendar_object,
 )
+from frappe.twofactor import decrypt
 from frappe.utils import get_datetime, now
 
 from frappe_appointment.constants import (
@@ -223,6 +224,7 @@ def create_event_for_appointment_group(
     end_time: str,
     user_timezone_offset: str,
     event_participants,
+    success_message="",
     **args,
 ):
     """API Endpoint to Create the Event
@@ -264,24 +266,36 @@ def create_event_for_appointment_group(
     google_calendar_api_obj, account = get_google_calendar_object(appointment_group.event_creator)
 
     if reschedule:
-        event = frappe.get_last_doc("Event", filters={"custom_appointment_group": appointment_group.name})
-        event.starts_on = starts_on
-        event.ends_on = ends_on
-        event.event_info = event_info
-        event.save(ignore_permissions=True)
+        try:
+            event_id = decrypt(event_info.get("event_token"))
+            if not event_id:
+                return frappe.throw(_("Unable to Update an event"))
 
-        # clear all previous logs
-        clear_messages()
+            event = frappe.get_doc("Event", event_id)
 
-        if not event.handle_webhook(
-            {
-                "event": event.as_dict(),
-                "appointment_group": appointment_group.as_dict(),
-                "metadata": event_info,
-            }
-        ):
+            event.starts_on = starts_on
+            event.ends_on = ends_on
+            event.event_info = event_info
+            event.save(ignore_permissions=True)
+
+            # clear all previous logs
+            clear_messages()
+
+            if not event.handle_webhook(
+                {
+                    "event": event.as_dict(),
+                    "appointment_group": appointment_group.as_dict(),
+                    "metadata": event_info,
+                }
+            ):
+                return frappe.throw(_("Unable to Update an event"))
+
+            if success_message:
+                return frappe.msgprint(success_message)
+
+            return frappe.msgprint(_("Event has been updated successfully."))
+        except Exception:
             return frappe.throw(_("Unable to Update an event"))
-        return frappe.msgprint(_("Interview has been Re-Scheduled."))
 
     calendar_event = {
         "doctype": "Event",
@@ -318,6 +332,9 @@ def create_event_for_appointment_group(
 
     # nosemgrep
     frappe.db.commit()
+
+    if success_message:
+        return frappe.msgprint(success_message)
 
     return _("Event has been created")
 
