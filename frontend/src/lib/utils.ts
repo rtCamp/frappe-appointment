@@ -74,20 +74,27 @@ export function getTimeZoneOffsetFromTimeZoneString(timezone: string) {
   // Create a date object
   const date = new Date();
 
-  // Get the timezone offset in minutes using Intl.DateTimeFormat
+  // Use Intl.DateTimeFormat to get the timezone offset in the format "GMT+hh:mm" or "GMT-hh:mm"
   const formatter = new Intl.DateTimeFormat('en-US', {
-      timeZone: timezone,
-      hour: 'numeric',
-      hour12: false,
+    timeZone: timezone,
+    timeZoneName: 'longOffset',
   });
 
-  // Extract the timezone offset
-  const offsetInHours = parseInt(formatter.format(date), 10) - date.getUTCHours();
-  const offsetInMinutes = offsetInHours * 60;
+  // Extract the timezone offset string (e.g., "GMT+05:30")
+  const offsetString = formatter
+    .formatToParts(date)
+    .find((part) => part.type === 'timeZoneName')?.value;
+
+  if (!offsetString) {
+    throw new Error('Unable to determine timezone offset');
+  }
+
+  // Parse the offset string to get the offset in minutes
+  const [_, sign, hours, minutes] = offsetString.match(/GMT([+-])(\d{2}):(\d{2})/) || [];
+  const offsetInMinutes = (sign === '+' ? 1 : -1) * (parseInt(hours, 10) * 60 + parseInt(minutes, 10));
 
   return offsetInMinutes;
 }
-
 
 export const convertToMinutes = (duration:string) => {
   const [hours, minutes, seconds] = duration.split(":").map(Number);

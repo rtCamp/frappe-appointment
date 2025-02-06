@@ -335,7 +335,7 @@ const Booking = ({ type }: BookingProp) => {
                       <Skeleton className="w-full lg:w-32 h-10" />
                     ) : (
                       <TimeZoneSelect
-                        timeZones={timeZones}
+                        timeZones={[...timeZones,"Asia/Calcutta"]}
                         setTimeZone={setTimeZone}
                         timeZone={timeZone}
                       />
