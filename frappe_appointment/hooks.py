@@ -9,6 +9,12 @@ app_license = "GNU AFFERO GENERAL PUBLIC LICENSE (v3)"
 
 # Includes in <head>
 # ------------------
+website_route_rules = [
+    {
+        "from_route": "/schedule/<path:app_path>",
+        "to_route": "schedule",
+    },
+]
 
 # include js, css files in header of desk.html
 # app_include_css = "/assets/frappe_appointment/css/frappe_appointment.css"
