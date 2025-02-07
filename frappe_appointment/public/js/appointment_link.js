@@ -46,12 +46,15 @@ function generate_table(title, data) {
         </thead>
         <tbody>`;
   data.forEach((event) => {
+    reschedule_link = event.reschedule_url
+      ? `<button class="btn btn-default btn-xs" onclick="window.copy_to_clipboard('${event.reschedule_url}')">Copy Reschedule Link</button>`
+      : "";
     html += `<tr>
             <td>${event.subject}</td>
             <td>${event.starts_on}</td>
             <td>${event.ends_on}</td>
             <td>${event.status}</td>
-            <td><a href="${event.url}" target="_blank">Edit</a></td>
+            <td><button class="btn btn-default btn-xs" onclick="window.open('${event.url}', '_blank')">Open</button> ${reschedule_link}</td>
         </tr>`;
   });
   html += `</tbody></table>`;
@@ -141,10 +144,10 @@ $(document).on("form-refresh", function (event, frm) {
               frm.page.add_custom_menu_item(appointment_group_menu, __("View"), function () {
                 frm.trigger("view_appointment");
               });
-              dialog_setup[doctype] = true;
             }
           },
         });
+        dialog_setup[doctype] = true;
       },
       view_appointment: function (frm) {
         frappe.call({

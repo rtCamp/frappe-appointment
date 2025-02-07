@@ -9,7 +9,7 @@ from frappe.desk.doctype.event.event import Event
 from frappe.integrations.doctype.google_calendar.google_calendar import (
     get_google_calendar_object,
 )
-from frappe.twofactor import decrypt
+from frappe.twofactor import decrypt, encrypt
 from frappe.utils import get_datetime, now
 
 from frappe_appointment.constants import (
@@ -636,6 +636,10 @@ def get_personal_meetings(user, past_events=False):
     doctype = "User Appointment Availability"
     docname = user
 
+    user_availability = frappe.get_doc(doctype, docname)
+    if not user_availability:
+        return None
+
     events = set()
     event_doctype_links = frappe.get_all(
         "Event DocType Link",
@@ -659,7 +663,15 @@ def get_personal_meetings(user, past_events=False):
     events_data = frappe.get_all(
         "Event",
         filters=filters,
-        fields=["name", "subject", "starts_on", "ends_on", "status", "custom_user_calendar"],
+        fields=[
+            "name",
+            "subject",
+            "starts_on",
+            "ends_on",
+            "status",
+            "custom_user_calendar",
+            "custom_appointment_slot_duration",
+        ],
         order_by="starts_on",
     )
 
@@ -705,6 +717,10 @@ def get_personal_meetings(user, past_events=False):
             event["ends_on"] = frappe.utils.format_datetime(ends_on, "MMM dd, yyyy, HH:mm")
 
         event["url"] = "/app/event/" + event["name"]
+        event["reschedule_url"] = (
+            frappe.utils.get_url("/schedule/in/{0}".format(user_availability.get("slug")))
+            + f"?type={event['custom_appointment_slot_duration']}&reschedule=1&event_token={encrypt(event['name'])}"
+        )
         all_events[event["state"]].append(event)
 
     return all_events
