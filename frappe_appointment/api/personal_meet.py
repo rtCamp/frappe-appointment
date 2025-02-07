@@ -166,6 +166,11 @@ def book_time_slot(
     args["user_calendar"] = ap_availability.name
     args["appointment_slot_duration"] = duration.name
 
+    success_message = ""
+
+    if args.get("event_token"):
+        success_message = "Appointment has been rescheduled."
+
     data = _create_event_for_appointment_group(
         appointment_group,
         date,
@@ -173,6 +178,7 @@ def book_time_slot(
         end_time,
         user_timezone_offset,
         json.dumps(event_participants),
+        success_message=success_message,
         **args,
     )
 
