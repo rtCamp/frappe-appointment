@@ -134,7 +134,9 @@ class EventOverride(Event):
                         meet_id = meet_data.get("id")
                         duration = frappe.utils.time_diff(self.ends_on, self.starts_on).seconds // 60
                         update_meeting(
-                            self.appointment_group.event_creator or self.user_calendar.google_calendar,
+                            self.appointment_group.event_creator
+                            if self.appointment_group
+                            else self.user_calendar.google_calendar,
                             meet_id,
                             self.subject,
                             self.starts_on,
@@ -157,8 +159,16 @@ class EventOverride(Event):
         if self.custom_meeting_provider == "Zoom":
             meet_data = json.loads(self.custom_meet_data)
             meet_id = meet_data.get("id")
-            self.appointment_group = frappe.get_doc(APPOINTMENT_GROUP, self.custom_appointment_group)
-            delete_meeting(self.appointment_group.event_creator, meet_id)
+            self.appointment_group = None
+            self.user_calendar = None
+            if self.custom_appointment_group:
+                self.appointment_group = frappe.get_doc(APPOINTMENT_GROUP, self.custom_appointment_group)
+            if self.custom_user_calendar:
+                self.user_calendar = frappe.get_doc(USER_APPOINTMENT_AVAILABILITY, self.custom_user_calendar)
+            delete_meeting(
+                self.appointment_group.event_creator if self.appointment_group else self.user_calendar.google_calendar,
+                meet_id,
+            )
         super().on_trash()
 
     def on_update(self):
@@ -537,10 +547,11 @@ def get_events_from_doc(doctype, docname, past_events=False):
     }
     if not past_events:
         filters["ends_on"] = [">=", cur_datetime]
+
     events_data = frappe.get_all(
         "Event",
         filters=filters,
-        fields=["name", "subject", "starts_on", "ends_on", "status"],
+        fields=["name", "subject", "starts_on", "ends_on", "status", "custom_appointment_group"],
         order_by="starts_on",
     )
 
@@ -551,6 +562,9 @@ def get_events_from_doc(doctype, docname, past_events=False):
     }
 
     for event in events_data:
+        if not event.get("custom_appointment_group"):
+            continue
+
         starts_on = event.get("starts_on")
         ends_on = event.get("ends_on")
 
@@ -584,4 +598,92 @@ def get_events_from_doc(doctype, docname, past_events=False):
 
         event["url"] = "/app/event/" + event["name"]
         all_events[event["state"]].append(event)
+    return all_events
+
+
+@frappe.whitelist()
+def get_personal_meetings(user, past_events=False):
+    """Get the personal meeting details from the given doc
+
+    Args:
+    doctype (str): Doctype name
+    docname (str): Docname
+
+    Returns:
+    dict: Event details
+    """
+    doctype = "User Appointment Availability"
+    docname = user
+
+    events = set()
+    event_doctype_links = frappe.get_all(
+        "Event DocType Link",
+        filters={"reference_doctype": doctype, "reference_docname": docname},
+        fields=["parent"],
+    )
+    for event_doctype_link in event_doctype_links:
+        events.add(event_doctype_link.parent)
+    events = list(events)
+
+    if not events:
+        return None
+
+    cur_datetime = frappe.utils.now_datetime()
+    filters = {
+        "name": ["in", events],
+    }
+    if not past_events:
+        filters["ends_on"] = [">=", cur_datetime]
+
+    events_data = frappe.get_all(
+        "Event",
+        filters=filters,
+        fields=["name", "subject", "starts_on", "ends_on", "status", "custom_user_calendar"],
+        order_by="starts_on",
+    )
+
+    all_events = {
+        "upcoming": [],
+        "ongoing": [],
+        "past": [],
+    }
+
+    for event in events_data:
+        if not event.get("custom_user_calendar"):
+            continue
+
+        starts_on = event.get("starts_on")
+        ends_on = event.get("ends_on")
+
+        event["state"] = "upcoming"
+        if event["status"] == "Open":
+            if ends_on < cur_datetime:
+                event["state"] = "past"
+            elif starts_on < cur_datetime:
+                event["state"] = "ongoing"
+        else:
+            event["state"] = "past"
+
+        # if difference between start time and current time is less than 1 day, show the difference in minutes and hours
+        diff = starts_on - cur_datetime
+
+        if diff.days == 0:
+            hours, remainder = divmod(diff.seconds, 3600)
+            minutes, _ = divmod(remainder, 60)
+            if hours == 0:
+                event["starts_on"] = f"in {minutes} minute" + ("s" if minutes > 1 else "")
+        if isinstance(starts_on, datetime.datetime):
+            if cur_datetime.year == starts_on.year:
+                event["starts_on"] = frappe.utils.format_datetime(starts_on, "MMM dd, HH:mm")
+            else:
+                event["starts_on"] = frappe.utils.format_datetime(starts_on, "MMM dd, yyyy, HH:mm")
+
+        if cur_datetime.year == ends_on.year:
+            event["ends_on"] = frappe.utils.format_datetime(ends_on, "MMM dd, HH:mm")
+        else:
+            event["ends_on"] = frappe.utils.format_datetime(ends_on, "MMM dd, yyyy, HH:mm")
+
+        event["url"] = "/app/event/" + event["name"]
+        all_events[event["state"]].append(event)
+
     return all_events

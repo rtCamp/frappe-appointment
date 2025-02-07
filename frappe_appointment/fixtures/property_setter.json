@@ -94,5 +94,21 @@
   "property_type": "Check",
   "row_name": null,
   "value": "0"
+ },
+ {
+  "default_value": null,
+  "doc_type": "Event Participants",
+  "docstatus": 0,
+  "doctype": "Property Setter",
+  "doctype_or_field": "DocField",
+  "field_name": "email",
+  "is_system_generated": 0,
+  "modified": "2025-02-06 11:19:11.726656",
+  "module": "Frappe Appointment",
+  "name": "Event Participants-email-in_list_view",
+  "property": "in_list_view",
+  "property_type": "Check",
+  "row_name": null,
+  "value": "1"
  }
 ]

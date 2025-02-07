@@ -72,24 +72,7 @@ def get_time_slots(duration_id: str, date: str, user_timezone_offset: str):
 
     ap_availability = ap_availability[0]
 
-    appointment_group_obj = {
-        "doctype": "Appointment Group",
-        "group_name": "Personal Meeting",
-        "event_creator": ap_availability.get("google_calendar"),
-        "event_organizer": ap_availability.get("user"),
-        "members": [{"user": ap_availability.get("name"), "is_mandatory": 1}],
-        "duration_for_event": datetime.timedelta(seconds=duration.duration),
-        "minimum_buffer_time": datetime.timedelta(seconds=duration.minimum_buffer_time)
-        if duration.minimum_buffer_time
-        else None,
-        "minimum_notice_before_event": duration.minimum_notice_before_event,
-        "event_availability_window": duration.availability_window,
-        "meet_provider": ap_availability.get("meeting_provider"),
-        "meet_link": ap_availability.get("meeting_link"),
-        "response_email_template": ap_availability.get("response_email_template"),
-        "linked_doctype": ap_availability.get("name"),
-        "limit_booking_frequency": -1,
-    }
+    appointment_group_obj = create_dummy_appointment_group(duration, ap_availability)
 
     appointment_group = frappe.get_doc(appointment_group_obj)
 
@@ -127,24 +110,7 @@ def book_time_slot(
 
     ap_availability = ap_availability[0]
 
-    appointment_group_obj = {
-        "doctype": "Appointment Group",
-        "group_name": "Personal Meeting",
-        "event_creator": ap_availability.get("google_calendar"),
-        "event_organizer": ap_availability.get("user"),
-        "members": [{"user": ap_availability.get("name"), "is_mandatory": 1}],
-        "duration_for_event": datetime.timedelta(seconds=duration.duration),
-        "minimum_buffer_time": datetime.timedelta(seconds=duration.minimum_buffer_time)
-        if duration.minimum_buffer_time
-        else None,
-        "minimum_notice_before_event": duration.minimum_notice_before_event,
-        "event_availability_window": duration.availability_window,
-        "meet_provider": ap_availability.get("meeting_provider"),
-        "meet_link": ap_availability.get("meeting_link"),
-        "response_email_template": ap_availability.get("response_email_template"),
-        "linked_doctype": ap_availability.get("name"),
-        "limit_booking_frequency": -1,
-    }
+    appointment_group_obj = create_dummy_appointment_group(duration, ap_availability)
 
     appointment_group = frappe.get_doc(appointment_group_obj)
 
@@ -192,18 +158,7 @@ def book_time_slot(
     if not args.get("Subject", None):
         name = frappe.get_value("User", ap_availability.get("user"), "full_name")
 
-        seconds = int(duration.duration)
-        minutes = seconds // 60
-        hours = minutes // 60
-        rest_minutes = minutes % 60
-
-        duration_str = ""
-        if hours:
-            duration_str += f"{hours} hour{'s' if hours > 1 else ''}"
-        if rest_minutes:
-            duration_str += f" {rest_minutes} minute{'s' if rest_minutes > 1 else ''}"
-
-        duration_str = duration_str.strip()
+        duration_str = duration_to_string(duration.duration)
 
         args["subject"] = f"Meet: {name} <> {user_name} ({duration_str})"
 
@@ -224,6 +179,79 @@ def book_time_slot(
     return data
 
 
+def duration_to_string(duration):
+    seconds = int(duration)
+    minutes = seconds // 60
+    hours = minutes // 60
+    rest_minutes = minutes % 60
+
+    duration_str = ""
+    if hours:
+        duration_str += f"{hours} hour{'s' if hours > 1 else ''}"
+    if rest_minutes:
+        duration_str += f" {rest_minutes} minute{'s' if rest_minutes > 1 else ''}"
+
+    duration_str = duration_str.strip()
+    return duration_str
+
+
+def create_dummy_appointment_group(duration, ap_availability):
+    appointment_group_obj = {
+        "doctype": "Appointment Group",
+        "group_name": "Personal Meeting",
+        "event_creator": ap_availability.get("google_calendar"),
+        "event_organizer": ap_availability.get("user"),
+        "members": [{"user": ap_availability.get("name"), "is_mandatory": 1}],
+        "duration_for_event": datetime.timedelta(seconds=duration.duration),
+        "minimum_buffer_time": datetime.timedelta(seconds=duration.minimum_buffer_time)
+        if duration.minimum_buffer_time
+        else None,
+        "minimum_notice_before_event": duration.minimum_notice_before_event,
+        "event_availability_window": duration.availability_window,
+        "meet_provider": ap_availability.get("meeting_provider"),
+        "meet_link": ap_availability.get("meeting_link"),
+        "response_email_template": ap_availability.get("response_email_template"),
+        "linked_doctype": ap_availability.get("name"),
+        "limit_booking_frequency": -1,
+    }
+
+    return appointment_group_obj
+
+
 @frappe.whitelist(allow_guest=True)
 def get_all_timezones():
     return pytz.common_timezones
+
+
+@frappe.whitelist()
+def get_schedular_link(user):
+    ap_availability = frappe.get_all(
+        "User Appointment Availability", filters={"user": user, "enable_scheduling": 1}, fields=["*"]
+    )
+    if not ap_availability:
+        return {"error": "No user found"}, 404
+
+    ap_availability = ap_availability[0]
+
+    all_durations = frappe.get_all(
+        "Appointment Slot Duration",
+        filters={"parent": ap_availability.get("name")},
+        fields=["name", "title", "duration"],
+    )
+
+    url = frappe.utils.get_url("/schedule/in/{0}".format(ap_availability.get("slug")))
+
+    return {
+        "url": url,
+        "slug": ap_availability.get("slug"),
+        "available_durations": [
+            {
+                "id": d.name,
+                "label": d.title,
+                "duration": d.duration,
+                "duration_str": duration_to_string(d.duration),
+                "url": url + "?type=" + d.name,
+            }
+            for d in all_durations
+        ],
+    }
