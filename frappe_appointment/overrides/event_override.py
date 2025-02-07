@@ -438,7 +438,7 @@ def _create_event_for_appointment_group(
 
     google_calendar_api_obj, account = get_google_calendar_object(appointment_group.event_creator)
 
-    if reschedule and not personal:
+    if reschedule:
         try:
             event_id = decrypt(event_info.get("event_token"))
             if not event_id:
