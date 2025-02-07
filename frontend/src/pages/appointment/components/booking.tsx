@@ -4,7 +4,7 @@
 import { useEffect, useRef, useState } from "react";
 import { format, formatDate } from "date-fns";
 import { Clock, Calendar as CalendarIcon, ArrowLeft, Tag } from "lucide-react";
-import { useFrappeGetCall } from "frappe-react-sdk";
+import { useFrappeGetCall, useFrappePostCall } from "frappe-react-sdk";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 
@@ -35,6 +35,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import Spinner from "@/components/ui/spinner";
 
 interface BookingProp {
   type: string;
@@ -49,6 +50,7 @@ const Booking = ({ type }: BookingProp) => {
     setTimeZone,
     selectedDate,
     setSelectedDate,
+    selectedSlot,
     setSelectedSlot,
     meetingId,
   } = useAppContext();
@@ -57,15 +59,18 @@ const Booking = ({ type }: BookingProp) => {
   const [expanded, setExpanded] = useState(true);
   const [isMobileView, setIsMobileView] = useState(false);
   const [showMeetingForm, setShowMeetingForm] = useState(false);
+  const [showReschedule, setShowReschedule] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
 
   const date = searchParams.get("date");
+  const reschedule = searchParams.get("reschedule") || "";
+  const event_token = searchParams.get("event_token") || "";
   const [displayMonth, setDisplayMonth] = useState(
     new Date(date || selectedDate)
   );
 
   const updateDateQuery = (date: Date) => {
-    const queries:Record<string, string> = {};
+    const queries: Record<string, string> = {};
     searchParams.forEach((value, key) => (queries[key] = value));
     setSearchParams({
       date: `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`,
@@ -106,10 +111,64 @@ const Booking = ({ type }: BookingProp) => {
     },
     undefined,
     {
-      revalidateOnFocus:false
+      revalidateOnFocus: false,
     }
   );
+  const { call: rescheduleMeeting, loading: rescheduleLoading } =
+    useFrappePostCall(`frappe_appointment.api.personal_meet.book_time_slot`);
 
+  const onReschedule = () => {
+    const extraArgs: Record<string, string> = {};
+    searchParams.forEach((value, key) => (extraArgs[key] = value));
+
+    const meetingData = {
+      duration_id: type,
+      date: new Intl.DateTimeFormat("en-CA", {
+        year: "numeric",
+        month: "numeric",
+        day: "numeric",
+      }).format(selectedDate),
+      user_timezone_offset: String(
+        getTimeZoneOffsetFromTimeZoneString(timeZone)
+      ),
+      start_time: selectedSlot.start_time,
+      end_time: selectedSlot.end_time,
+      user_name: "",
+      user_email: "",
+      other_participants: "",
+      reschedule,
+      event_token,
+      ...extraArgs,
+    };
+
+    rescheduleMeeting(meetingData)
+      .then(() => {
+        navigate(`/in/${meetingId}`);
+        setShowMeetingForm(false);
+        setExpanded(false);
+        toast("Appointment has been re-scheduled", {
+          duration: 6000,
+          position: "top-right",
+          description: `For ${formatDate(
+            new Date(selectedDate),
+            "d MMM, yyyy"
+          )} at ${formatDate(new Date(selectedSlot.start_time), "h:m a")}`,
+          action: {
+            label: "OK",
+            onClick: () => toast.dismiss(),
+          },
+        });
+      })
+      .catch((err) => {
+        const error = parseFrappeErrorMsg(err);
+        toast(error || "Something went wrong", {
+          action: {
+            label: "OK",
+            onClick: () => toast.dismiss(),
+          },
+        });
+      });
+  };
 
   useEffect(() => {
     if (data) {
@@ -322,6 +381,11 @@ const Booking = ({ type }: BookingProp) => {
                       updateDateQuery(date);
                       setDisplayMonth(date);
                       setExpanded(true);
+                      setShowReschedule(false);
+                      setSelectedSlot({
+                        start_time: "",
+                        end_time: "",
+                      });
                     }}
                     className="rounded-md md:border md:h-96 w-full flex md:px-6"
                     classNames={{
@@ -381,17 +445,21 @@ const Booking = ({ type }: BookingProp) => {
               <div
                 className={cn(
                   "w-48 max-lg:w-full overflow-hidden space-y-4 max-md:pb-10 max-md:px-4 transition-all duration-300 ",
-                  !expanded && "max-md:hidden"
+                  !expanded && "max-md:hidden",
+                  showReschedule && "lg:flex lg:flex-col lg:justify-between"
                 )}
               >
-                <h3 className="text-sm font-semibold mb-4 ">
+                <h3 className="text-sm font-semibold lg:w-full">
                   {format(selectedDate, "EEEE, d MMMM yyyy")}
                 </h3>
                 {isLoading ? (
                   <TimeSlotSkeleton />
                 ) : (
                   <div
-                    className="md:h-96 overflow-y-auto no-scrollbar space-y-2 transition-transform transform"
+                    className={cn(
+                      "lg:h-[22rem] overflow-y-auto no-scrollbar space-y-2 transition-transform transform",
+                      showReschedule && "lg:!mt-0"
+                    )}
                     style={{
                       transform: selectedDate
                         ? "translateX(0)"
@@ -404,14 +472,25 @@ const Booking = ({ type }: BookingProp) => {
                           <Button
                             key={index}
                             onClick={() => {
-                              setShowMeetingForm(true);
+                              if (reschedule && event_token) {
+                                setShowReschedule(true);
+                              } else {
+                                setShowMeetingForm(true);
+                              }
                               setSelectedSlot({
                                 start_time: slot.start_time,
                                 end_time: slot.end_time,
                               });
                             }}
                             variant="outline"
-                            className="w-full font-normal border border-blue-500 text-blue-500 hover:text-blue-500 hover:bg-blue-50 transition-colors"
+                            className={cn(
+                              "w-full font-normal border border-blue-500 text-blue-500 hover:text-blue-500 hover:bg-blue-50 transition-colors ",
+                              selectedSlot.start_time === slot.start_time &&
+                                selectedSlot.end_time === slot.end_time &&
+                                reschedule &&
+                                event_token &&
+                                "bg-blue-500 text-white hover:bg-blue-400 hover:text-white"
+                            )}
                           >
                             {formatTimeSlot(new Date(slot.start_time))}
                           </Button>
@@ -426,12 +505,21 @@ const Booking = ({ type }: BookingProp) => {
                     )}
                   </div>
                 )}
+                {showReschedule && (
+                  <Button
+                    className="bg-blue-400 hover:bg-blue-500 lg:!mt-0 max-lg:w-full"
+                    onClick={onReschedule}
+                    disabled={rescheduleLoading}
+                  >
+                    {rescheduleLoading && <Spinner />} Reschedule
+                  </Button>
+                )}
               </div>
             </div>
           )}
           {showMeetingForm && (
             <MeetingForm
-              onSuccess={()=>{
+              onSuccess={() => {
                 navigate(`/in/${meetingId}`);
                 setShowMeetingForm(false);
                 setExpanded(false);
