@@ -50,6 +50,7 @@ const Booking = ({ type }: BookingProp) => {
     selectedDate,
     setSelectedDate,
     setSelectedSlot,
+    meetingId,
   } = useAppContext();
   const [timeFormat, setTimeFormat] = useState<TimeFormat>("12h");
   const containerRef = useRef<HTMLDivElement>(null);
@@ -57,15 +58,19 @@ const Booking = ({ type }: BookingProp) => {
   const [isMobileView, setIsMobileView] = useState(false);
   const [showMeetingForm, setShowMeetingForm] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
+
   const date = searchParams.get("date");
   const [displayMonth, setDisplayMonth] = useState(
     new Date(date || selectedDate)
   );
 
   const updateDateQuery = (date: Date) => {
+    const queries:Record<string, string> = {};
+    searchParams.forEach((value, key) => (queries[key] = value));
     setSearchParams({
       date: `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`,
       type,
+      ...queries,
     });
   };
 
@@ -99,23 +104,12 @@ const Booking = ({ type }: BookingProp) => {
         getTimeZoneOffsetFromTimeZoneString(timeZone || "Asia/Calcutta")
       ),
     },
-    undefined
+    undefined,
+    {
+      revalidateOnFocus:false
+    }
   );
 
-  useEffect(() => {
-    if (date) {
-      setSelectedDate(new Date(date));
-    }
-    if (error) {
-      const err = parseFrappeErrorMsg(error);
-      toast(err || "Something went wrong", {
-        action: {
-          label: "OK",
-          onClick: () => toast.dismiss(),
-        },
-      });
-    }
-  }, [date, error]);
 
   useEffect(() => {
     if (data) {
@@ -129,7 +123,13 @@ const Booking = ({ type }: BookingProp) => {
       setDisplayMonth(validData);
     }
     if (error) {
-      navigate("/");
+      const err = parseFrappeErrorMsg(error);
+      toast(err || "Something went wrong", {
+        action: {
+          label: "OK",
+          onClick: () => toast.dismiss(),
+        },
+      });
     }
   }, [data, error, type, navigate, setDuration, setMeetingData, mutate]);
 
@@ -167,7 +167,11 @@ const Booking = ({ type }: BookingProp) => {
           {/* Profile */}
           <div className="w-full md:max-w-sm flex flex-col gap-4 md:p-6 px-4">
             <Avatar className="md:h-32 md:w-32 h-24 w-24 object-cover mb-4 md:mb-0 ">
-              <AvatarImage src={userInfo.userImage} alt="Profile picture" className="bg-blue-50"/>
+              <AvatarImage
+                src={userInfo.userImage}
+                alt="Profile picture"
+                className="bg-blue-50"
+              />
               <AvatarFallback className="text-4xl">
                 {userInfo.name?.toString()[0]?.toUpperCase()}
               </AvatarFallback>
@@ -427,6 +431,11 @@ const Booking = ({ type }: BookingProp) => {
           )}
           {showMeetingForm && (
             <MeetingForm
+              onSuccess={()=>{
+                navigate(`/in/${meetingId}`);
+                setShowMeetingForm(false);
+                setExpanded(false);
+              }}
               onBack={() => {
                 setShowMeetingForm(false);
                 setExpanded(false);

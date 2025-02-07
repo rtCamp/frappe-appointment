@@ -9,6 +9,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { ChevronLeft, X } from "lucide-react";
 import { formatDate } from "date-fns";
 import { toast } from "sonner";
+import { useSearchParams } from "react-router-dom";
 
 /**
  * Internal dependencies.
@@ -41,15 +42,17 @@ type ContactFormValues = z.infer<typeof contactFormSchema>;
 
 interface MeetingFormProps {
   onBack: VoidFunction;
+  onSuccess: VoidFunction;
   durationId: string;
 }
 
-const MeetingForm = ({ onBack,durationId }: MeetingFormProps) => {
+const MeetingForm = ({ onBack, durationId, onSuccess }: MeetingFormProps) => {
   const [isGuestsOpen, setIsGuestsOpen] = useState(false);
   const [guestInput, setGuestInput] = useState("");
   const { call: bookMeeting, loading } = useFrappePostCall(
     `frappe_appointment.api.personal_meet.book_time_slot`
   );
+  const [searchParams] = useSearchParams();
 
   const { selectedDate, selectedSlot, timeZone } = useAppContext();
 
@@ -88,6 +91,8 @@ const MeetingForm = ({ onBack,durationId }: MeetingFormProps) => {
     );
   };
   const onSubmit = (data: ContactFormValues) => {
+    const extraArgs: Record<string, string> = {};
+    searchParams.forEach((value, key) => (extraArgs[key] = value));
     const meetingData = {
       duration_id: durationId,
       date: new Intl.DateTimeFormat("en-CA", {
@@ -103,13 +108,19 @@ const MeetingForm = ({ onBack,durationId }: MeetingFormProps) => {
       user_name: data.fullName,
       user_email: data.email,
       other_participants: data.guests.join(", "),
+      ...extraArgs,
     };
 
     bookMeeting(meetingData)
       .then(() => {
-        onBack();
+        onSuccess();
         toast("Appointment has been scheduled", {
-          description: `For ${formatDate(new Date(selectedDate), "d MMM, yyyy")} at ${formatDate(new Date(selectedSlot.start_time), "h a")}`,
+          duration: 6000,
+          position: "top-right",
+          description: `For ${formatDate(
+            new Date(selectedDate),
+            "d MMM, yyyy"
+          )} at ${formatDate(new Date(selectedSlot.start_time), "h a")}`,
           action: {
             label: "OK",
             onClick: () => toast.dismiss(),
