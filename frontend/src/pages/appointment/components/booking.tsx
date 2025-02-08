@@ -73,9 +73,9 @@ const Booking = ({ type }: BookingProp) => {
     const queries: Record<string, string> = {};
     searchParams.forEach((value, key) => (queries[key] = value));
     setSearchParams({
-      date: `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`,
-      type,
       ...queries,
+      date: `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`,
+      type
     });
   };
 

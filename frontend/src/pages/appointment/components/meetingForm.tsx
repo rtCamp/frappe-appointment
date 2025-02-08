@@ -94,6 +94,7 @@ const MeetingForm = ({ onBack, durationId, onSuccess }: MeetingFormProps) => {
     const extraArgs: Record<string, string> = {};
     searchParams.forEach((value, key) => (extraArgs[key] = value));
     const meetingData = {
+      ...extraArgs,
       duration_id: durationId,
       date: new Intl.DateTimeFormat("en-CA", {
         year: "numeric",
@@ -108,7 +109,6 @@ const MeetingForm = ({ onBack, durationId, onSuccess }: MeetingFormProps) => {
       user_name: data.fullName,
       user_email: data.email,
       other_participants: data.guests.join(", "),
-      ...extraArgs,
     };
 
     bookMeeting(meetingData)
