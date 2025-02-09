@@ -120,7 +120,7 @@ const MeetingForm = ({ onBack, durationId, onSuccess }: MeetingFormProps) => {
           description: `For ${formatDate(
             new Date(selectedDate),
             "d MMM, yyyy"
-          )} at ${formatDate(new Date(selectedSlot.start_time), "h:m a")}`,
+          )} at ${formatDate(new Date(selectedSlot.start_time), "hh:mm a")}`,
           action: {
             label: "OK",
             onClick: () => toast.dismiss(),
