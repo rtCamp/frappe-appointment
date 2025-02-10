@@ -189,7 +189,7 @@ const socialIcons = {
 
 const SocialProfiles = ({ profiles }: SocialProfilesProps) => {
   return (
-    <div className="flex gap-4 flex-wrap justify-center">
+    <div className="flex gap-4 flex-wrap">
       {profiles.map((profile, index) => {
         const [platform, url] = Object.entries(profile)[0];
         return (
