@@ -9,11 +9,10 @@ import { useFrappeGetCall } from "frappe-react-sdk";
  * Internal dependencies
  */
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Card, CardContent } from "@/components/ui/card";
 import { MeetingCardSkeleton, ProfileSkeleton } from "./components/skeletons";
 import MeetingCard from "./components/meetingCard";
 import Booking from "./components/booking";
-import SocialProfiles, { Profile } from "./components/socialProfiles";
+import SocialProfiles from "./components/socialProfiles";
 import { useAppContext } from "@/context/app";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getLocalTimezone } from "@/lib/utils";
@@ -23,6 +22,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import Typography from "@/components/ui/typography";
 
 const Appointment = () => {
   const { meetId } = useParams();
@@ -57,11 +57,12 @@ const Appointment = () => {
     }
   );
 
-  const profiles: Profile[] = [
-    { LinkedIn: "https://www.linkedin.com/in/example" },
-    { X: "https://x.com/example" },
-    { GitHub: "https://github.com/example" },
-  ];
+  // Profiles mock data
+  // const profiles: Profile[] = [
+  //   { LinkedIn: "https://www.linkedin.com/in/example" },
+  //   { X: "https://x.com/example" },
+  //   { GitHub: "https://github.com/example" },
+  // ];
 
   useEffect(() => {
     if (meetId) {
@@ -91,61 +92,49 @@ const Appointment = () => {
     <>
       {!type || isLoading ? (
         <div className="w-full h-full max-md:h-fit flex justify-center">
-          <div className="container max-w-6xl mx-auto p-4 py-8 md:py-16 grid gap-10 md:gap-12">
-            <div className="grid lg:grid-cols-[300px,1fr] gap-8 items-start relative">
+          <div className="container max-w-[74rem] mx-auto p-4 py-8 md:py-16 grid gap-10 md:gap-12">
+            <div className="grid lg:grid-cols-[360px,1fr] gap-8 items-start relative md:border rounded-lg">
               {/* Profile Section */}
               {isLoading ? (
                 <ProfileSkeleton />
               ) : (
-                <Card className="border max-lg:w-full max-lg:overflow-hidden">
-                  <CardContent className="p-6 flex flex-col items-center text-center space-y-10">
-                    <Avatar className="w-36 h-36 border-4 border-white shadow-lg">
-                      <AvatarImage
-                        src={userInfo.userImage}
-                        alt="Profile picture"
-                        className="bg-blue-50"
-                      />
-                      <AvatarFallback className="text-4xl">
-                        {userInfo?.name?.toString()[0]?.toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="space-y-2 w-full">
-                      <h1 className="text-2xl font-semibold tracking-tight truncate cursor-pointer">
-                        <Tooltip>
-                          <TooltipTrigger>{userInfo.name}</TooltipTrigger>
-                          <TooltipContent>{userInfo.name}</TooltipContent>
-                        </Tooltip>
-                      </h1>
-                      <div className="text-muted-foreground">
-                        <p className="font-medium truncate cursor-pointer">
-                          <Tooltip>
-                            <TooltipTrigger>
-                              {userInfo.designation}
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              {userInfo.designation}
-                            </TooltipContent>
-                          </Tooltip>
-                        </p>
-                        <p className="cursor-pointer truncate">
-                          <Tooltip>
-                            <TooltipTrigger>
-                              {userInfo.organizationName}
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              {userInfo.organizationName}
-                            </TooltipContent>
-                          </Tooltip>
-                        </p>
-                      </div>
-                    </div>
-                    <SocialProfiles profiles={userInfo.socialProfiles} />
-                  </CardContent>
-                </Card>
+                <div className="w-full md:max-w-sm flex flex-col gap-4 md:p-6 md:px-4">
+                  <Avatar className="md:h-32 md:w-32 h-24 w-24 object-cover mb-4 md:mb-0 ">
+                    <AvatarImage
+                      src={userInfo.userImage}
+                      alt="Profile picture"
+                      className="bg-blue-50"
+                    />
+                    <AvatarFallback className="text-4xl">
+                      {userInfo?.name?.toString()[0]?.toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="w-full flex flex-col gap-1">
+                    <Typography variant="h2" className="text-3xl font-semibold">
+                      <Tooltip>
+                        <TooltipTrigger className="text-left truncate w-full">
+                          {userInfo.name}
+                        </TooltipTrigger>
+                        <TooltipContent>{userInfo.name}</TooltipContent>
+                      </Tooltip>
+                    </Typography>
+                    <Tooltip>
+                      <Typography className="text-base text-left text-muted-foreground">
+                        <TooltipTrigger className="text-left">
+                          {userInfo.designation} at {userInfo.organizationName}
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          {userInfo.designation} at {userInfo.organizationName}
+                        </TooltipContent>
+                      </Typography>
+                    </Tooltip>
+                  </div>
+                  <SocialProfiles profiles={userInfo.socialProfiles} />
+                </div>
               )}
 
               {/* Meeting Options */}
-              <div className="space-y-6">
+              <div className="space-y-6 md:p-6">
                 {isLoading ? (
                   <>
                     <Skeleton className="h-6 md:w-56" />
@@ -167,12 +156,12 @@ const Appointment = () => {
                     <>
                       <MeetingCardSkeleton />
                       <MeetingCardSkeleton />
+                      <MeetingCardSkeleton />
                     </>
                   ) : (
                     meetingDurationCards.map((card) => (
                       <MeetingCard
                         key={card.id}
-                        id={card.id}
                         title={card.label}
                         duration={card.duration / 60}
                         onClick={() => {

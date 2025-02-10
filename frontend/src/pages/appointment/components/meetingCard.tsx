@@ -23,13 +23,12 @@ import {
 } from "@/components/ui/tooltip";
 
 interface MeetingCardProps {
-  id: string;
   title: string;
   duration: number;
   onClick: VoidFunction;
 }
 
-const MeetingCard = ({ id, title, duration, onClick }: MeetingCardProps) => {
+const MeetingCard = ({ title, duration, onClick }: MeetingCardProps) => {
   const { userInfo } = useAppContext();
   return (
     <Card className="group relative overflow-hidden transition-all hover:shadow-lg">
