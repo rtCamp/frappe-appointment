@@ -56,7 +56,7 @@ const Booking = ({ type }: BookingProp) => {
   } = useAppContext();
   const [timeFormat, setTimeFormat] = useState<TimeFormat>("12h");
   const containerRef = useRef<HTMLDivElement>(null);
-  const [expanded, setExpanded] = useState(true);
+  const [expanded, setExpanded] = useState(false);
   const [isMobileView, setIsMobileView] = useState(false);
   const [showMeetingForm, setShowMeetingForm] = useState(false);
   const [showReschedule, setShowReschedule] = useState(false);
@@ -210,8 +210,6 @@ const Booking = ({ type }: BookingProp) => {
   useEffect(() => {
     const handleResize = () => {
       setIsMobileView(window.innerWidth <= 768);
-      setExpanded(false);
-      setShowMeetingForm(false);
     };
 
     handleResize();

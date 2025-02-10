@@ -157,6 +157,7 @@ def _get_time_slots_for_day(appointment_group: object, date: str, user_timezone_
 
         return time_slots_today_object
     except Exception:
+        frappe.log_error()
         return None
 
 
@@ -329,7 +330,7 @@ def check_availability(date_validation_obj: object, weekday: str, appointment_gr
             res["is_slots_available"] = False
             return res
         next_available_date = add_days(date_validation_obj["next_valid_date"], next_available_day)
-        if next_available_date > date_validation_obj["valid_end_date"]:
+        if date_validation_obj["valid_end_date"] and next_available_date > date_validation_obj["valid_end_date"]:
             next_available_date = date_validation_obj["valid_end_date"]
         prev_available_date = add_days(date_validation_obj["prev_valid_date"], -prev_available_day)
         if prev_available_date < date_validation_obj["valid_start_date"]:
