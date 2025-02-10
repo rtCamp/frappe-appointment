@@ -139,7 +139,7 @@ const MeetingForm = ({ onBack, durationId, onSuccess }: MeetingFormProps) => {
   };
 
   return (
-    <div className={`w-full md:h-[30rem] lg:w-[41rem] shrink-0 md:p-6 px-4`}>
+    <div className={`w-full md:h-[30rem] lg:w-[41rem] shrink-0 md:p-6 md:px-4`}>
       <Form {...form}>
         <form
           onSubmit={form.handleSubmit(onSubmit)}

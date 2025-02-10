@@ -227,10 +227,10 @@ const Booking = ({ type }: BookingProp) => {
 
   return (
     <div className="w-full h-fit flex justify-center">
-      <div className="md:w-4xl max-lg:w-full max-md:mx-1 py-8 md:px-4 md:py-16 gap-10 md:gap-12">
+      <div className="md:w-4xl max-lg:w-full py-8 p-4 md:py-16 gap-10 md:gap-12">
         <div className="w-full rounded-lg flex max-lg:flex-col md:border gap-8 md:gap-28 items-start">
           {/* Profile */}
-          <div className="w-full md:max-w-sm flex flex-col gap-4 md:p-6 px-4">
+          <div className="w-full md:max-w-sm flex flex-col gap-4 md:p-6 md:px-4">
             <Avatar className="md:h-32 md:w-32 h-24 w-24 object-cover mb-4 md:mb-0 ">
               <AvatarImage
                 src={userInfo.userImage}
@@ -393,7 +393,7 @@ const Booking = ({ type }: BookingProp) => {
                         end_time: "",
                       });
                     }}
-                    className="rounded-md md:border md:h-96 w-full flex md:px-6"
+                    className="rounded-md md:border md:h-96 w-full flex md:px-6 p-0"
                     classNames={{
                       months:
                         "flex w-full flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0 flex-1",
@@ -404,7 +404,7 @@ const Booking = ({ type }: BookingProp) => {
                       caption_label: "md:text-xl text-sm",
                     }}
                   />
-                  <div className="mt-4 max-md:px-6 gap-5 flex max-md:flex-col md:justify-between md:items-center ">
+                  <div className="mt-4  gap-5 flex max-md:flex-col md:justify-between md:items-center ">
                     {/* Timezone */}
 
                     <TimeZoneSelect
@@ -450,7 +450,7 @@ const Booking = ({ type }: BookingProp) => {
               {/* Available slots */}
               <div
                 className={cn(
-                  "w-48 max-lg:w-full overflow-hidden space-y-4 max-md:pb-10 max-md:px-4 transition-all duration-300 ",
+                  "w-48 max-lg:w-full overflow-hidden space-y-4 max-md:pb-10  transition-all duration-300 ",
                   !expanded && "max-md:hidden",
                   showReschedule && "lg:flex lg:flex-col lg:justify-between"
                 )}
