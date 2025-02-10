@@ -241,7 +241,7 @@
   "doctype": "Custom Field",
   "dt": "Google Calendar",
   "fetch_from": "user.email",
-  "fetch_if_empty": 0,
+  "fetch_if_empty": 1,
   "fieldname": "custom_zoom_user_email",
   "fieldtype": "Data",
   "hidden": 0,
