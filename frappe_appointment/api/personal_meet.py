@@ -78,7 +78,8 @@ def get_time_slots(duration_id: str, date: str, user_timezone_offset: str):
 
     data = _get_time_slots_for_day(appointment_group, date, user_timezone_offset)
 
-    del data["appointment_group_id"]
+    if "appointment_group_id" in data:
+        del data["appointment_group_id"]
     data["user"] = ap_availability.get("name")
     data["label"] = duration.title
 

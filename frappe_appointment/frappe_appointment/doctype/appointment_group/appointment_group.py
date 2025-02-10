@@ -157,6 +157,7 @@ def _get_time_slots_for_day(appointment_group: object, date: str, user_timezone_
 
         return time_slots_today_object
     except Exception:
+        frappe.log_error()
         return None
 
 
