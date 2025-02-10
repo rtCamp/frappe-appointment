@@ -251,7 +251,7 @@ $(document).on("form-refresh", function (event, frm) {
               });
               var html = "";
               if (r.message.available_durations.length > 0) {
-                html += "<ul>";
+                html += "<ul style='display:grid;gap:5px;'>";
                 r.message.available_durations.forEach((duration) => {
                   const title = duration.label;
                   const duration_str = duration.duration_str;
