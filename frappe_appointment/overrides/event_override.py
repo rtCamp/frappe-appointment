@@ -441,6 +441,10 @@ def _create_event_for_appointment_group(
     if reschedule:
         try:
             event_id = decrypt(event_info.get("event_token"))
+        except Exception:
+            frappe.clear_last_message()
+            frappe.throw(_("Invalid Event Token. Make sure you are using the correct link."))
+        try:
             if not event_id:
                 return frappe.throw(_("Unable to Update an event"))
 
