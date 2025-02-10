@@ -69,13 +69,19 @@ const Booking = ({ type }: BookingProp) => {
     new Date(date || selectedDate)
   );
 
+  useEffect(() => {
+    if (date) {
+      setSelectedDate(new Date(date));
+    }
+  }, [date]);
+
   const updateDateQuery = (date: Date) => {
     const queries: Record<string, string> = {};
     searchParams.forEach((value, key) => (queries[key] = value));
     setSearchParams({
       ...queries,
       date: `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`,
-      type
+      type,
     });
   };
 
@@ -104,7 +110,7 @@ const Booking = ({ type }: BookingProp) => {
         year: "numeric",
         month: "numeric",
         day: "numeric",
-      }).format(selectedDate),
+      }).format(date ? new Date(date) : selectedDate),
       user_timezone_offset: String(
         getTimeZoneOffsetFromTimeZoneString(timeZone || "Asia/Calcutta")
       ),

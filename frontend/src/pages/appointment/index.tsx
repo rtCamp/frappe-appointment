@@ -162,7 +162,7 @@ const Appointment = () => {
                   </div>
                 )}
                 {/* meeting cards */}
-                <div className="grid sm:grid-cols-2 gap-4 h-full overflow-y-auto">
+                <div className="grid sm:grid-cols-2 gap-4 h-full lg:pb-5 overflow-y-auto">
                   {isLoading ? (
                     <>
                       <MeetingCardSkeleton />
