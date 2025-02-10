@@ -113,6 +113,9 @@ class EventOverride(Event):
             )
             self.update_attendees_for_appointment_group()
 
+    def after_insert(self):
+        pass  # This exists to prevent errors in derived classes.
+
     def before_save(self):
         super().before_save()
         if self.is_new():
