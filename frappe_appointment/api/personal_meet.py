@@ -160,7 +160,7 @@ def book_time_slot(
 
         duration_str = duration_to_string(duration.duration)
 
-        args["subject"] = f"Meet: {name} <> {user_name} ({duration_str})"
+        args["subject"] = f"Meet: {user_name} <> {name} ({duration_str})"
 
     args["personal"] = True
     args["user_calendar"] = ap_availability.name
