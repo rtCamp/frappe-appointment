@@ -32,9 +32,8 @@ function compose_mail(frm, subject, recipient, message) {
   new frappe.views.CommunicationComposer(args);
 }
 
-function generate_table(title, data) {
-  var html = `<h4>${title}:</h4>`;
-  html += `<table class="table table-bordered">
+function generate_table(data) {
+  var html = `<table class="table table-bordered">
         <thead>
             <tr>
                 <th>Event</th>
@@ -54,7 +53,12 @@ function generate_table(title, data) {
             <td>${event.starts_on}</td>
             <td>${event.ends_on}</td>
             <td>${event.status}</td>
-            <td><button class="btn btn-default btn-xs" onclick="window.open('${event.url}', '_blank')">Open</button> ${reschedule_link}</td>
+            <td>
+              <div style="display: grid;grid-template-columns: 1fr;gap: 10px;">
+                <button class="btn btn-default btn-xs" onclick="window.open('${event.url}', '_blank')">Open Event</button>
+                ${reschedule_link}
+              </div>
+            </td>
         </tr>`;
   });
   html += `</tbody></table>`;
@@ -72,23 +76,60 @@ function generate_appointment_dialogue(r, title) {
   const dialog = new frappe.ui.Dialog({
     title: __(title || "Appointments"),
     fields: [
+      // {
+      //   fieldname: "appointments",
+      //   fieldtype: "HTML",
+      // },
       {
-        fieldname: "appointments",
+        fieldname: "ongoing_appointments_section",
+        fieldtype: "Section Break",
+        label: __("Ongoing Appointments"),
+        hidden: data.ongoing.length == 0,
+      },
+      {
+        fieldname: "ongoing_appointments",
         fieldtype: "HTML",
+        hidden: data.ongoing.length == 0,
+      },
+      {
+        fieldname: "upcoming_appointments_section",
+        fieldtype: "Section Break",
+        label: __("Upcoming Appointments"),
+        hidden: data.upcoming.length == 0,
+      },
+      {
+        fieldname: "upcoming_appointments",
+        fieldtype: "HTML",
+        hidden: data.upcoming.length == 0,
+      },
+      {
+        fieldname: "past_appointments_section",
+        fieldtype: "Section Break",
+        label: __("Past & Closed Appointments"),
+        collapsible: 1,
+        collapsed: 1,
+        hidden: data.past.length == 0,
+      },
+      {
+        fieldname: "past_appointments",
+        fieldtype: "HTML",
+        hidden: data.past.length == 0,
       },
     ],
+    size: "large",
   });
-  var html = "";
   if (data.ongoing.length > 0) {
-    html += generate_table("Ongoing", data.ongoing);
+    dialog.fields_dict.ongoing_appointments.$wrapper.html(generate_table(data.ongoing));
+    dialog.fields_dict.ongoing_appointments_section.wrapper.find(".section-head").css("font-size", "1.25em");
   }
   if (data.upcoming.length > 0) {
-    html += generate_table("Upcoming", data.upcoming);
+    dialog.fields_dict.upcoming_appointments.$wrapper.html(generate_table(data.upcoming));
+    dialog.fields_dict.upcoming_appointments_section.wrapper.find(".section-head").css("font-size", "1.25em");
   }
   if (data.past.length > 0) {
-    html += generate_table("Past & Closed", data.past);
+    dialog.fields_dict.past_appointments.$wrapper.html(generate_table(data.past));
+    dialog.fields_dict.past_appointments_section.wrapper.find(".section-head").css("font-size", "1.25em");
   }
-  dialog.fields_dict.appointments.$wrapper.html(html);
   dialog.show();
 }
 
