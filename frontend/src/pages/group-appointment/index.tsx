@@ -97,10 +97,6 @@ const GroupAppointment = () => {
       start_time: "2025-02-11 11:00:00+00:00",
       end_time: "2025-02-11 11:30:00+00:00",
     },
-    {
-      start_time: "2025-02-11 11:00:00+00:00",
-      end_time: "2025-02-11 11:30:00+00:00",
-    },
   ];
 
   useEffect(() => {
@@ -131,7 +127,7 @@ const GroupAppointment = () => {
   };
 
   const MeetingData = {
-    name: "Siddhant Singh",
+    "name": "Siddhant Singh",
     "job title": "React Engineer",
     "interview round": "React Engineer | HM Technical Interview",
     "meeting provider": "Google Meet",
@@ -142,7 +138,7 @@ const GroupAppointment = () => {
   return (
     <>
       <div className="w-full flex justify-center items-center">
-        <div className="w-full xl:w-3/5 lg:py-16 p-6 px-4">
+        <div className="w-full xl:w-4/5 2xl:w-3/5 lg:py-16 p-6 px-4">
           <div className="h-fit flex w-full max-lg:flex-col md:border md:rounded-lg md:p-6 md:px-4 max-lg:gap-5 ">
             {/* Group Meet Details */}
             {isLoading ? (
@@ -157,27 +153,26 @@ const GroupAppointment = () => {
                     <TooltipContent>Siddhant's group</TooltipContent>
                   </Tooltip>
                 </Typography>
-                <div className="w-full pr-5">
+                <div className="w-full flex flex-col gap-2 mt-3">
                   {Object.entries(MeetingData).map(([key, value]) => {
                     const Icon = getIconForKey(key);
                     return (
-                      <Typography
+                      <div
                         key={key}
                         className="flex cursor-default items-center gap-2 w-full "
                       >
-                        <span className="flex items-center justify-center gap-2">
-                          <Icon className="h-4 w-4 shrink-0 " />
-                          <span className="truncate capitalize">{key}</span>:
-                        </span>
-                        <Tooltip>
-                          <TooltipTrigger className="text-left truncate w-full">
-                            <span className="text-sm text-muted-foreground truncate max-w-[160px]">
-                              {value}
-                            </span>
-                          </TooltipTrigger>
-                          <TooltipContent>{value}</TooltipContent>
-                        </Tooltip>
-                      </Typography>
+                        <div className="w-full truncate text-gray-600 flex items-center justify-start gap-2">
+                          <Icon className="h-4 w-4 shrink-0" />
+                          <Tooltip>
+                            <TooltipTrigger className="text-left truncate">
+                              <Typography className={cn("truncate capitalize font-medium text-gray-600",key.includes("name")&&"text-foreground")}>
+                                {value}
+                              </Typography>
+                            </TooltipTrigger>
+                            <TooltipContent className="capitalize"><span className="text-blue-600">{key}</span> : {value}</TooltipContent>
+                          </Tooltip>
+                        </div>
+                      </div>
                     );
                   })}
                 </div>
