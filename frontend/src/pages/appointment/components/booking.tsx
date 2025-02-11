@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { format, formatDate } from "date-fns";
 import { Clock, Calendar as CalendarIcon, ArrowLeft, Tag } from "lucide-react";
 import { useFrappeGetCall, useFrappePostCall } from "frappe-react-sdk";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 
 /**
@@ -36,6 +36,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import Spinner from "@/components/ui/spinner";
+import useBack from "@/hooks/useBack";
 
 interface BookingProp {
   type: string;
@@ -61,6 +62,7 @@ const Booking = ({ type }: BookingProp) => {
   const [showMeetingForm, setShowMeetingForm] = useState(false);
   const [showReschedule, setShowReschedule] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
+  const location = useLocation();
 
   const date = searchParams.get("date");
   const reschedule = searchParams.get("reschedule") || "";
@@ -68,6 +70,12 @@ const Booking = ({ type }: BookingProp) => {
   const [displayMonth, setDisplayMonth] = useState(
     new Date(date || selectedDate)
   );
+
+  const handleBackNavigation = () => {
+    navigate(location.pathname, { replace: true });
+  };
+
+  useBack(handleBackNavigation);
 
   useEffect(() => {
     if (date) {
@@ -271,7 +279,7 @@ const Booking = ({ type }: BookingProp) => {
                 <CalendarIcon className="inline-block w-4 h-4 mr-1" />
                 {formatDate(new Date(), "d MMM, yyyy")}
               </Typography>
-              {userInfo.meetingProvider == "Zoom" ? (
+              {userInfo.meetingProvider == "Zoom" && (
                 <Typography className="text-sm text-blue-500 mt-1">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -292,7 +300,8 @@ const Booking = ({ type }: BookingProp) => {
                   </svg>
                   Zoom
                 </Typography>
-              ) : (
+              )}{" "}
+              {userInfo.meetingProvider == "Google Meet" && (
                 <Typography className="text-sm text-blue-700 mt-1">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
