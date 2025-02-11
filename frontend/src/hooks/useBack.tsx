@@ -1,3 +1,6 @@
+/**
+ * External dependencies.
+ */
 import { useEffect } from 'react';
 
 const useBack = (callback:VoidFunction) => {

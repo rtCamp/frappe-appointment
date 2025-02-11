@@ -46,7 +46,7 @@ export default function TimeZoneSelect({
           <div className="flex justify-center items-center gap-2">
             <Globe className="h-4 w-4" />
             {timeZone
-              ? timeZone.split("/")[1]?.replace("_", " ")
+              ? timeZone?.split("/").slice(1).join("/").replace(/_/g, " ")
               : "Select timezone"}
           </div>
           {/* Rotate the ChevronDown icon when popover is open */}
@@ -75,7 +75,7 @@ export default function TimeZoneSelect({
                   <div className="flex w-full items-center gap-4">
                     <div className="w-40 truncate">
                       <div className="font-medium truncate">
-                        {tz?.split("/")[1]?.replace("_", " ")}
+                        {tz?.split("/").slice(1).join("/").replace(/_/g, " ")}
                       </div>
                       <div className="text-sm text-muted-foreground truncate">
                         {getTimeZoneOffset(tz)}
