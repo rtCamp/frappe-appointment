@@ -6,7 +6,7 @@ import { useForm } from "react-hook-form";
 import z from "zod";
 import { useFrappePostCall } from "frappe-react-sdk";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ChevronLeft, X } from "lucide-react";
+import { CalendarPlus, ChevronLeft, X } from "lucide-react";
 import { formatDate } from "date-fns";
 import { toast } from "sonner";
 import { useSearchParams } from "react-router-dom";
@@ -146,9 +146,15 @@ const MeetingForm = ({ onBack, durationId, onSuccess }: MeetingFormProps) => {
           className="space-y-6 h-full flex justify-between flex-col"
         >
           <div className="space-y-4">
-            <Typography variant="p" className="text-2xl">
-              Your contact info
-            </Typography>
+            <div className="flex gap-3 max-md:flex-col md:items-center md:justify-between">
+              <Typography variant="p" className="text-2xl">
+                Your contact info
+              </Typography>
+              <Typography className="text-sm  mt-1 text-blue-500">
+                <CalendarPlus className="inline-block w-4 h-4 mr-1 md:hidden" />
+                {formatDate(selectedDate, "d MMM, yyyy")}
+              </Typography>
+            </div>
 
             <FormField
               control={form.control}
