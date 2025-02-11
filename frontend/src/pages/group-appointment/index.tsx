@@ -4,21 +4,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import { format } from "date-fns";
-import {
-  ArrowLeft,
-  Briefcase,
-  CircleUserRound,
-  FileText,
-  GraduationCap,
-  LucideIcon,
-  Mail,
-  MapPin,
-  Phone,
-  User2,
-  Calendar as CalendarIcon,
-  Tag,
-  Video,
-} from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 
 /**
  * Internal dependencies
@@ -39,6 +25,9 @@ import { Switch } from "@/components/ui/switch";
 import TimeZoneSelect from "../appointment/components/timeZoneSelectmenu";
 import { slotType } from "@/context/app";
 import Spinner from "@/components/ui/spinner";
+import GroupMeetSkeleton from "./components/groupMeetSkeleton";
+import { Skeleton } from "@/components/ui/skeleton";
+import { getIconForKey } from "./utils";
 
 const GroupAppointment = () => {
   const { groupId } = useParams();
@@ -51,6 +40,15 @@ const GroupAppointment = () => {
   const [selectedSlot, setSelectedSlot] = useState<slotType>();
   const [expanded, setExpanded] = useState(false);
   const [isMobileView, setIsMobileView] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 2000);
+
+    return () => clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
     const handleResize = () => {
@@ -132,29 +130,11 @@ const GroupAppointment = () => {
     }).format(date);
   };
 
-  const iconMap: Record<string, LucideIcon> = {
-    name: User2,
-    "job title": Briefcase,
-    "interview round": CalendarIcon,
-    email: Mail,
-    phone: Phone,
-    location: MapPin,
-    education: GraduationCap,
-    experience: FileText,
-    interviewer: CircleUserRound,
-    "meeting provider": Video,
-  };
-
   const MeetingData = {
     name: "Siddhant Singh",
-    "Job Title": "React Engineer",
-    "Interview Round": "React Engineer | HM Technical Interview",
+    "job title": "React Engineer",
+    "interview round": "React Engineer | HM Technical Interview",
     "meeting provider": "Google Meet",
-  };
-
-  const getIconForKey = (key: string): LucideIcon => {
-    const normalizedKey = key.toLowerCase();
-    return iconMap[normalizedKey] || Tag; // Default to Tag if no matching icon
   };
 
   const scheduleMeeting = () => {};
@@ -165,43 +145,44 @@ const GroupAppointment = () => {
         <div className="w-full xl:w-3/5 lg:py-16 p-6 px-4">
           <div className="h-fit flex w-full max-lg:flex-col md:border md:rounded-lg md:p-6 md:px-4 max-lg:gap-5 ">
             {/* Group Meet Details */}
-            <div className="flex flex-col w-full lg:w-3/4 truncate gap-3 ">
-              <Typography variant="h2" className="text-3xl font-semibold">
-                <Tooltip>
-                  <TooltipTrigger className="text-left truncate w-full">
-                    Siddhant's group
-                  </TooltipTrigger>
-                  <TooltipContent>Siddhant's group</TooltipContent>
-                </Tooltip>
-              </Typography>
-              <div className="w-full pr-5">
-                {Object.entries(MeetingData).map(([key, value]) => {
-                  const Icon = getIconForKey(key);
-                  return (
-                    <Typography
-                      key={key}
-                      className="flex cursor-default items-center gap-2 w-full "
-                    >
-                      <span className="flex items-center justify-center gap-2">
-                        <Icon className="h-4 w-4 shrink-0 " />
-                        <Typography className="truncate capitalize">
-                          {key}
-                        </Typography>
-                        :
-                      </span>
-                      <Tooltip>
-                        <TooltipTrigger className="text-left truncate w-full">
-                          <span className="text-sm text-muted-foreground truncate max-w-[160px]">
-                            {value}
-                          </span>
-                        </TooltipTrigger>
-                        <TooltipContent>{value}</TooltipContent>
-                      </Tooltip>
-                    </Typography>
-                  );
-                })}
+            {isLoading ? (
+              <GroupMeetSkeleton />
+            ) : (
+              <div className="flex flex-col w-full lg:w-3/4 truncate gap-3 ">
+                <Typography variant="h2" className="text-3xl font-semibold">
+                  <Tooltip>
+                    <TooltipTrigger className="text-left truncate w-full">
+                      Siddhant's group
+                    </TooltipTrigger>
+                    <TooltipContent>Siddhant's group</TooltipContent>
+                  </Tooltip>
+                </Typography>
+                <div className="w-full pr-5">
+                  {Object.entries(MeetingData).map(([key, value]) => {
+                    const Icon = getIconForKey(key);
+                    return (
+                      <Typography
+                        key={key}
+                        className="flex cursor-default items-center gap-2 w-full "
+                      >
+                        <span className="flex items-center justify-center gap-2">
+                          <Icon className="h-4 w-4 shrink-0 " />
+                          <span className="truncate capitalize">{key}</span>:
+                        </span>
+                        <Tooltip>
+                          <TooltipTrigger className="text-left truncate w-full">
+                            <span className="text-sm text-muted-foreground truncate max-w-[160px]">
+                              {value}
+                            </span>
+                          </TooltipTrigger>
+                          <TooltipContent>{value}</TooltipContent>
+                        </Tooltip>
+                      </Typography>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
+            )}
             <hr className="w-full bg-muted md:hidden" />
             {(!isMobileView || !expanded) && (
               <div className="flex flex-col w-full lg:max-w-96">
@@ -289,37 +270,49 @@ const GroupAppointment = () => {
                 {format(selectedDate, "EEEE, d MMMM yyyy")}
               </Typography>
 
-              <div className="lg:h-[22rem] mb-3 overflow-y-auto no-scrollbar space-y-2">
-                {mockData.map((slot, index) => (
+              {isLoading ? (
+                <div className="h-full flex flex-col w-full mb-3 overflow-y-auto no-scrollbar space-y-2">
+                  {Array.from({ length: 5 }).map((_, key) => (
+                    <Skeleton key={key} className="w-full h-10" />
+                  ))}
+                </div>
+              ) : (
+                <>
+                  <div className="lg:h-[22rem] mb-3 overflow-y-auto no-scrollbar space-y-2">
+                    {mockData.map((slot, index) => (
+                      <Button
+                        key={index}
+                        onClick={() => {
+                          setSelectedSlot({
+                            start_time: slot.start_time,
+                            end_time: slot.end_time,
+                          });
+                        }}
+                        variant="outline"
+                        className={cn(
+                          "w-full font-normal border border-blue-500 text-blue-500 hover:text-blue-500 hover:bg-blue-50 transition-colors ",
+                          selectedSlot?.start_time === slot.start_time &&
+                            selectedSlot?.end_time === slot.end_time &&
+                            "bg-blue-500 text-white hover:bg-blue-400 hover:text-white"
+                        )}
+                      >
+                        {formatTimeSlot(new Date(slot.start_time))}
+                      </Button>
+                    ))}
+                  </div>
                   <Button
-                    key={index}
-                    onClick={() => {
-                      setSelectedSlot({
-                        start_time: slot.start_time,
-                        end_time: slot.end_time,
-                      });
-                    }}
-                    variant="outline"
                     className={cn(
-                      "w-full font-normal border border-blue-500 text-blue-500 hover:text-blue-500 hover:bg-blue-50 transition-colors ",
-                      selectedSlot?.start_time === slot.start_time &&
-                        selectedSlot?.end_time === slot.end_time &&
-                        "bg-blue-500 text-white hover:bg-blue-400 hover:text-white"
+                      "bg-blue-400 hover:bg-blue-500 lg:!mt-0 max-lg:w-full hidden",
+                      selectedSlot?.start_time &&
+                        selectedSlot.end_time &&
+                        "block"
                     )}
+                    onClick={scheduleMeeting}
                   >
-                    {formatTimeSlot(new Date(slot.start_time))}
+                    Schedule
                   </Button>
-                ))}
-              </div>
-              <Button
-                className={cn(
-                  "bg-blue-400 hover:bg-blue-500 lg:!mt-0 max-lg:w-full hidden",
-                  selectedSlot?.start_time && selectedSlot.end_time && "block"
-                )}
-                onClick={scheduleMeeting}
-              >
-                Schedule
-              </Button>
+                </>
+              )}
             </div>
           </div>
         </div>
