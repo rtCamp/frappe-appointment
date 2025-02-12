@@ -41,6 +41,7 @@ const GroupAppointment = () => {
   const [expanded, setExpanded] = useState(false);
   const [isMobileView, setIsMobileView] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [scheduleLoading, setScheduleLoading] = useState(false);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -248,7 +249,7 @@ const GroupAppointment = () => {
               </div>
             )}
             {isMobileView && expanded && (
-              <div className="h-14 fixed bottom-0 left-0 w-screen border z-10 bg-white border-top flex items-center justify-between px-3">
+              <div className="h-14 fixed bottom-0 left-0 w-screen border z-10 bg-white border-top flex items-center justify-between px-4">
                 <Button
                   variant="link"
                   className="text-blue-500 px-0"
@@ -259,17 +260,23 @@ const GroupAppointment = () => {
                 </Button>
                 <Button
                   disabled={
-                    selectedSlot?.start_time && selectedSlot?.end_time
+                    (selectedSlot?.start_time && selectedSlot?.end_time
                       ? false
-                      : true
+                      : true) || scheduleLoading
                   }
                   className={cn(
-                    "bg-blue-400 hover:bg-blue-500 w-fit px-10",
+                    "bg-blue-400 flex hover:bg-blue-500 w-fit px-10",
                     "md:hidden"
                   )}
-                  onClick={scheduleMeeting}
+                  onClick={() => {
+                    scheduleMeeting();
+                    setScheduleLoading(true);
+                    setTimeout(() => {
+                      setScheduleLoading(false);
+                    }, 2000);
+                  }}
                 >
-                  Schedule
+                  {scheduleLoading && <Spinner />}Schedule
                 </Button>
               </div>
             )}
@@ -318,16 +325,23 @@ const GroupAppointment = () => {
                     ))}
                   </div>
                   <Button
+                    disabled={scheduleLoading}
                     className={cn(
                       "bg-blue-400 hover:bg-blue-500 lg:!mt-0 max-lg:w-full hidden",
                       selectedSlot?.start_time &&
                         selectedSlot.end_time &&
-                        "block",
+                        "flex",
                       "max-md:hidden"
                     )}
-                    onClick={scheduleMeeting}
+                    onClick={() => {
+                      scheduleMeeting();
+                      setScheduleLoading(true);
+                      setTimeout(() => {
+                        setScheduleLoading(false);
+                      }, 2000);
+                    }}
                   >
-                    Schedule
+                    {scheduleLoading && <Spinner />}Schedule
                   </Button>
                 </>
               )}
