@@ -451,7 +451,7 @@ const Booking = ({ type }: BookingProp) => {
                     <ArrowLeft className="h-4 w-4" />
                     Back
                   </Button>
-                  
+                  {showReschedule && (
                     <Button
                       className="bg-blue-400 hover:bg-blue-500 w-fit px-6"
                       onClick={onReschedule}
@@ -459,6 +459,7 @@ const Booking = ({ type }: BookingProp) => {
                     >
                       {rescheduleLoading && <Spinner />} Reschedule
                     </Button>
+                  )}
                 </div>
               )}
 
