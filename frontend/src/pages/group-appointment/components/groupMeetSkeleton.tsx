@@ -1,3 +1,6 @@
+/**
+ * Internal dependencies
+ */
 import { Skeleton } from "@/components/ui/skeleton";
 
 const GroupMeetSkeleton = () => {

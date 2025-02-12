@@ -127,7 +127,7 @@ const GroupAppointment = () => {
   };
 
   const MeetingData = {
-    "name": "Siddhant Singh",
+    name: "Siddhant Singh",
     "job title": "React Engineer",
     "interview round": "React Engineer | HM Technical Interview",
     "meeting provider": "Google Meet",
@@ -165,11 +165,19 @@ const GroupAppointment = () => {
                           <Icon className="h-4 w-4 shrink-0" />
                           <Tooltip>
                             <TooltipTrigger className="text-left truncate">
-                              <Typography className={cn("truncate capitalize font-medium text-gray-600",key.includes("name")&&"text-foreground")}>
+                              <Typography
+                                className={cn(
+                                  "truncate capitalize font-medium text-gray-600",
+                                  key.includes("name") && "text-foreground"
+                                )}
+                              >
                                 {value}
                               </Typography>
                             </TooltipTrigger>
-                            <TooltipContent className="capitalize"><span className="text-blue-600">{key}</span> : {value}</TooltipContent>
+                            <TooltipContent className="capitalize">
+                              <span className="text-blue-600">{key}</span> :{" "}
+                              {value}
+                            </TooltipContent>
                           </Tooltip>
                         </div>
                       </div>
@@ -240,14 +248,28 @@ const GroupAppointment = () => {
               </div>
             )}
             {isMobileView && expanded && (
-              <div className="h-14 fixed bottom-0 left-0 w-screen border z-10 bg-white border-top flex items-center justify-start">
+              <div className="h-14 fixed bottom-0 left-0 w-screen border z-10 bg-white border-top flex items-center justify-between px-3">
                 <Button
                   variant="link"
-                  className="text-blue-500"
+                  className="text-blue-500 px-0"
                   onClick={() => setExpanded(false)}
                 >
-                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  <ArrowLeft className="h-4 w-4 " />
                   Back
+                </Button>
+                <Button
+                  disabled={
+                    selectedSlot?.start_time && selectedSlot?.end_time
+                      ? false
+                      : true
+                  }
+                  className={cn(
+                    "bg-blue-400 hover:bg-blue-500 w-fit px-10",
+                    "md:hidden"
+                  )}
+                  onClick={scheduleMeeting}
+                >
+                  Schedule
                 </Button>
               </div>
             )}
@@ -300,7 +322,8 @@ const GroupAppointment = () => {
                       "bg-blue-400 hover:bg-blue-500 lg:!mt-0 max-lg:w-full hidden",
                       selectedSlot?.start_time &&
                         selectedSlot.end_time &&
-                        "block"
+                        "block",
+                      "max-md:hidden"
                     )}
                     onClick={scheduleMeeting}
                   >

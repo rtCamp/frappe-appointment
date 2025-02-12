@@ -14,12 +14,13 @@ import {
   ShoppingBag,
   ClipboardList,
   Globe,
-  Building,
+  Building2,
   Users,
   HeartPulse,
   Lightbulb,
   Hammer,
   LucideIcon,
+  LaptopMinimal,
 } from "lucide-react";
 
 const iconMap = new Map<string, LucideIcon>([
@@ -45,8 +46,8 @@ const iconMap = new Map<string, LucideIcon>([
   // Professional / Work-related
   ["job title", Briefcase],
   ["position", Briefcase],
-  ["company", Building],
-  ["organization", Building],
+  ["company", Building2],
+  ["organization", Building2],
   ["department", Users],
   ["industry", ShoppingBag],
 
@@ -57,6 +58,7 @@ const iconMap = new Map<string, LucideIcon>([
   ["meeting", CalendarIcon],
   ["event", CalendarIcon],
   ["schedule", ClipboardList],
+  ["interview round", LaptopMinimal],
 
   // Financial & Transactions
   ["salary", DollarSign],
