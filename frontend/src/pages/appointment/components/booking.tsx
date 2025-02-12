@@ -442,15 +442,23 @@ const Booking = ({ type }: BookingProp) => {
 
               {/* Availability Slots */}
               {isMobileView && expanded && (
-                <div className="h-14 fixed bottom-0 left-0 w-screen border z-10 bg-white border-top flex items-center justify-start">
+                <div className="h-14 fixed bottom-0 left-0 w-screen border z-10 bg-white border-top flex items-center justify-between px-4">
                   <Button
                     variant="link"
-                    className="text-blue-500"
+                    className="text-blue-500 px-0"
                     onClick={() => setExpanded(false)}
                   >
-                    <ArrowLeft className="h-4 w-4 mr-2" />
+                    <ArrowLeft className="h-4 w-4" />
                     Back
                   </Button>
+                  
+                    <Button
+                      className="bg-blue-400 hover:bg-blue-500 w-fit px-6"
+                      onClick={onReschedule}
+                      disabled={rescheduleLoading || !showReschedule}
+                    >
+                      {rescheduleLoading && <Spinner />} Reschedule
+                    </Button>
                 </div>
               )}
 
@@ -520,7 +528,7 @@ const Booking = ({ type }: BookingProp) => {
                 )}
                 {showReschedule && (
                   <Button
-                    className="bg-blue-400 hover:bg-blue-500 lg:!mt-0 max-lg:w-full"
+                    className="bg-blue-400 hover:bg-blue-500 lg:!mt-0 max-lg:w-full max-md:hidden"
                     onClick={onReschedule}
                     disabled={rescheduleLoading}
                   >
