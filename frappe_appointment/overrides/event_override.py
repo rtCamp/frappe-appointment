@@ -287,34 +287,40 @@ class EventOverride(Event):
             return {"status": True, "message": ""}
 
         try:
+            is_frappe_function = False
             try:
                 webhook_function = frappe.get_attr(appointment_group.webhook)
-                if webhook_function:
-                    api_res = webhook_function(body)
-                else:
+                if not webhook_function:
                     raise Exception
+                is_frappe_function = True
             except Exception:
-                # clear all previous logs
-                clear_messages()
+                # clear last message
+                frappe.clear_last_message()
 
+            if is_frappe_function:
+                try:
+                    api_res = webhook_function(**body)
+                except Exception as e:
+                    return {"status": False, "message": str(e)}
+            else:
                 api_res = requests.post(
                     appointment_group.webhook,
                     data=json.dumps(body, default=datetime_serializer),
                 ).json()
 
-            is_exc = False
+                is_exc = False
 
-            if api_res and "exc_type" in api_res:
-                is_exc = True
+                if api_res and "exc_type" in api_res:
+                    is_exc = True
 
-            if not api_res or is_exc:
-                messages = json.loads(api_res["_server_messages"])
-                messages = json.loads(messages[0])
+                if not api_res or is_exc:
+                    messages = json.loads(api_res["_server_messages"])
+                    messages = json.loads(messages[0])
 
-                if len(messages) != 0:
-                    messages = messages["message"]
+                    if len(messages) != 0:
+                        messages = messages["message"]
 
-                return {"status": False, "message": messages}
+                    return {"status": False, "message": messages}
 
             return {"status": True, "message": ""}
 
@@ -410,7 +416,7 @@ def _create_event_for_appointment_group(
     start_time: str,
     end_time: str,
     user_timezone_offset: str,
-    event_participants,
+    event_participants="[]",
     success_message="",
     **args,
 ):
