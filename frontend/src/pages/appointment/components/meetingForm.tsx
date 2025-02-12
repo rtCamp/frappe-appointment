@@ -6,7 +6,7 @@ import { useForm } from "react-hook-form";
 import z from "zod";
 import { useFrappePostCall } from "frappe-react-sdk";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { CalendarPlus, ChevronLeft, X } from "lucide-react";
+import { CalendarPlus, ChevronLeft, CircleAlert, X } from "lucide-react";
 import { formatDate } from "date-fns";
 import { toast } from "sonner";
 import { useSearchParams } from "react-router-dom";
@@ -130,6 +130,12 @@ const MeetingForm = ({ onBack, durationId, onSuccess }: MeetingFormProps) => {
       .catch((err) => {
         const error = parseFrappeErrorMsg(err);
         toast(error || "Something went wrong", {
+          duration: 4000,
+          classNames: {
+            actionButton:
+              "group-[.toast]:!bg-red-500 group-[.toast]:hover:!bg-red-300 group-[.toast]:!text-white",
+          },
+          icon: <CircleAlert className="h-5 w-5 text-red-500" />,
           action: {
             label: "OK",
             onClick: () => toast.dismiss(),

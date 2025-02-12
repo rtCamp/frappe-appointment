@@ -2,9 +2,10 @@
  * External dependencies
  */
 import { useEffect, useState } from "react";
-import { useParams, useSearchParams } from "react-router-dom";
-import { format } from "date-fns";
-import { ArrowLeft } from "lucide-react";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { format, formatDate } from "date-fns";
+import { ArrowLeft, CircleAlert } from "lucide-react";
+import { toast } from "sonner";
 
 /**
  * Internal dependencies
@@ -16,7 +17,12 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import Typography from "@/components/ui/typography";
-import { cn, getAllSupportedTimeZones } from "@/lib/utils";
+import {
+  cn,
+  getAllSupportedTimeZones,
+  getTimeZoneOffsetFromTimeZoneString,
+  parseFrappeErrorMsg,
+} from "@/lib/utils";
 import { TimeFormat } from "../appointment/types";
 import { Button } from "@/components/ui/button";
 import { getLocalTimezone } from "@/lib/utils";
@@ -27,12 +33,17 @@ import { slotType } from "@/context/app";
 import Spinner from "@/components/ui/spinner";
 import GroupMeetSkeleton from "./components/groupMeetSkeleton";
 import { Skeleton } from "@/components/ui/skeleton";
-import { getIconForKey } from "./utils";
+import { getIconForKey, validTitle } from "./utils";
+import { useFrappeGetCall, useFrappePostCall } from "frappe-react-sdk";
+import { MeetingData } from "./types";
+import { disabledDays } from "../appointment/utils";
 
 const GroupAppointment = () => {
   const { groupId } = useParams();
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const date = searchParams.get("date");
+  const interview = searchParams.get("interview");
   const [timeFormat, setTimeFormat] = useState<TimeFormat>("12h");
   const [timeZone, setTimeZone] = useState<string>(getLocalTimezone());
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
@@ -40,16 +51,66 @@ const GroupAppointment = () => {
   const [selectedSlot, setSelectedSlot] = useState<slotType>();
   const [expanded, setExpanded] = useState(false);
   const [isMobileView, setIsMobileView] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [scheduleLoading, setScheduleLoading] = useState(false);
+  const [meetingData, setMeetingData] = useState<MeetingData>({
+    all_available_slots_for_data: [],
+    available_days: [],
+    date: "",
+    duration: "",
+    endtime: "",
+    is_invalid_date: true,
+    next_valid_date: "",
+    prev_valid_date: "",
+    starttime: "",
+    total_slots_for_day: 0,
+    appointment_group_id: "",
+    valid_end_date: "",
+    valid_start_date: "",
+  });
+
+  const {
+    data,
+    isLoading: dataIsLoading,
+    error: fetchError,
+    mutate,
+  } = useFrappeGetCall(
+    "frappe_appointment.api.group_meet.get_time_slots",
+    {
+      appointment_group_id: groupId,
+      date: new Intl.DateTimeFormat("en-CA", {
+        year: "numeric",
+        month: "numeric",
+        day: "numeric",
+      }).format(date ? new Date(date) : selectedDate),
+      user_timezone_offset: String(
+        getTimeZoneOffsetFromTimeZoneString(timeZone)
+      ),
+      interview: interview,
+    },
+    undefined,
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+    }
+  );
+
+  const { call: bookMeeting, loading } = useFrappePostCall(
+    "frappe_appointment.api.group_meet.book_time_slot"
+  );
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 2000);
-
-    return () => clearTimeout(timer);
-  }, []);
+    if (data) {
+      setMeetingData(data.message);
+      const validData = data.message.is_invalid_date
+        ? new Date(data.message.next_valid_date)
+        : selectedDate;
+      setSelectedDate(validData);
+      setDisplayMonth(validData);
+      updateDateQuery(validData);
+    }
+    if (fetchError) {
+      navigate("/");
+    }
+  }, [data, fetchError, mutate, selectedDate, navigate]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -60,45 +121,6 @@ const GroupAppointment = () => {
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
-
-  const mockData = [
-    {
-      start_time: "2025-02-11 05:30:00+00:00",
-      end_time: "2025-02-11 06:00:00+00:00",
-    },
-    {
-      start_time: "2025-02-11 06:00:00+00:00",
-      end_time: "2025-02-11 06:30:00+00:00",
-    },
-    {
-      start_time: "2025-02-11 06:30:00+00:00",
-      end_time: "2025-02-11 07:00:00+00:00",
-    },
-    {
-      start_time: "2025-02-11 07:30:00+00:00",
-      end_time: "2025-02-11 08:00:00+00:00",
-    },
-    {
-      start_time: "2025-02-11 08:00:00+00:00",
-      end_time: "2025-02-11 08:30:00+00:00",
-    },
-    {
-      start_time: "2025-02-11 08:30:00+00:00",
-      end_time: "2025-02-11 09:00:00+00:00",
-    },
-    {
-      start_time: "2025-02-11 09:00:00+00:00",
-      end_time: "2025-02-11 09:30:00+00:00",
-    },
-    {
-      start_time: "2025-02-11 09:30:00+00:00",
-      end_time: "2025-02-11 10:00:00+00:00",
-    },
-    {
-      start_time: "2025-02-11 11:00:00+00:00",
-      end_time: "2025-02-11 11:30:00+00:00",
-    },
-  ];
 
   useEffect(() => {
     if (date) {
@@ -127,14 +149,55 @@ const GroupAppointment = () => {
     }).format(date);
   };
 
-  const MeetingData = {
-    name: "Siddhant Singh",
-    "job title": "React Engineer",
-    "interview round": "React Engineer | HM Technical Interview",
-    "meeting provider": "Google Meet",
-  };
+  const scheduleMeeting = () => {
+    const extraArgs: Record<string, string> = {};
+    searchParams.forEach((value, key) => (extraArgs[key] = value));
+    const meetingData = {
+      ...extraArgs,
+      appointment_group_id: groupId,
+      date: new Intl.DateTimeFormat("en-CA", {
+        year: "numeric",
+        month: "numeric",
+        day: "numeric",
+      }).format(selectedDate),
+      user_timezone_offset: String(
+        getTimeZoneOffsetFromTimeZoneString(timeZone)
+      ),
+      start_time: selectedSlot!.start_time,
+      end_time: selectedSlot!.end_time,
+    };
 
-  const scheduleMeeting = () => {};
+    bookMeeting(meetingData)
+      .then(() => {
+        toast("Appointment has been scheduled", {
+          duration: 6000,
+          position: "top-right",
+          description: `For ${formatDate(
+            new Date(selectedDate),
+            "d MMM, yyyy"
+          )} at ${formatDate(new Date(selectedSlot!.start_time), "hh:mm a")}`,
+          action: {
+            label: "OK",
+            onClick: () => toast.dismiss(),
+          },
+        });
+      })
+      .catch((err) => {
+        const error = parseFrappeErrorMsg(err);
+        toast(error || "Something went wrong", {
+          duration: 4000,
+          classNames: {
+            actionButton:
+              "group-[.toast]:!bg-red-500 group-[.toast]:hover:!bg-red-300 group-[.toast]:!text-white",
+          },
+          icon: <CircleAlert className="h-5 w-5 text-red-500" />,
+          action: {
+            label: "OK",
+            onClick: () => toast.dismiss(),
+          },
+        });
+      });
+  };
 
   return (
     <>
@@ -142,49 +205,57 @@ const GroupAppointment = () => {
         <div className="w-full xl:w-4/5 2xl:w-3/5 lg:py-16 p-6 px-4">
           <div className="h-fit flex w-full max-lg:flex-col md:border md:rounded-lg md:p-6 md:px-4 max-lg:gap-5 ">
             {/* Group Meet Details */}
-            {isLoading ? (
+            {!meetingData.appointment_group_id ? (
               <GroupMeetSkeleton />
             ) : (
               <div className="flex flex-col w-full lg:w-3/4 truncate gap-3 ">
                 <Typography variant="h2" className="text-3xl font-semibold">
                   <Tooltip>
-                    <TooltipTrigger className="text-left truncate w-full">
-                      Siddhant's group
+                    <TooltipTrigger className="text-left truncate w-full capitalize">
+                      {validTitle(meetingData.appointment_group_id)}
                     </TooltipTrigger>
-                    <TooltipContent>Siddhant's group</TooltipContent>
+                    <TooltipContent className="capitalize">
+                      {validTitle(meetingData.appointment_group_id)}
+                    </TooltipContent>
                   </Tooltip>
                 </Typography>
-                <div className="w-full flex flex-col gap-2 mt-3">
-                  {Object.entries(MeetingData).map(([key, value]) => {
-                    const Icon = getIconForKey(key);
-                    return (
-                      <div
-                        key={key}
-                        className="flex cursor-default items-center gap-2 w-full "
-                      >
-                        <div className="w-full truncate text-gray-600 flex items-center justify-start gap-2">
-                          <Icon className="h-4 w-4 shrink-0" />
-                          <Tooltip>
-                            <TooltipTrigger className="text-left truncate">
-                              <Typography
-                                className={cn(
-                                  "truncate capitalize font-medium text-gray-600",
-                                  key.includes("name") && "text-foreground"
-                                )}
-                              >
-                                {value}
-                              </Typography>
-                            </TooltipTrigger>
-                            <TooltipContent className="capitalize">
-                              <span className="text-blue-600">{key}</span> :{" "}
-                              {value}
-                            </TooltipContent>
-                          </Tooltip>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
+                {meetingData.meeting_details && (
+                  <div className="w-full flex flex-col gap-2 mt-3">
+                    {Object.entries(meetingData.meeting_details).map(
+                      ([key, value]) => {
+                        const Icon = getIconForKey(key);
+                        return (
+                          <div
+                            key={key}
+                            className="flex cursor-default items-center gap-2 w-full "
+                          >
+                            <div className="w-full truncate text-gray-600 flex items-center justify-start gap-2">
+                              <Icon className="h-4 w-4 shrink-0" />
+                              <Tooltip>
+                                <TooltipTrigger className="text-left truncate">
+                                  <Typography
+                                    className={cn(
+                                      "truncate capitalize font-medium text-gray-600",
+                                      key.includes("name") && "text-foreground"
+                                    )}
+                                  >
+                                    {value}
+                                  </Typography>
+                                </TooltipTrigger>
+                                <TooltipContent className="capitalize">
+                                  <span className="text-blue-600">
+                                    {validTitle(key)}
+                                  </span>{" "}
+                                  : {value}
+                                </TooltipContent>
+                              </Tooltip>
+                            </div>
+                          </div>
+                        );
+                      }
+                    )}
+                  </div>
+                )}
               </div>
             )}
             <hr className="w-full bg-muted md:hidden" />
@@ -217,6 +288,33 @@ const GroupAppointment = () => {
                       head_row: "",
                       row: "w-full mt-2",
                       caption_label: "md:text-xl text-sm",
+                    }}
+                    fromMonth={new Date(meetingData.valid_start_date)}
+                    toMonth={new Date(meetingData.valid_end_date)}
+                    disabled={(date) => {
+                      const disabledDaysList =
+                        disabledDays(meetingData.available_days) || [];
+                      const isPastDate =
+                        date.getTime() <
+                        new Date(meetingData.valid_start_date)?.setHours(
+                          0,
+                          0,
+                          0,
+                          0
+                        );
+                      const isNextDate =
+                        date.getTime() >
+                        new Date(meetingData.valid_end_date)?.setHours(
+                          0,
+                          0,
+                          0,
+                          0
+                        );
+                      return (
+                        isPastDate ||
+                        disabledDaysList.includes(date.getDay()) ||
+                        isNextDate
+                      );
                     }}
                   />
                 </div>
@@ -262,21 +360,15 @@ const GroupAppointment = () => {
                   disabled={
                     (selectedSlot?.start_time && selectedSlot?.end_time
                       ? false
-                      : true) || scheduleLoading
+                      : true) || loading
                   }
                   className={cn(
                     "bg-blue-400 flex hover:bg-blue-500 w-fit px-10",
                     "md:hidden"
                   )}
-                  onClick={() => {
-                    scheduleMeeting();
-                    setScheduleLoading(true);
-                    setTimeout(() => {
-                      setScheduleLoading(false);
-                    }, 2000);
-                  }}
+                  onClick={scheduleMeeting}
                 >
-                  {scheduleLoading && <Spinner />}Schedule
+                  {loading && <Spinner />}Schedule
                 </Button>
               </div>
             )}
@@ -294,7 +386,7 @@ const GroupAppointment = () => {
                 {format(selectedDate, "EEEE, d MMMM yyyy")}
               </Typography>
 
-              {isLoading ? (
+              {dataIsLoading ? (
                 <div className="h-full flex flex-col w-full mb-3 overflow-y-auto no-scrollbar space-y-2">
                   {Array.from({ length: 5 }).map((_, key) => (
                     <Skeleton key={key} className="w-full h-10" />
@@ -303,29 +395,39 @@ const GroupAppointment = () => {
               ) : (
                 <>
                   <div className="lg:h-[22rem] mb-3 overflow-y-auto no-scrollbar space-y-2">
-                    {mockData.map((slot, index) => (
-                      <Button
-                        key={index}
-                        onClick={() => {
-                          setSelectedSlot({
-                            start_time: slot.start_time,
-                            end_time: slot.end_time,
-                          });
-                        }}
-                        variant="outline"
-                        className={cn(
-                          "w-full font-normal border border-blue-500 text-blue-500 hover:text-blue-500 hover:bg-blue-50 transition-colors ",
-                          selectedSlot?.start_time === slot.start_time &&
-                            selectedSlot?.end_time === slot.end_time &&
-                            "bg-blue-500 text-white hover:bg-blue-400 hover:text-white"
-                        )}
-                      >
-                        {formatTimeSlot(new Date(slot.start_time))}
-                      </Button>
-                    ))}
+                    {meetingData.all_available_slots_for_data.length > 0 ? (
+                      meetingData.all_available_slots_for_data.map(
+                        (slot, index) => (
+                          <Button
+                            key={index}
+                            onClick={() => {
+                              setSelectedSlot({
+                                start_time: slot.start_time,
+                                end_time: slot.end_time,
+                              });
+                            }}
+                            variant="outline"
+                            className={cn(
+                              "w-full font-normal border border-blue-500 text-blue-500 hover:text-blue-500 hover:bg-blue-50 transition-colors ",
+                              selectedSlot?.start_time === slot.start_time &&
+                                selectedSlot?.end_time === slot.end_time &&
+                                "bg-blue-500 text-white hover:bg-blue-400 hover:text-white"
+                            )}
+                          >
+                            {formatTimeSlot(new Date(slot.start_time))}
+                          </Button>
+                        )
+                      )
+                    ) : (
+                      <div className="h-full max-md:h-44 w-full flex justify-center items-center">
+                        <Typography className="text-center text-gray-500">
+                          No open-time slots
+                        </Typography>
+                      </div>
+                    )}
                   </div>
                   <Button
-                    disabled={scheduleLoading}
+                    disabled={loading}
                     className={cn(
                       "bg-blue-400 hover:bg-blue-500 lg:!mt-0 max-lg:w-full hidden",
                       selectedSlot?.start_time &&
@@ -333,15 +435,9 @@ const GroupAppointment = () => {
                         "flex",
                       "max-md:hidden"
                     )}
-                    onClick={() => {
-                      scheduleMeeting();
-                      setScheduleLoading(true);
-                      setTimeout(() => {
-                        setScheduleLoading(false);
-                      }, 2000);
-                    }}
+                    onClick={scheduleMeeting}
                   >
-                    {scheduleLoading && <Spinner />}Schedule
+                    {loading && <Spinner />}Schedule
                   </Button>
                 </>
               )}

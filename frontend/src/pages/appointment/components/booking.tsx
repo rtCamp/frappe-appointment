@@ -3,7 +3,13 @@
  */
 import { useEffect, useRef, useState } from "react";
 import { format, formatDate } from "date-fns";
-import { Clock, Calendar as CalendarIcon, ArrowLeft, Tag } from "lucide-react";
+import {
+  Clock,
+  Calendar as CalendarIcon,
+  ArrowLeft,
+  Tag,
+  CircleAlert,
+} from "lucide-react";
 import { useFrappeGetCall, useFrappePostCall } from "frappe-react-sdk";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
@@ -129,7 +135,7 @@ const Booking = ({ type }: BookingProp) => {
     }
   );
   const { call: rescheduleMeeting, loading: rescheduleLoading } =
-    useFrappePostCall(`frappe_appointment.api.personal_meet.book_time_slot`);
+    useFrappePostCall("frappe_appointment.api.personal_meet.book_time_slot");
 
   const onReschedule = () => {
     const extraArgs: Record<string, string> = {};
@@ -176,6 +182,12 @@ const Booking = ({ type }: BookingProp) => {
       .catch((err) => {
         const error = parseFrappeErrorMsg(err);
         toast(error || "Something went wrong", {
+          duration: 4000,
+          classNames: {
+            actionButton:
+              "group-[.toast]:!bg-red-500 group-[.toast]:hover:!bg-red-300 group-[.toast]:!text-white",
+          },
+          icon: <CircleAlert className="h-5 w-5 text-red-500" />,
           action: {
             label: "OK",
             onClick: () => toast.dismiss(),
@@ -198,6 +210,12 @@ const Booking = ({ type }: BookingProp) => {
     if (error) {
       const err = parseFrappeErrorMsg(error);
       toast(err || "Something went wrong", {
+        duration: 4000,
+        classNames: {
+          actionButton:
+            "group-[.toast]:!bg-red-500 group-[.toast]:hover:!bg-red-300 group-[.toast]:!text-white",
+        },
+        icon: <CircleAlert className="h-5 w-5 text-red-500" />,
         action: {
           label: "OK",
           onClick: () => toast.dismiss(),
