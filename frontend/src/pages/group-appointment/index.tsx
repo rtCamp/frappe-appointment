@@ -45,6 +45,8 @@ const GroupAppointment = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const date = searchParams.get("date");
+  const reschedule = searchParams.get("reschedule") || "";
+  const event_token = searchParams.get("event_token") || "";
   const [timeFormat, setTimeFormat] = useState<TimeFormat>("12h");
   const [timeZone, setTimeZone] = useState<string>(getLocalTimezone());
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
@@ -76,9 +78,6 @@ const GroupAppointment = () => {
     reschedule_url: "",
   });
 
-  const extraArgs: Record<string, string> = {};
-  searchParams.forEach((value, key) => (extraArgs[key] = value));
-
   const {
     data,
     isLoading: dataIsLoading,
@@ -87,7 +86,7 @@ const GroupAppointment = () => {
   } = useFrappeGetCall(
     "frappe_appointment.api.group_meet.get_time_slots",
     {
-      ...extraArgs,
+      ...Object.fromEntries(searchParams),
       appointment_group_id: groupId,
       date: new Intl.DateTimeFormat("en-CA", {
         year: "numeric",
@@ -162,10 +161,8 @@ const GroupAppointment = () => {
   };
 
   const scheduleMeeting = () => {
-    const extraArgs: Record<string, string> = {};
-    searchParams.forEach((value, key) => (extraArgs[key] = value));
     const meetingData = {
-      ...extraArgs,
+      ...Object.fromEntries(searchParams),
       appointment_group_id: groupId,
       date: new Intl.DateTimeFormat("en-CA", {
         year: "numeric",
@@ -240,7 +237,7 @@ const GroupAppointment = () => {
                                     className={cn(
                                       "truncate font-medium text-gray-600",
                                       key.includes("name") && "text-foreground",
-                                      key.includes("email")? "" : "capitalize"
+                                      key.includes("email") ? "" : "capitalize"
                                     )}
                                   >
                                     {value}
@@ -372,7 +369,8 @@ const GroupAppointment = () => {
                   )}
                   onClick={scheduleMeeting}
                 >
-                  {loading && <Spinner />}Schedule
+                  {loading && <Spinner />}
+                  {reschedule && event_token ? "Reschedule" : "Schedule"}
                 </Button>
               </div>
             )}
@@ -441,7 +439,8 @@ const GroupAppointment = () => {
                     )}
                     onClick={scheduleMeeting}
                   >
-                    {loading && <Spinner />}Schedule
+                    {loading && <Spinner />}
+                    {reschedule && event_token ? "Reschedule" : "Schedule"}
                   </Button>
                 </>
               )}

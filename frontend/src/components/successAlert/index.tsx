@@ -119,7 +119,7 @@ const SuccessAlert = ({
               </div>
             </div>
             <a href={meetLink} target="_blank">
-              <SquareArrowOutUpRight className="text-blue-500 transition-colors cursor-pointer h-5 w-5 " />
+              <SquareArrowOutUpRight className="text-blue-500 transition-colors cursor-pointer h-4 w-4 " />
             </a>
           </div>
         </div>
@@ -143,7 +143,7 @@ const SuccessAlert = ({
           </Button>
         </div>
 
-        <DialogFooter className="flex w-full sm:justify-start gap-4 md:mt-6 ">
+        <DialogFooter className="flex max-md:flex-col w-full sm:justify-start gap-4 md:mt-6 ">
           <a href={rescheduleLink} target="_blank">
             <Button
               variant="ghost"
