@@ -54,4 +54,5 @@ def book_time_slot(
     resp["reschedule_url"] = frappe.utils.get_url(
         "/schedule/gr/{0}?reschedule=1&event_token={1}".format(appointment_group_id, event_token)
     )
+    resp["google_calendar_event_url"] = event.custom_google_calendar_event_url
     return resp

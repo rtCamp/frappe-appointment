@@ -193,6 +193,7 @@ def book_time_slot(
             ap_availability.get("slug"), duration_id, event_token
         )
     )
+    response["google_calendar_event_url"] = event.custom_google_calendar_event_url
     return response
 
 
