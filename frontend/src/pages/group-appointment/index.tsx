@@ -3,7 +3,7 @@
  */
 import { useEffect, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { format, formatDate } from "date-fns";
+import { format } from "date-fns";
 import { ArrowLeft, CircleAlert } from "lucide-react";
 import { toast } from "sonner";
 
@@ -37,6 +37,7 @@ import { getIconForKey, validTitle } from "./utils";
 import { useFrappeGetCall, useFrappePostCall } from "frappe-react-sdk";
 import { MeetingData } from "./types";
 import { disabledDays } from "../appointment/utils";
+import SuccessAlert from "./components/successAlert";
 
 const GroupAppointment = () => {
   const { groupId } = useParams();
@@ -51,6 +52,7 @@ const GroupAppointment = () => {
   const [selectedSlot, setSelectedSlot] = useState<slotType>();
   const [expanded, setExpanded] = useState(false);
   const [isMobileView, setIsMobileView] = useState(false);
+  const [appointmentScheduled, setAppointmentScheduled] = useState(false);
   const [meetingData, setMeetingData] = useState<MeetingData>({
     all_available_slots_for_data: [],
     available_days: [],
@@ -169,18 +171,8 @@ const GroupAppointment = () => {
 
     bookMeeting(meetingData)
       .then(() => {
-        toast("Appointment has been scheduled", {
-          duration: 6000,
-          position: "top-right",
-          description: `For ${formatDate(
-            new Date(selectedDate),
-            "d MMM, yyyy"
-          )} at ${formatDate(new Date(selectedSlot!.start_time), "hh:mm a")}`,
-          action: {
-            label: "OK",
-            onClick: () => toast.dismiss(),
-          },
-        });
+        setAppointmentScheduled(true);
+        mutate();
       })
       .catch((err) => {
         const error = parseFrappeErrorMsg(err);
@@ -446,6 +438,13 @@ const GroupAppointment = () => {
         </div>
       </div>
       <PoweredBy />
+      {selectedSlot && (
+        <SuccessAlert
+          open={appointmentScheduled}
+          setOpen={setAppointmentScheduled}
+          selectedSlot={selectedSlot}
+        />
+      )}
     </>
   );
 };
