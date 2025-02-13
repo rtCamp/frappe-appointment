@@ -114,18 +114,6 @@ const MeetingForm = ({ onBack, durationId, onSuccess }: MeetingFormProps) => {
     bookMeeting(meetingData)
       .then(() => {
         onSuccess();
-        toast("Appointment has been scheduled", {
-          duration: 6000,
-          position: "top-right",
-          description: `For ${formatDate(
-            new Date(selectedDate),
-            "d MMM, yyyy"
-          )} at ${formatDate(new Date(selectedSlot.start_time), "hh:mm a")}`,
-          action: {
-            label: "OK",
-            onClick: () => toast.dismiss(),
-          },
-        });
       })
       .catch((err) => {
         const error = parseFrappeErrorMsg(err);

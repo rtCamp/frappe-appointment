@@ -43,6 +43,7 @@ import {
 } from "@/components/ui/tooltip";
 import Spinner from "@/components/ui/spinner";
 import useBack from "@/hooks/useBack";
+import SuccessAlert from "@/components/successAlert";
 
 interface BookingProp {
   type: string;
@@ -68,6 +69,7 @@ const Booking = ({ type }: BookingProp) => {
   const [showMeetingForm, setShowMeetingForm] = useState(false);
   const [showReschedule, setShowReschedule] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
+  const [appointmentScheduled, setAppointmentScheduled] = useState(false);
   const location = useLocation();
 
   const date = searchParams.get("date");
@@ -163,21 +165,10 @@ const Booking = ({ type }: BookingProp) => {
 
     rescheduleMeeting(meetingData)
       .then(() => {
-        navigate(`/in/${meetingId}`);
         setShowMeetingForm(false);
         setExpanded(false);
-        toast("Appointment has been re-scheduled", {
-          duration: 6000,
-          position: "top-right",
-          description: `For ${formatDate(
-            new Date(selectedDate),
-            "d MMM, yyyy"
-          )} at ${formatDate(new Date(selectedSlot.start_time), "hh:mm a")}`,
-          action: {
-            label: "OK",
-            onClick: () => toast.dismiss(),
-          },
-        });
+        setAppointmentScheduled(true);
+        mutate()
       })
       .catch((err) => {
         const error = parseFrappeErrorMsg(err);
@@ -250,331 +241,348 @@ const Booking = ({ type }: BookingProp) => {
   }, [isMobileView]);
 
   return (
-    <div className="w-full h-fit flex justify-center">
-      <div className="md:w-4xl max-lg:w-full py-8 p-4 md:py-16 gap-10 md:gap-12">
-        <div className="w-full rounded-lg flex max-lg:flex-col md:border gap-8 md:gap-28 items-start">
-          {/* Profile */}
-          <div className="w-full md:max-w-sm flex flex-col gap-4 md:p-6 md:px-4">
-            <Avatar className="md:h-32 md:w-32 h-24 w-24 object-cover mb-4 md:mb-0 ">
-              <AvatarImage
-                src={userInfo.userImage}
-                alt="Profile picture"
-                className="bg-blue-50"
-              />
-              <AvatarFallback className="text-4xl">
-                {userInfo.name?.toString()[0]?.toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
-            <div className="w-full flex flex-col gap-1">
-              <Typography variant="h2" className="text-3xl font-semibold">
-                <Tooltip>
-                  <TooltipTrigger className="w-full truncate text-left">
-                    {userInfo.name}
-                  </TooltipTrigger>
-                  <TooltipContent>{userInfo.name}</TooltipContent>
-                </Tooltip>
-              </Typography>
-              <Typography className="text-base text-muted-foreground">
-                {userInfo.designation} at {userInfo.organizationName}
-              </Typography>
-              {meetingData.label ? (
-                <Typography className="text-sm mt-1">
-                  <Tag className="inline-block w-4 h-4 mr-1" />
-                  {meetingData.label}
+    <>
+      <div className="w-full h-fit flex justify-center">
+        <div className="md:w-4xl max-lg:w-full py-8 p-4 md:py-16 gap-10 md:gap-12">
+          <div className="w-full rounded-lg flex max-lg:flex-col md:border gap-8 md:gap-28 items-start">
+            {/* Profile */}
+            <div className="w-full md:max-w-sm flex flex-col gap-4 md:p-6 md:px-4">
+              <Avatar className="md:h-32 md:w-32 h-24 w-24 object-cover mb-4 md:mb-0 ">
+                <AvatarImage
+                  src={userInfo.userImage}
+                  alt="Profile picture"
+                  className="bg-blue-50"
+                />
+                <AvatarFallback className="text-4xl">
+                  {userInfo.name?.toString()[0]?.toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+              <div className="w-full flex flex-col gap-1">
+                <Typography variant="h2" className="text-3xl font-semibold">
+                  <Tooltip>
+                    <TooltipTrigger className="w-full truncate text-left">
+                      {userInfo.name}
+                    </TooltipTrigger>
+                    <TooltipContent>{userInfo.name}</TooltipContent>
+                  </Tooltip>
                 </Typography>
-              ) : (
-                <Skeleton className="h-5 w-20" />
-              )}
-              {duration ? (
-                <Typography className="text-sm mt-1">
-                  <Clock className="inline-block w-4 h-4 mr-1" />
-                  {duration} Minute Meeting
+                <Typography className="text-base text-muted-foreground">
+                  {userInfo.designation} at {userInfo.organizationName}
                 </Typography>
-              ) : (
-                <Skeleton className="h-5 w-24" />
-              )}
-              <Typography className="text-sm  mt-1">
-                <CalendarIcon className="inline-block w-4 h-4 mr-1" />
-                {formatDate(new Date(), "d MMM, yyyy")}
-              </Typography>
-              {userInfo.meetingProvider == "Zoom" && (
-                <Typography className="text-sm text-blue-500 mt-1">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    x="0px"
-                    y="0px"
-                    className="inline-block w-4 h-4 mr-1"
-                    viewBox="0 0 48 48"
-                  >
-                    <circle cx="24" cy="24" r="20" fill="#2196f3"></circle>
-                    <path
-                      fill="#fff"
-                      d="M29,31H14c-1.657,0-3-1.343-3-3V17h15c1.657,0,3,1.343,3,3V31z"
-                    ></path>
-                    <polygon
-                      fill="#fff"
-                      points="37,31 31,27 31,21 37,17"
-                    ></polygon>
-                  </svg>
-                  Zoom
+                {meetingData.label ? (
+                  <Typography className="text-sm mt-1">
+                    <Tag className="inline-block w-4 h-4 mr-1" />
+                    {meetingData.label}
+                  </Typography>
+                ) : (
+                  <Skeleton className="h-5 w-20" />
+                )}
+                {duration ? (
+                  <Typography className="text-sm mt-1">
+                    <Clock className="inline-block w-4 h-4 mr-1" />
+                    {duration} Minute Meeting
+                  </Typography>
+                ) : (
+                  <Skeleton className="h-5 w-24" />
+                )}
+                <Typography className="text-sm  mt-1">
+                  <CalendarIcon className="inline-block w-4 h-4 mr-1" />
+                  {formatDate(new Date(), "d MMM, yyyy")}
                 </Typography>
-              )}{" "}
-              {userInfo.meetingProvider == "Google Meet" && (
-                <Typography className="text-sm text-blue-700 mt-1">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    x="0px"
-                    y="0px"
-                    className="inline-block w-4 h-4 mr-1"
-                    width="100"
-                    height="100"
-                    viewBox="0 0 48 48"
-                  >
-                    <rect
-                      width="16"
-                      height="16"
-                      x="12"
-                      y="16"
-                      fill="#fff"
-                      transform="rotate(-90 20 24)"
-                    ></rect>
-                    <polygon
-                      fill="#1e88e5"
-                      points="3,17 3,31 8,32 13,31 13,17 8,16"
-                    ></polygon>
-                    <path
-                      fill="#4caf50"
-                      d="M37,24v14c0,1.657-1.343,3-3,3H13l-1-5l1-5h14v-7l5-1L37,24z"
-                    ></path>
-                    <path
-                      fill="#fbc02d"
-                      d="M37,10v14H27v-7H13l-1-5l1-5h21C35.657,7,37,8.343,37,10z"
-                    ></path>
-                    <path
-                      fill="#1565c0"
-                      d="M13,31v10H6c-1.657,0-3-1.343-3-3v-7H13z"
-                    ></path>
-                    <polygon fill="#e53935" points="13,7 13,17 3,17"></polygon>
-                    <polygon
-                      fill="#2e7d32"
-                      points="38,24 37,32.45 27,24 37,15.55"
-                    ></polygon>
-                    <path
-                      fill="#4caf50"
-                      d="M46,10.11v27.78c0,0.84-0.98,1.31-1.63,0.78L37,32.45v-16.9l7.37-6.22C45.02,8.8,46,9.27,46,10.11z"
-                    ></path>
-                  </svg>
-                  Google Meet
-                </Typography>
-              )}
+                {userInfo.meetingProvider == "Zoom" && (
+                  <Typography className="text-sm text-blue-500 mt-1">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      x="0px"
+                      y="0px"
+                      className="inline-block w-4 h-4 mr-1"
+                      viewBox="0 0 48 48"
+                    >
+                      <circle cx="24" cy="24" r="20" fill="#2196f3"></circle>
+                      <path
+                        fill="#fff"
+                        d="M29,31H14c-1.657,0-3-1.343-3-3V17h15c1.657,0,3,1.343,3,3V31z"
+                      ></path>
+                      <polygon
+                        fill="#fff"
+                        points="37,31 31,27 31,21 37,17"
+                      ></polygon>
+                    </svg>
+                    Zoom
+                  </Typography>
+                )}{" "}
+                {userInfo.meetingProvider == "Google Meet" && (
+                  <Typography className="text-sm text-blue-700 mt-1">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      x="0px"
+                      y="0px"
+                      className="inline-block w-4 h-4 mr-1"
+                      width="100"
+                      height="100"
+                      viewBox="0 0 48 48"
+                    >
+                      <rect
+                        width="16"
+                        height="16"
+                        x="12"
+                        y="16"
+                        fill="#fff"
+                        transform="rotate(-90 20 24)"
+                      ></rect>
+                      <polygon
+                        fill="#1e88e5"
+                        points="3,17 3,31 8,32 13,31 13,17 8,16"
+                      ></polygon>
+                      <path
+                        fill="#4caf50"
+                        d="M37,24v14c0,1.657-1.343,3-3,3H13l-1-5l1-5h14v-7l5-1L37,24z"
+                      ></path>
+                      <path
+                        fill="#fbc02d"
+                        d="M37,10v14H27v-7H13l-1-5l1-5h21C35.657,7,37,8.343,37,10z"
+                      ></path>
+                      <path
+                        fill="#1565c0"
+                        d="M13,31v10H6c-1.657,0-3-1.343-3-3v-7H13z"
+                      ></path>
+                      <polygon
+                        fill="#e53935"
+                        points="13,7 13,17 3,17"
+                      ></polygon>
+                      <polygon
+                        fill="#2e7d32"
+                        points="38,24 37,32.45 27,24 37,15.55"
+                      ></polygon>
+                      <path
+                        fill="#4caf50"
+                        d="M46,10.11v27.78c0,0.84-0.98,1.31-1.63,0.78L37,32.45v-16.9l7.37-6.22C45.02,8.8,46,9.27,46,10.11z"
+                      ></path>
+                    </svg>
+                    Google Meet
+                  </Typography>
+                )}
+              </div>
             </div>
-          </div>
-          {/* Calendar and Availability slots */}
-          {!showMeetingForm && (
-            <div className="w-full flex max-lg:flex-col gap-4 md:p-6 pb-5">
-              {(!isMobileView || !expanded) && (
-                <div className="flex flex-col w-full lg:w-[25rem] shrink-0">
-                  <Calendar
-                    mode="single"
-                    selected={selectedDate}
-                    month={displayMonth}
-                    onMonthChange={setDisplayMonth}
-                    weekStartsOn={1}
-                    fromMonth={new Date(meetingData.valid_start_date)}
-                    toMonth={new Date(meetingData.valid_end_date)}
-                    disabled={(date) => {
-                      const disabledDaysList =
-                        disabledDays(meetingData.available_days) || [];
-                      const isPastDate =
-                        date.getTime() <
-                        new Date(meetingData.valid_start_date)?.setHours(
-                          0,
-                          0,
-                          0,
-                          0
+            {/* Calendar and Availability slots */}
+            {!showMeetingForm && (
+              <div className="w-full flex max-lg:flex-col gap-4 md:p-6 pb-5">
+                {(!isMobileView || !expanded) && (
+                  <div className="flex flex-col w-full lg:w-[25rem] shrink-0">
+                    <Calendar
+                      mode="single"
+                      selected={selectedDate}
+                      month={displayMonth}
+                      onMonthChange={setDisplayMonth}
+                      weekStartsOn={1}
+                      fromMonth={new Date(meetingData.valid_start_date)}
+                      toMonth={new Date(meetingData.valid_end_date)}
+                      disabled={(date) => {
+                        const disabledDaysList =
+                          disabledDays(meetingData.available_days) || [];
+                        const isPastDate =
+                          date.getTime() <
+                          new Date(meetingData.valid_start_date)?.setHours(
+                            0,
+                            0,
+                            0,
+                            0
+                          );
+                        const isNextDate =
+                          date.getTime() >
+                          new Date(meetingData.valid_end_date)?.setHours(
+                            0,
+                            0,
+                            0,
+                            0
+                          );
+                        return (
+                          isPastDate ||
+                          disabledDaysList.includes(date.getDay()) ||
+                          isNextDate
                         );
-                      const isNextDate =
-                        date.getTime() >
-                        new Date(meetingData.valid_end_date)?.setHours(
-                          0,
-                          0,
-                          0,
-                          0
-                        );
-                      return (
-                        isPastDate ||
-                        disabledDaysList.includes(date.getDay()) ||
-                        isNextDate
-                      );
-                    }}
-                    onDayClick={(date) => {
-                      setSelectedDate(date);
-                      updateDateQuery(date);
-                      setDisplayMonth(date);
-                      setExpanded(true);
-                      setShowReschedule(false);
-                      setSelectedSlot({
-                        start_time: "",
-                        end_time: "",
-                      });
-                    }}
-                    className="rounded-md md:border md:h-96 w-full flex md:px-6 p-0"
-                    classNames={{
-                      months:
-                        "flex w-full flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0 flex-1",
-                      month: "space-y-4 w-full flex flex-col",
-                      table: "w-full h-full border-collapse space-y-1",
-                      head_row: "",
-                      row: "w-full mt-2",
-                      caption_label: "md:text-xl text-sm",
-                    }}
-                  />
-                  <div className="mt-4  gap-5 flex max-md:flex-col md:justify-between md:items-center ">
-                    {/* Timezone */}
-
-                    <TimeZoneSelect
-                      timeZones={getAllSupportedTimeZones()}
-                      setTimeZone={setTimeZone}
-                      timeZone={timeZone}
+                      }}
+                      onDayClick={(date) => {
+                        setSelectedDate(date);
+                        updateDateQuery(date);
+                        setDisplayMonth(date);
+                        setExpanded(true);
+                        setShowReschedule(false);
+                        setSelectedSlot({
+                          start_time: "",
+                          end_time: "",
+                        });
+                      }}
+                      className="rounded-md md:border md:h-96 w-full flex md:px-6 p-0"
+                      classNames={{
+                        months:
+                          "flex w-full flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0 flex-1",
+                        month: "space-y-4 w-full flex flex-col",
+                        table: "w-full h-full border-collapse space-y-1",
+                        head_row: "",
+                        row: "w-full mt-2",
+                        caption_label: "md:text-xl text-sm",
+                      }}
                     />
+                    <div className="mt-4  gap-5 flex max-md:flex-col md:justify-between md:items-center ">
+                      {/* Timezone */}
 
-                    {/* Time Format Toggle */}
-                    <div className="flex items-center gap-2">
-                      <Typography className="text-sm text-gray-700">
-                        AM/PM
-                      </Typography>
-                      <Switch
-                        className="data-[state=checked]:bg-blue-500 active:ring-blue-400 focus-visible:ring-blue-400"
-                        checked={timeFormat === "24h"}
-                        onCheckedChange={(checked) =>
-                          setTimeFormat(checked ? "24h" : "12h")
-                        }
+                      <TimeZoneSelect
+                        timeZones={getAllSupportedTimeZones()}
+                        setTimeZone={setTimeZone}
+                        timeZone={timeZone}
                       />
-                      <Typography className="text-sm text-gray-700">
-                        24H
-                      </Typography>
+
+                      {/* Time Format Toggle */}
+                      <div className="flex items-center gap-2">
+                        <Typography className="text-sm text-gray-700">
+                          AM/PM
+                        </Typography>
+                        <Switch
+                          className="data-[state=checked]:bg-blue-500 active:ring-blue-400 focus-visible:ring-blue-400"
+                          checked={timeFormat === "24h"}
+                          onCheckedChange={(checked) =>
+                            setTimeFormat(checked ? "24h" : "12h")
+                          }
+                        />
+                        <Typography className="text-sm text-gray-700">
+                          24H
+                        </Typography>
+                      </div>
                     </div>
                   </div>
-                </div>
-              )}
+                )}
 
-              {/* Availability Slots */}
-              {isMobileView && expanded && (
-                <div className="h-14 fixed bottom-0 left-0 w-screen border z-10 bg-white border-top flex items-center justify-between px-4">
-                  <Button
-                    variant="link"
-                    className="text-blue-500 px-0"
-                    onClick={() => setExpanded(false)}
-                  >
-                    <ArrowLeft className="h-4 w-4" />
-                    Back
-                  </Button>
+                {/* Availability Slots */}
+                {isMobileView && expanded && (
+                  <div className="h-14 fixed bottom-0 left-0 w-screen border z-10 bg-white border-top flex items-center justify-between px-4">
+                    <Button
+                      variant="link"
+                      className="text-blue-500 px-0"
+                      onClick={() => setExpanded(false)}
+                    >
+                      <ArrowLeft className="h-4 w-4" />
+                      Back
+                    </Button>
+                    {showReschedule && (
+                      <Button
+                        className="bg-blue-400 hover:bg-blue-500 w-fit px-6"
+                        onClick={onReschedule}
+                        disabled={rescheduleLoading || !showReschedule}
+                      >
+                        {rescheduleLoading && <Spinner />} Reschedule
+                      </Button>
+                    )}
+                  </div>
+                )}
+
+                {/* Available slots */}
+                <div
+                  className={cn(
+                    "w-48 max-lg:w-full overflow-hidden space-y-4 max-md:pb-10  transition-all duration-300 ",
+                    !expanded && "max-md:hidden",
+                    showReschedule && "lg:flex lg:flex-col lg:justify-between"
+                  )}
+                >
+                  <h3 className="text-sm font-semibold lg:w-full">
+                    {format(selectedDate, "EEEE, d MMMM yyyy")}
+                  </h3>
+                  {isLoading ? (
+                    <TimeSlotSkeleton />
+                  ) : (
+                    <div
+                      className={cn(
+                        "lg:h-[22rem] overflow-y-auto no-scrollbar space-y-2 transition-transform transform",
+                        showReschedule && "lg:!mt-0"
+                      )}
+                      style={{
+                        transform: selectedDate
+                          ? "translateX(0)"
+                          : "translateX(-100%)",
+                      }}
+                    >
+                      {meetingData.all_available_slots_for_data.length > 0 ? (
+                        meetingData.all_available_slots_for_data.map(
+                          (slot, index) => (
+                            <Button
+                              key={index}
+                              onClick={() => {
+                                if (reschedule && event_token) {
+                                  setShowReschedule(true);
+                                } else {
+                                  setShowMeetingForm(true);
+                                }
+                                setSelectedSlot({
+                                  start_time: slot.start_time,
+                                  end_time: slot.end_time,
+                                });
+                              }}
+                              variant="outline"
+                              className={cn(
+                                "w-full font-normal border border-blue-500 text-blue-500 hover:text-blue-500 hover:bg-blue-50 transition-colors ",
+                                selectedSlot.start_time === slot.start_time &&
+                                  selectedSlot.end_time === slot.end_time &&
+                                  reschedule &&
+                                  event_token &&
+                                  "bg-blue-500 text-white hover:bg-blue-400 hover:text-white"
+                              )}
+                            >
+                              {formatTimeSlot(new Date(slot.start_time))}
+                            </Button>
+                          )
+                        )
+                      ) : (
+                        <div className="h-full max-md:h-44 w-full flex justify-center items-center">
+                          <Typography className="text-center text-gray-500">
+                            No open-time slots
+                          </Typography>
+                        </div>
+                      )}
+                    </div>
+                  )}
                   {showReschedule && (
                     <Button
-                      className="bg-blue-400 hover:bg-blue-500 w-fit px-6"
+                      className="bg-blue-400 hover:bg-blue-500 lg:!mt-0 max-lg:w-full max-md:hidden"
                       onClick={onReschedule}
-                      disabled={rescheduleLoading || !showReschedule}
+                      disabled={rescheduleLoading}
                     >
                       {rescheduleLoading && <Spinner />} Reschedule
                     </Button>
                   )}
                 </div>
-              )}
-
-              {/* Available slots */}
-              <div
-                className={cn(
-                  "w-48 max-lg:w-full overflow-hidden space-y-4 max-md:pb-10  transition-all duration-300 ",
-                  !expanded && "max-md:hidden",
-                  showReschedule && "lg:flex lg:flex-col lg:justify-between"
-                )}
-              >
-                <h3 className="text-sm font-semibold lg:w-full">
-                  {format(selectedDate, "EEEE, d MMMM yyyy")}
-                </h3>
-                {isLoading ? (
-                  <TimeSlotSkeleton />
-                ) : (
-                  <div
-                    className={cn(
-                      "lg:h-[22rem] overflow-y-auto no-scrollbar space-y-2 transition-transform transform",
-                      showReschedule && "lg:!mt-0"
-                    )}
-                    style={{
-                      transform: selectedDate
-                        ? "translateX(0)"
-                        : "translateX(-100%)",
-                    }}
-                  >
-                    {meetingData.all_available_slots_for_data.length > 0 ? (
-                      meetingData.all_available_slots_for_data.map(
-                        (slot, index) => (
-                          <Button
-                            key={index}
-                            onClick={() => {
-                              if (reschedule && event_token) {
-                                setShowReschedule(true);
-                              } else {
-                                setShowMeetingForm(true);
-                              }
-                              setSelectedSlot({
-                                start_time: slot.start_time,
-                                end_time: slot.end_time,
-                              });
-                            }}
-                            variant="outline"
-                            className={cn(
-                              "w-full font-normal border border-blue-500 text-blue-500 hover:text-blue-500 hover:bg-blue-50 transition-colors ",
-                              selectedSlot.start_time === slot.start_time &&
-                                selectedSlot.end_time === slot.end_time &&
-                                reschedule &&
-                                event_token &&
-                                "bg-blue-500 text-white hover:bg-blue-400 hover:text-white"
-                            )}
-                          >
-                            {formatTimeSlot(new Date(slot.start_time))}
-                          </Button>
-                        )
-                      )
-                    ) : (
-                      <div className="h-full max-md:h-44 w-full flex justify-center items-center">
-                        <Typography className="text-center text-gray-500">
-                          No open-time slots
-                        </Typography>
-                      </div>
-                    )}
-                  </div>
-                )}
-                {showReschedule && (
-                  <Button
-                    className="bg-blue-400 hover:bg-blue-500 lg:!mt-0 max-lg:w-full max-md:hidden"
-                    onClick={onReschedule}
-                    disabled={rescheduleLoading}
-                  >
-                    {rescheduleLoading && <Spinner />} Reschedule
-                  </Button>
-                )}
               </div>
-            </div>
-          )}
-          {showMeetingForm && (
-            <MeetingForm
-              onSuccess={() => {
-                navigate(`/in/${meetingId}`);
-                setShowMeetingForm(false);
-                setExpanded(false);
-              }}
-              onBack={() => {
-                setShowMeetingForm(false);
-                setExpanded(false);
-                mutate();
-              }}
-              durationId={type}
-            />
-          )}
+            )}
+            {showMeetingForm && (
+              <MeetingForm
+                onSuccess={() => {
+                  setShowMeetingForm(false);
+                  setExpanded(false);
+                  mutate();
+                  setAppointmentScheduled(true);
+                }}
+                onBack={() => {
+                  setShowMeetingForm(false);
+                  setExpanded(false);
+                  mutate();
+                }}
+                durationId={type}
+              />
+            )}
+          </div>
         </div>
       </div>
-    </div>
+      {selectedSlot.start_time && (
+        <SuccessAlert
+          open={appointmentScheduled}
+          setOpen={setAppointmentScheduled}
+          selectedSlot={selectedSlot}
+          meetingProvider={userInfo.meetingProvider}
+          onClose={() => {
+            navigate(`/in/${meetingId}`);
+          }}
+        />
+      )}
+    </>
   );
 };
 

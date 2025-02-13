@@ -37,7 +37,7 @@ import { getIconForKey, validTitle } from "./utils";
 import { useFrappeGetCall, useFrappePostCall } from "frappe-react-sdk";
 import { MeetingData } from "./types";
 import { disabledDays } from "../appointment/utils";
-import SuccessAlert from "./components/successAlert";
+import SuccessAlert from "@/components/successAlert";
 
 const GroupAppointment = () => {
   const { groupId } = useParams();
@@ -443,6 +443,7 @@ const GroupAppointment = () => {
           open={appointmentScheduled}
           setOpen={setAppointmentScheduled}
           selectedSlot={selectedSlot}
+          meetingProvider={"Google Meet"}
         />
       )}
     </>
