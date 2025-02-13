@@ -45,7 +45,6 @@ const GroupAppointment = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const date = searchParams.get("date");
-  const interview = searchParams.get("interview");
   const [timeFormat, setTimeFormat] = useState<TimeFormat>("12h");
   const [timeZone, setTimeZone] = useState<string>(getLocalTimezone());
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
@@ -77,6 +76,9 @@ const GroupAppointment = () => {
     reschedule_url: "",
   });
 
+  const extraArgs: Record<string, string> = {};
+  searchParams.forEach((value, key) => (extraArgs[key] = value));
+
   const {
     data,
     isLoading: dataIsLoading,
@@ -85,6 +87,7 @@ const GroupAppointment = () => {
   } = useFrappeGetCall(
     "frappe_appointment.api.group_meet.get_time_slots",
     {
+      ...extraArgs,
       appointment_group_id: groupId,
       date: new Intl.DateTimeFormat("en-CA", {
         year: "numeric",
@@ -94,7 +97,6 @@ const GroupAppointment = () => {
       user_timezone_offset: String(
         getTimeZoneOffsetFromTimeZoneString(timeZone)
       ),
-      interview: interview,
     },
     undefined,
     {
@@ -236,8 +238,9 @@ const GroupAppointment = () => {
                                 <TooltipTrigger className="text-left truncate">
                                   <Typography
                                     className={cn(
-                                      "truncate capitalize font-medium text-gray-600",
-                                      key.includes("name") && "text-foreground"
+                                      "truncate font-medium text-gray-600",
+                                      key.includes("name") && "text-foreground",
+                                      key.includes("email")? "" : "capitalize"
                                     )}
                                   >
                                     {value}
