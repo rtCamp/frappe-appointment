@@ -172,11 +172,12 @@ const Booking = ({ type }: BookingProp) => {
     };
 
     rescheduleMeeting(meetingData)
-      .then(() => {
+      .then((data) => {
         setShowMeetingForm(false);
         setExpanded(false);
-        setAppointmentScheduled(true);
         mutate()
+        setBookingResponse(data.message);
+        setAppointmentScheduled(true);
       })
       .catch((err) => {
         const error = parseFrappeErrorMsg(err);
@@ -565,7 +566,7 @@ const Booking = ({ type }: BookingProp) => {
                 onSuccess={(data) => {
                   setShowMeetingForm(false);
                   setExpanded(false);
-                  mutate();
+                  mutate();                  
                   setBookingResponse(data.message);
                   setAppointmentScheduled(true);
                 }}
