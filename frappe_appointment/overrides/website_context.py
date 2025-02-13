@@ -12,7 +12,7 @@ def website_context(context):
 
 
 def handle_appointment_group_route(route, full_path):
-    if "appointment" in route or "app" in route:
+    if "appointment" in route or "app" in route or "schedule" in route:
         return
 
     appointment_group_route = frappe.db.get_value("Appointment Group", {"name": route[-1]}, "route")
