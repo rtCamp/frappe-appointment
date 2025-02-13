@@ -42,7 +42,8 @@ type ContactFormValues = z.infer<typeof contactFormSchema>;
 
 interface MeetingFormProps {
   onBack: VoidFunction;
-  onSuccess: VoidFunction;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  onSuccess: (data:any)=>void;
   durationId: string;
 }
 
@@ -112,8 +113,8 @@ const MeetingForm = ({ onBack, durationId, onSuccess }: MeetingFormProps) => {
     };
 
     bookMeeting(meetingData)
-      .then(() => {
-        onSuccess();
+      .then((data) => {
+        onSuccess(data);
       })
       .catch((err) => {
         const error = parseFrappeErrorMsg(err);

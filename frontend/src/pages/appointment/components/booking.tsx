@@ -44,6 +44,7 @@ import {
 import Spinner from "@/components/ui/spinner";
 import useBack from "@/hooks/useBack";
 import SuccessAlert from "@/components/successAlert";
+import { BookingResponseType } from "@/lib/types";
 
 interface BookingProp {
   type: string;
@@ -70,6 +71,13 @@ const Booking = ({ type }: BookingProp) => {
   const [showReschedule, setShowReschedule] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
   const [appointmentScheduled, setAppointmentScheduled] = useState(false);
+    const [bookingResponse, setBookingResponse] = useState<BookingResponseType>({
+      event_id: "",
+      meet_link: "",
+      meeting_provider: "",
+      message: "",
+      reschedule_url: "",
+    });
   const location = useLocation();
 
   const date = searchParams.get("date");
@@ -554,10 +562,11 @@ const Booking = ({ type }: BookingProp) => {
             )}
             {showMeetingForm && (
               <MeetingForm
-                onSuccess={() => {
+                onSuccess={(data) => {
                   setShowMeetingForm(false);
                   setExpanded(false);
                   mutate();
+                  setBookingResponse(data.message);
                   setAppointmentScheduled(true);
                 }}
                 onBack={() => {
@@ -576,10 +585,12 @@ const Booking = ({ type }: BookingProp) => {
           open={appointmentScheduled}
           setOpen={setAppointmentScheduled}
           selectedSlot={selectedSlot}
-          meetingProvider={userInfo.meetingProvider}
           onClose={() => {
             navigate(`/in/${meetingId}`);
           }}
+          meetingProvider={bookingResponse.meeting_provider}
+          meetLink={bookingResponse.meet_link}
+          rescheduleLink={bookingResponse.reschedule_url}
         />
       )}
     </>

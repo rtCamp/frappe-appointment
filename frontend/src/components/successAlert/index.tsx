@@ -32,6 +32,8 @@ interface SuccessAlertProps {
   setOpen: (opem: boolean) => void;
   selectedSlot: slotType;
   meetingProvider: string;
+  meetLink: string;
+  rescheduleLink: string;
   onClose?: VoidFunction;
 }
 
@@ -40,6 +42,8 @@ const SuccessAlert = ({
   setOpen,
   selectedSlot,
   meetingProvider,
+  meetLink,
+  rescheduleLink,
   onClose,
 }: SuccessAlertProps) => {
   const [copied, setCopied] = useState(false);
@@ -114,8 +118,9 @@ const SuccessAlert = ({
                 <p className="text-xs text-gray-600">{meetingProvider}</p>
               </div>
             </div>
-
-            <SquareArrowOutUpRight className="text-blue-500 transition-colors cursor-pointer h-5 w-5 " />
+            <a href={meetLink} target="_blank">
+              <SquareArrowOutUpRight className="text-blue-500 transition-colors cursor-pointer h-5 w-5 " />
+            </a>
           </div>
         </div>
 
@@ -139,10 +144,10 @@ const SuccessAlert = ({
         </div>
 
         <DialogFooter className="flex w-full sm:justify-start gap-4 md:mt-6 ">
-          <a href="">
+          <a href={rescheduleLink} target="_blank">
             <Button
               variant="ghost"
-              onClick={() => setOpen(false)}
+              onClick={(e) => e.stopPropagation()}
               size="sm"
               className="border border-blue-400 hover:text-blue-500 text-blue-500 w-full hover:bg-blue-50 p-4 rounded-full text-sm"
             >

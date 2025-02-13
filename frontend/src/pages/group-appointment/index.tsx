@@ -38,6 +38,7 @@ import { useFrappeGetCall, useFrappePostCall } from "frappe-react-sdk";
 import { MeetingData } from "./types";
 import { disabledDays } from "../appointment/utils";
 import SuccessAlert from "@/components/successAlert";
+import { BookingResponseType } from "@/lib/types";
 
 const GroupAppointment = () => {
   const { groupId } = useParams();
@@ -52,7 +53,7 @@ const GroupAppointment = () => {
   const [selectedSlot, setSelectedSlot] = useState<slotType>();
   const [expanded, setExpanded] = useState(false);
   const [isMobileView, setIsMobileView] = useState(false);
-  const [appointmentScheduled, setAppointmentScheduled] = useState(true);
+  const [appointmentScheduled, setAppointmentScheduled] = useState(false);
   const [meetingData, setMeetingData] = useState<MeetingData>({
     all_available_slots_for_data: [],
     available_days: [],
@@ -67,6 +68,13 @@ const GroupAppointment = () => {
     appointment_group_id: "",
     valid_end_date: "",
     valid_start_date: "",
+  });
+  const [bookingResponse, setBookingResponse] = useState<BookingResponseType>({
+    event_id: "",
+    meet_link: "",
+    meeting_provider: "",
+    message: "",
+    reschedule_url: "",
   });
 
   const {
@@ -170,7 +178,8 @@ const GroupAppointment = () => {
     };
 
     bookMeeting(meetingData)
-      .then(() => {
+      .then((data) => {
+        setBookingResponse(data.message);
         setAppointmentScheduled(true);
         mutate();
       })
@@ -443,7 +452,9 @@ const GroupAppointment = () => {
           open={appointmentScheduled}
           setOpen={setAppointmentScheduled}
           selectedSlot={selectedSlot}
-          meetingProvider={"Google Meet"}
+          meetingProvider={bookingResponse.meeting_provider}
+          meetLink={bookingResponse.meet_link}
+          rescheduleLink={bookingResponse.reschedule_url}
         />
       )}
     </>
