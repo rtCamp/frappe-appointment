@@ -52,7 +52,7 @@ const GroupAppointment = () => {
   const [selectedSlot, setSelectedSlot] = useState<slotType>();
   const [expanded, setExpanded] = useState(false);
   const [isMobileView, setIsMobileView] = useState(false);
-  const [appointmentScheduled, setAppointmentScheduled] = useState(false);
+  const [appointmentScheduled, setAppointmentScheduled] = useState(true);
   const [meetingData, setMeetingData] = useState<MeetingData>({
     all_available_slots_for_data: [],
     available_days: [],
@@ -438,7 +438,7 @@ const GroupAppointment = () => {
         </div>
       </div>
       <PoweredBy />
-      {selectedSlot && (
+      {selectedSlot?.start_time && (
         <SuccessAlert
           open={appointmentScheduled}
           setOpen={setAppointmentScheduled}

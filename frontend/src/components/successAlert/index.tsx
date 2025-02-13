@@ -53,7 +53,7 @@ const SuccessAlert = ({
       });
       setCalendarString(
         `https://calendar.google.com/calendar/u/0/r/day/${format(
-          new Date(),
+          new Date(selectedSlot.start_time),
           "yyyy/MM/dd"
         )}`
       );
@@ -97,10 +97,10 @@ const SuccessAlert = ({
               <Calendar className="text-blue-500 transition-colors cursor-pointer h-5 w-5 mr-3" />
               <div>
                 <p className="font-medium text-sm">
-                  {format(new Date(selectedSlot?.start_time), "MMMM d, yyyy")}
+                  {format(new Date(selectedSlot.start_time), "MMMM d, yyyy")}
                 </p>
                 <p className="text-xs text-gray-600">
-                  {format(new Date(selectedSlot?.start_time), "EEEE, hh:mm a")}
+                  {format(new Date(selectedSlot.start_time), "EEEE, hh:mm a")}
                 </p>
               </div>
             </div>
@@ -126,7 +126,7 @@ const SuccessAlert = ({
           <Button
             variant="ghost"
             size="sm"
-            className="flex gap-2 shrink-0 hover:bg-transparent text-blue-400 hover:text-blue-500"
+            className="flex gap-2 shrink-0 hover:bg-transparent text-blue-400 hover:text-blue-500 focus-visible:ring-0 focus-visible:ring-offset-0"
             onClick={copyToClipboard}
           >
             {copied ? (
@@ -139,6 +139,16 @@ const SuccessAlert = ({
         </div>
 
         <DialogFooter className="flex w-full sm:justify-start gap-4 md:mt-6 ">
+          <a href="">
+            <Button
+              variant="ghost"
+              onClick={() => setOpen(false)}
+              size="sm"
+              className="border border-blue-400 hover:text-blue-500 text-blue-500 w-full hover:bg-blue-50 p-4 rounded-full text-sm"
+            >
+              Reschedule
+            </Button>
+          </a>
           <Button
             onClick={() => setOpen(false)}
             size="sm"

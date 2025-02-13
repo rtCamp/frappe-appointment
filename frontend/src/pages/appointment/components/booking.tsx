@@ -571,7 +571,7 @@ const Booking = ({ type }: BookingProp) => {
           </div>
         </div>
       </div>
-      {selectedSlot.start_time && (
+      {selectedSlot?.start_time && (
         <SuccessAlert
           open={appointmentScheduled}
           setOpen={setAppointmentScheduled}
