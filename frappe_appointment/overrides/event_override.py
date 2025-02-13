@@ -381,6 +381,7 @@ def create_event_for_appointment_group(
     user_timezone_offset: str,
     event_participants,
     success_message="",
+    return_event_id=False,
     **args,
 ):
     """API Endpoint to Create the Event
@@ -398,7 +399,7 @@ def create_event_for_appointment_group(
     """
 
     appointment_group = frappe.get_last_doc(APPOINTMENT_GROUP, filters={"route": "appointment/" + appointment_group_id})
-    return _create_event_for_appointment_group(
+    response = _create_event_for_appointment_group(
         appointment_group,
         date,
         start_time,
@@ -406,8 +407,11 @@ def create_event_for_appointment_group(
         user_timezone_offset,
         event_participants,
         success_message=success_message,
+        return_event_id=return_event_id,
         **args,
     )
+
+    return response
 
 
 def _create_event_for_appointment_group(
@@ -418,6 +422,7 @@ def _create_event_for_appointment_group(
     user_timezone_offset: str,
     event_participants="[]",
     success_message="",
+    return_event_id=False,
     **args,
 ):
     # query parameters
@@ -479,8 +484,18 @@ def _create_event_for_appointment_group(
             clear_messages()
 
             if success_message:
+                if return_event_id:
+                    return {
+                        "message": success_message,
+                        "event_id": event.name,
+                    }
                 return frappe.msgprint(success_message)
 
+            if return_event_id:
+                return {
+                    "message": "Event has been updated successfully.",
+                    "event_id": event.name,
+                }
             return frappe.msgprint(_("Event has been updated successfully."))
         except Exception:
             return frappe.throw(_("Unable to Update an event"))
@@ -528,7 +543,12 @@ def _create_event_for_appointment_group(
     if success_message:
         return frappe.msgprint(success_message)
 
-    return _("Event has been created")
+    if return_event_id:
+        return {
+            "message": _("Event has been created"),
+            "event_id": event.name,
+        }
+    return frappe.msgprint(_("Event has been created"))
 
 
 @frappe.whitelist(allow_guest=True)

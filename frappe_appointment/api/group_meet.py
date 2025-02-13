@@ -1,6 +1,7 @@
 import frappe
 import frappe.utils
 from frappe import _
+from frappe.twofactor import encrypt
 
 from frappe_appointment.frappe_appointment.doctype.appointment_group.appointment_group import _get_time_slots_for_day
 from frappe_appointment.helpers.overrides import add_response_code
@@ -37,11 +38,20 @@ def book_time_slot(
     **args,
 ):
     appointment_group = frappe.get_doc(APPOINTMENT_GROUP, appointment_group_id)
-    return _create_event_for_appointment_group(
+    resp = _create_event_for_appointment_group(
         appointment_group=appointment_group,
         date=date,
         start_time=start_time,
         end_time=end_time,
         user_timezone_offset=user_timezone_offset,
+        return_event_id=True,
         **args,
     )
+    event_token = encrypt(resp["event_id"])
+    event = frappe.get_doc("Event", resp["event_id"])
+    resp["meeting_provider"] = event.custom_meeting_provider
+    resp["meet_link"] = event.custom_meet_link
+    resp["reschedule_url"] = frappe.utils.get_url(
+        "/schedule/gr/{0}?reschedule=1&event_token={1}".format(appointment_group_id, event_token)
+    )
+    return resp

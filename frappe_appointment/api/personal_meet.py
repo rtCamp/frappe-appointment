@@ -5,6 +5,7 @@ import re
 import frappe
 import frappe.utils
 import pytz
+from frappe.twofactor import encrypt
 
 from frappe_appointment.frappe_appointment.doctype.appointment_group.appointment_group import _get_time_slots_for_day
 from frappe_appointment.helpers.overrides import add_response_code
@@ -172,7 +173,7 @@ def book_time_slot(
     if args.get("event_token"):
         success_message = "Appointment has been rescheduled."
 
-    data = _create_event_for_appointment_group(
+    response = _create_event_for_appointment_group(
         appointment_group,
         date,
         start_time,
@@ -180,10 +181,19 @@ def book_time_slot(
         user_timezone_offset,
         json.dumps(event_participants),
         success_message=success_message,
+        return_event_id=True,
         **args,
     )
-
-    return data
+    event_token = encrypt(response["event_id"])
+    event = frappe.get_doc("Event", response["event_id"])
+    response["meeting_provider"] = event.custom_meeting_provider
+    response["meet_link"] = event.custom_meet_link
+    response["reschedule_url"] = frappe.utils.get_url(
+        "/schedule/in/{0}?type={1}&reschedule=1&event_token={2}".format(
+            ap_availability.get("slug"), duration_id, event_token
+        )
+    )
+    return response
 
 
 def duration_to_string(duration):
