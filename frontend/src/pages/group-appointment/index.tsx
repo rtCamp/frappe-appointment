@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/tooltip";
 import Typography from "@/components/ui/typography";
 import {
+  capitalizeWords,
   cn,
   getAllSupportedTimeZones,
   getTimeZoneOffsetFromTimeZoneString,
@@ -39,6 +40,7 @@ import { MeetingData } from "./types";
 import { disabledDays } from "../appointment/utils";
 import SuccessAlert from "@/components/successAlert";
 import { BookingResponseType } from "@/lib/types";
+import MetaTags from "@/components/metaTags";
 
 const GroupAppointment = () => {
   const { groupId } = useParams();
@@ -202,6 +204,33 @@ const GroupAppointment = () => {
 
   return (
     <>
+      <MetaTags
+        title={`${
+          capitalizeWords(validTitle(meetingData.appointment_group_id)) ||
+          "Group"
+        } | Scheduler`}
+        description={`Book appointment with ${validTitle(
+          meetingData.appointment_group_id
+        )}`}
+        keywords="Group appointment"
+        author={meetingData.appointment_group_id}
+        robots="index, follow"
+        ogTitle={`${
+          capitalizeWords(validTitle(meetingData.appointment_group_id)) ||
+          "Group"
+        } | Scheduler`}
+        ogDescription={`Book appointment with ${validTitle(
+          meetingData.appointment_group_id
+        )}`}
+        twitterCard="summary_large_image"
+        twitterTitle={`${
+          capitalizeWords(validTitle(meetingData.appointment_group_id)) ||
+          "Group"
+        } | Scheduler`}
+        twitterDescription={`Book appointment with ${validTitle(
+          meetingData.appointment_group_id
+        )}`}
+      />
       <div className="w-full flex justify-center items-center">
         <div className="w-full xl:w-4/5 2xl:w-3/5 lg:py-16 p-6 px-4">
           <div className="h-fit flex w-full max-lg:flex-col md:border md:rounded-lg md:p-6 md:px-4 max-lg:gap-5 ">
@@ -291,8 +320,8 @@ const GroupAppointment = () => {
                     toMonth={new Date(meetingData.valid_end_date)}
                     disableNavigation={loading}
                     disabled={(date) => {
-                      if(loading){
-                        return true
+                      if (loading) {
+                        return true;
                       }
                       const disabledDaysList =
                         disabledDays(meetingData.available_days) || [];

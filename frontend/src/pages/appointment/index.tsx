@@ -23,6 +23,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import Typography from "@/components/ui/typography";
+import MetaTags from "@/components/metaTags";
 
 const Appointment = () => {
   const { meetId } = useParams();
@@ -90,6 +91,20 @@ const Appointment = () => {
 
   return (
     <>
+      <MetaTags
+        title={`${userInfo.name} | Scheduler`}
+        description={`Book appointment with ${userInfo.name}`}
+        keywords="Personal meeting scheduling"
+        author={userInfo.name}
+        robots="index, follow"
+        ogTitle={`${userInfo.name} | Scheduler`}
+        ogDescription={`Book appointment with ${userInfo.name}`}
+        ogImage={userInfo.userImage}
+        twitterCard="summary_large_image"
+        twitterTitle={`${userInfo.name} | Scheduler`}
+        twitterDescription={`Book appointment with ${userInfo.name}`}
+        twitterImage={userInfo.userImage}
+      />
       {!type || isLoading ? (
         <div className="w-full h-full max-md:h-fit flex justify-center">
           <div className="container max-w-[74rem] mx-auto p-4 py-8 md:py-16 grid gap-10 md:gap-12">
