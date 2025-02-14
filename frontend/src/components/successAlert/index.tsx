@@ -146,7 +146,10 @@ const SuccessAlert = ({
             </a>
           )}
           <Button
-            onClick={() => setOpen(false)}
+            onClick={() => {
+              setOpen(false);
+              onClose?.();
+            }}
             size="sm"
             className="bg-blue-500 w-full hover:bg-blue-600 p-4 rounded-full text-sm"
           >
