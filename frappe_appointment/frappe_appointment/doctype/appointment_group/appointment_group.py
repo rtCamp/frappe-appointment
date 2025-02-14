@@ -445,25 +445,42 @@ def get_booking_frequency_reached(datetime: datetime, appointment_group: object)
         "events": [],
     }
 
+    if int(appointment_group.limit_booking_frequency) < 0:
+        return res
+
     # Get today's data and the range for the next day to fetch events.
     start_datetime, end_datetime = get_datetime_str(datetime), get_datetime_str(add_days(datetime, 1))
 
-    if not appointment_group.name:
+    if appointment_group.get("is_personal_meeting", False):
+        all_events = frappe.get_list(
+            "Event",
+            filters=[
+                ["custom_appointment_slot_duration", "=", appointment_group.duration_id],
+                ["starts_on", ">=", start_datetime],
+                ["starts_on", "<", end_datetime],
+                ["ends_on", ">=", start_datetime],
+                ["ends_on", "<", end_datetime],
+            ],
+            fields=["starts_on", "ends_on"],
+            order_by="starts_on asc",
+            ignore_permissions=True,
+        )
+    elif appointment_group.name:
+        all_events = frappe.get_list(
+            "Event",
+            filters=[
+                ["custom_appointment_group", "=", appointment_group.name],
+                ["starts_on", ">=", start_datetime],
+                ["starts_on", "<", end_datetime],
+                ["ends_on", ">=", start_datetime],
+                ["ends_on", "<", end_datetime],
+            ],
+            fields=["starts_on", "ends_on"],
+            order_by="starts_on asc",
+            ignore_permissions=True,
+        )
+    else:
         return res
-
-    all_events = frappe.get_list(
-        "Event",
-        filters=[
-            ["custom_appointment_group", "=", appointment_group.name],
-            ["starts_on", ">=", start_datetime],
-            ["starts_on", "<", end_datetime],
-            ["ends_on", ">=", start_datetime],
-            ["ends_on", "<", end_datetime],
-        ],
-        fields=["starts_on", "ends_on"],
-        order_by="starts_on asc",
-        ignore_permissions=True,
-    )
 
     all_events = sorted(
         all_events,

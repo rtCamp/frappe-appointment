@@ -79,6 +79,9 @@ def get_time_slots(duration_id: str, date: str, user_timezone_offset: str):
 
     data = _get_time_slots_for_day(appointment_group, date, user_timezone_offset)
 
+    if not data:
+        return None
+
     if "appointment_group_id" in data:
         del data["appointment_group_id"]
     data["user"] = ap_availability.get("name")
@@ -230,7 +233,9 @@ def create_dummy_appointment_group(duration, ap_availability):
         "meet_link": ap_availability.get("meeting_link"),
         "response_email_template": ap_availability.get("response_email_template"),
         "linked_doctype": ap_availability.get("name"),
-        "limit_booking_frequency": -1,
+        "limit_booking_frequency": duration.limit_booking_frequency,
+        "is_personal_meeting": 1,
+        "duration_id": duration.name,
     }
 
     return appointment_group_obj
