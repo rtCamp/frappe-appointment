@@ -34,6 +34,7 @@ interface SuccessAlertProps {
   meetingProvider: string;
   meetLink: string;
   rescheduleLink: string;
+  calendarString: string;
   onClose?: VoidFunction;
 }
 
@@ -44,10 +45,10 @@ const SuccessAlert = ({
   meetingProvider,
   meetLink,
   rescheduleLink,
+  calendarString,
   onClose,
 }: SuccessAlertProps) => {
   const [copied, setCopied] = useState(false);
-  const [calendarString, setCalendarString] = useState("");
   useEffect(() => {
     if (open && selectedSlot.start_time) {
       confetti({
@@ -55,12 +56,6 @@ const SuccessAlert = ({
         spread: 70,
         origin: { y: 0.6 },
       });
-      setCalendarString(
-        `https://calendar.google.com/calendar/u/0/r/day/${format(
-          new Date(selectedSlot.start_time),
-          "yyyy/MM/dd"
-        )}`
-      );
     }
   }, [open, selectedSlot]);
 
@@ -118,42 +113,48 @@ const SuccessAlert = ({
                 <p className="text-xs text-gray-600">{meetingProvider}</p>
               </div>
             </div>
-            <a href={meetLink} target="_blank">
-              <SquareArrowOutUpRight className="text-blue-500 transition-colors cursor-pointer h-4 w-4 " />
-            </a>
+            {meetLink && (
+              <a href={meetLink} target="_blank">
+                <SquareArrowOutUpRight className="text-blue-500 transition-colors cursor-pointer h-4 w-4 " />
+              </a>
+            )}
           </div>
         </div>
 
-        <div className="w-full overflow-hidden flex mt-4 px-3 py-1  bg-blue-50 items-center gap-2 max-md:h-14 rounded-full">
-          <span className="w-full text-sm text-gray-500  truncate">
-            {calendarString}
-          </span>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="flex gap-2 shrink-0 hover:bg-transparent text-blue-400 hover:text-blue-500 focus-visible:ring-0 focus-visible:ring-offset-0"
-            onClick={copyToClipboard}
-          >
-            {copied ? (
-              <CheckCircle2 className="h-4 w-4" />
-            ) : (
-              <Copy className="h-4 w-4" />
-            )}
-            {copied ? "Copied!" : "Copy"}
-          </Button>
-        </div>
-
-        <DialogFooter className="flex max-md:flex-col w-full sm:justify-start gap-4 md:mt-6 ">
-          <a href={rescheduleLink} target="_blank">
+        {calendarString && (
+          <div className="w-full overflow-hidden flex mt-4 px-3 py-1  bg-blue-50 items-center gap-2 max-md:h-14 rounded-full">
+            <span className="w-full text-sm text-gray-500  truncate">
+              {calendarString}
+            </span>
             <Button
               variant="ghost"
-              onClick={(e) => e.stopPropagation()}
               size="sm"
-              className="border border-blue-400 hover:text-blue-500 text-blue-500 w-full hover:bg-blue-50 p-4 rounded-full text-sm"
+              className="flex gap-2 shrink-0 hover:bg-transparent text-blue-400 hover:text-blue-500 focus-visible:ring-0 focus-visible:ring-offset-0"
+              onClick={copyToClipboard}
             >
-              Reschedule
+              {copied ? (
+                <CheckCircle2 className="h-4 w-4" />
+              ) : (
+                <Copy className="h-4 w-4" />
+              )}
+              {copied ? "Copied!" : "Copy"}
             </Button>
-          </a>
+          </div>
+        )}
+
+        <DialogFooter className="flex max-md:flex-col w-full sm:justify-start gap-4 md:mt-6 ">
+          {rescheduleLink && (
+            <a href={rescheduleLink} target="_blank">
+              <Button
+                variant="ghost"
+                onClick={(e) => e.stopPropagation()}
+                size="sm"
+                className="border border-blue-400 hover:text-blue-500 text-blue-500 w-full hover:bg-blue-50 p-4 rounded-full text-sm"
+              >
+                Reschedule
+              </Button>
+            </a>
+          )}
           <Button
             onClick={() => setOpen(false)}
             size="sm"

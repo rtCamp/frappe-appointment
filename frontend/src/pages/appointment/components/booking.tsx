@@ -77,6 +77,7 @@ const Booking = ({ type }: BookingProp) => {
       meeting_provider: "",
       message: "",
       reschedule_url: "",
+      google_calendar_event_url:"",
     });
   const location = useLocation();
 
@@ -592,6 +593,7 @@ const Booking = ({ type }: BookingProp) => {
           meetingProvider={bookingResponse.meeting_provider}
           meetLink={bookingResponse.meet_link}
           rescheduleLink={bookingResponse.reschedule_url}
+          calendarString={bookingResponse.google_calendar_event_url}
         />
       )}
     </>
