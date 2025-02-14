@@ -76,7 +76,7 @@ const GroupAppointment = () => {
     meeting_provider: "",
     message: "",
     reschedule_url: "",
-    google_calendar_event_url:"",
+    google_calendar_event_url: "",
   });
 
   const {
@@ -209,16 +209,12 @@ const GroupAppointment = () => {
             {!meetingData.appointment_group_id ? (
               <GroupMeetSkeleton />
             ) : (
-              <div className="flex flex-col w-full lg:w-3/4 truncate gap-3 ">
-                <Typography variant="h2" className="text-3xl font-semibold">
-                  <Tooltip>
-                    <TooltipTrigger className="text-left truncate w-full capitalize">
-                      {validTitle(meetingData.appointment_group_id)}
-                    </TooltipTrigger>
-                    <TooltipContent className="capitalize">
-                      {validTitle(meetingData.appointment_group_id)}
-                    </TooltipContent>
-                  </Tooltip>
+              <div className="flex flex-col w-full lg:w-3/4 gap-3 ">
+                <Typography
+                  variant="h2"
+                  className="text-3xl font-semibold text-left w-full capitalize"
+                >
+                  {validTitle(meetingData.appointment_group_id)}
                 </Typography>
                 {meetingData.meeting_details && (
                   <div className="w-full flex flex-col gap-2 mt-3">
