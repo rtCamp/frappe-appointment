@@ -71,14 +71,14 @@ const Booking = ({ type }: BookingProp) => {
   const [showReschedule, setShowReschedule] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
   const [appointmentScheduled, setAppointmentScheduled] = useState(false);
-    const [bookingResponse, setBookingResponse] = useState<BookingResponseType>({
-      event_id: "",
-      meet_link: "",
-      meeting_provider: "",
-      message: "",
-      reschedule_url: "",
-      google_calendar_event_url:"",
-    });
+  const [bookingResponse, setBookingResponse] = useState<BookingResponseType>({
+    event_id: "",
+    meet_link: "",
+    meeting_provider: "",
+    message: "",
+    reschedule_url: "",
+    google_calendar_event_url: "",
+  });
   const location = useLocation();
 
   const date = searchParams.get("date");
@@ -176,7 +176,7 @@ const Booking = ({ type }: BookingProp) => {
       .then((data) => {
         setShowMeetingForm(false);
         setExpanded(false);
-        mutate()
+        mutate();
         setBookingResponse(data.message);
         setAppointmentScheduled(true);
       })
@@ -276,9 +276,11 @@ const Booking = ({ type }: BookingProp) => {
                     <TooltipContent>{userInfo.name}</TooltipContent>
                   </Tooltip>
                 </Typography>
-                <Typography className="text-base text-muted-foreground">
-                  {userInfo.designation} at {userInfo.organizationName}
-                </Typography>
+                {userInfo.designation && userInfo.organizationName && (
+                  <Typography className="text-base text-muted-foreground">
+                    {userInfo.designation} at {userInfo.organizationName}
+                  </Typography>
+                )}
                 {meetingData.label ? (
                   <Typography className="text-sm mt-1">
                     <Tag className="inline-block w-4 h-4 mr-1" />
@@ -299,7 +301,7 @@ const Booking = ({ type }: BookingProp) => {
                   <CalendarIcon className="inline-block w-4 h-4 mr-1" />
                   {formatDate(new Date(), "d MMM, yyyy")}
                 </Typography>
-                {userInfo.meetingProvider == "Zoom" && (
+                {userInfo.meetingProvider.toLowerCase() == "zoom" && (
                   <Typography className="text-sm text-blue-500 mt-1">
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
@@ -321,7 +323,7 @@ const Booking = ({ type }: BookingProp) => {
                     Zoom
                   </Typography>
                 )}{" "}
-                {userInfo.meetingProvider == "Google Meet" && (
+                {userInfo.meetingProvider.toLowerCase() == "google meet" && (
                   <Typography className="text-sm text-blue-700 mt-1">
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
@@ -567,7 +569,7 @@ const Booking = ({ type }: BookingProp) => {
                 onSuccess={(data) => {
                   setShowMeetingForm(false);
                   setExpanded(false);
-                  mutate();                  
+                  mutate();
                   setBookingResponse(data.message);
                   setAppointmentScheduled(true);
                 }}

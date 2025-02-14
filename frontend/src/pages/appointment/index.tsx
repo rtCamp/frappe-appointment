@@ -118,16 +118,20 @@ const Appointment = () => {
                         <TooltipContent>{userInfo.name}</TooltipContent>
                       </Tooltip>
                     </Typography>
-                    <Tooltip>
-                      <Typography className="text-base text-left text-muted-foreground">
-                        <TooltipTrigger className="text-left">
-                          {userInfo.designation} at {userInfo.organizationName}
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          {userInfo.designation} at {userInfo.organizationName}
-                        </TooltipContent>
-                      </Typography>
-                    </Tooltip>
+                    {userInfo.designation && userInfo.organizationName && (
+                      <Tooltip>
+                        <Typography className="text-base text-left text-muted-foreground">
+                          <TooltipTrigger className="text-left">
+                            {userInfo.designation} at{" "}
+                            {userInfo.organizationName}
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            {userInfo.designation} at{" "}
+                            {userInfo.organizationName}
+                          </TooltipContent>
+                        </Typography>
+                      </Tooltip>
+                    )}
                   </div>
                   <SocialProfiles profiles={userInfo.socialProfiles} />
                 </div>
