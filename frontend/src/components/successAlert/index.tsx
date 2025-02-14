@@ -1,7 +1,7 @@
 /**
  * External dependencies
  */
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   Copy,
   CheckCircle2,
@@ -10,7 +10,6 @@ import {
   MapPin,
   SquareArrowOutUpRight,
 } from "lucide-react";
-import confetti from "canvas-confetti";
 import { format } from "date-fns";
 
 /**
@@ -49,15 +48,6 @@ const SuccessAlert = ({
   onClose,
 }: SuccessAlertProps) => {
   const [copied, setCopied] = useState(false);
-  useEffect(() => {
-    if (open && selectedSlot.start_time) {
-      confetti({
-        particleCount: 100,
-        spread: 70,
-        origin: { y: 0.6 },
-      });
-    }
-  }, [open, selectedSlot]);
 
   const copyToClipboard = () => {
     navigator.clipboard.writeText(calendarString);
