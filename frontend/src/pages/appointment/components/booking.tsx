@@ -389,7 +389,11 @@ const Booking = ({ type }: BookingProp) => {
                       weekStartsOn={1}
                       fromMonth={new Date(meetingData.valid_start_date)}
                       toMonth={new Date(meetingData.valid_end_date)}
+                      disableNavigation={rescheduleLoading}
                       disabled={(date) => {
+                        if (rescheduleLoading) {
+                          return true;
+                        }
                         const disabledDaysList =
                           disabledDays(meetingData.available_days) || [];
                         const isPastDate =
@@ -451,6 +455,7 @@ const Booking = ({ type }: BookingProp) => {
                           AM/PM
                         </Typography>
                         <Switch
+                          disabled={rescheduleLoading}
                           className="data-[state=checked]:bg-blue-500 active:ring-blue-400 focus-visible:ring-blue-400"
                           checked={timeFormat === "24h"}
                           onCheckedChange={(checked) =>
@@ -472,6 +477,7 @@ const Booking = ({ type }: BookingProp) => {
                       variant="link"
                       className="text-blue-500 px-0"
                       onClick={() => setExpanded(false)}
+                      disabled={rescheduleLoading}
                     >
                       <ArrowLeft className="h-4 w-4" />
                       Back
@@ -517,6 +523,7 @@ const Booking = ({ type }: BookingProp) => {
                         meetingData.all_available_slots_for_data.map(
                           (slot, index) => (
                             <Button
+                              disabled={rescheduleLoading}
                               key={index}
                               onClick={() => {
                                 if (reschedule && event_token) {

@@ -289,7 +289,11 @@ const GroupAppointment = () => {
                     }}
                     fromMonth={new Date(meetingData.valid_start_date)}
                     toMonth={new Date(meetingData.valid_end_date)}
+                    disableNavigation={loading}
                     disabled={(date) => {
+                      if(loading){
+                        return true
+                      }
                       const disabledDaysList =
                         disabledDays(meetingData.available_days) || [];
                       const isPastDate =
@@ -331,6 +335,7 @@ const GroupAppointment = () => {
                       AM/PM
                     </Typography>
                     <Switch
+                      disabled={loading}
                       className="data-[state=checked]:bg-blue-500 active:ring-blue-400 focus-visible:ring-blue-400"
                       checked={timeFormat === "24h"}
                       onCheckedChange={(checked) =>
@@ -350,6 +355,7 @@ const GroupAppointment = () => {
                   variant="link"
                   className="text-blue-500 px-0"
                   onClick={() => setExpanded(false)}
+                  disabled={loading}
                 >
                   <ArrowLeft className="h-4 w-4 " />
                   Back
@@ -405,6 +411,7 @@ const GroupAppointment = () => {
                                 end_time: slot.end_time,
                               });
                             }}
+                            disabled={loading}
                             variant="outline"
                             className={cn(
                               "w-full font-normal border border-blue-500 text-blue-500 hover:text-blue-500 hover:bg-blue-50 transition-colors ",
