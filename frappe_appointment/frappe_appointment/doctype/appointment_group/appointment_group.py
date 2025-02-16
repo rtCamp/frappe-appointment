@@ -2,7 +2,6 @@
 # For license information, please see license.txt
 
 import datetime
-import urllib.parse
 
 import frappe
 import frappe.utils
@@ -44,25 +43,17 @@ class AppointmentGroup(WebsiteGenerator):
     def validate_zoom(self):
         if self.meet_provider == "Zoom":
             ap_settings = frappe.get_single("Zoom Settings")
+            zoom_settings_link = frappe.utils.get_link_to_form("Zoom Settings", None, "Zoom Settings")
             if not ap_settings.enable_zoom:
-                return frappe.throw(
-                    frappe._(
-                        "Zoom is not enabled. Please enable it from <a href='/app/zoom-settings'>Zoom Settings</a>."
-                    )
-                )
+                return frappe.throw(frappe._(f"Zoom is not enabled. Please enable it from {zoom_settings_link}."))
             if not ap_settings.client_id or not ap_settings.get_password("client_secret") or not ap_settings.account_id:
                 return frappe.throw(
-                    frappe._(
-                        "Please set Zoom Account ID, Client ID and Secret in <a href='/app/zoom-settings'>Zoom Settings</a>."
-                    )
+                    frappe._(f"Please set Zoom Account ID, Client ID and Secret in {zoom_settings_link}.")
                 )
-            g_calendar = frappe.get_doc("Google Calendar", self.event_creator)
+            g_calendar = frappe.get_doc("Google Calendar", self.event_creator, "Google Calendar")
             if not g_calendar.custom_zoom_user_email:
-                return frappe.throw(
-                    frappe._(
-                        f"Please set Zoom User Email in <a href='/app/google-calendar/{urllib.parse.quote(self.event_creator)}'>Google Calendar</a>."
-                    )
-                )
+                g_calendar_link = frappe.utils.get_link_to_form("Google Calendar", self.event_creator)
+                return frappe.throw(frappe._(f"Please set Zoom User Email in {g_calendar_link}."))
 
     def validate(self):
         self.validate_zoom()
