@@ -91,6 +91,18 @@ fixtures = [
             ]
         ],
     },
+    {
+        "dt": "Email Template",
+        "filters": [
+            [
+                "name",
+                "in",
+                {
+                    "[Default] Appointment Scheduled",
+                },
+            ]
+        ],
+    },
 ]
 
 # Installation
