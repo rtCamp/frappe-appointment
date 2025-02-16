@@ -46,7 +46,9 @@ def get_meeting_windows(slug):
         "Appointment Slot Duration", filters={"parent": user_availability.get("name")}, fields=["*"]
     )
 
-    durations = [{"id": d.name, "label": d.title, "duration": d.duration} for d in all_durations]
+    durations = [
+        {"id": duration.name, "label": duration.title, "duration": duration.duration} for duration in all_durations
+    ]
 
     return {
         "full_name": full_name,
@@ -238,12 +240,12 @@ def get_schedular_link(user):
         "slug": user_availability.get("slug"),
         "available_durations": [
             {
-                "id": d.name,
-                "label": d.title,
-                "duration": d.duration,
-                "duration_str": duration_to_string(d.duration),
-                "url": url + "?type=" + d.name,
+                "id": duration.name,
+                "label": duration.title,
+                "duration": duration.duration,
+                "duration_str": duration_to_string(duration.duration),
+                "url": url + "?type=" + duration.name,
             }
-            for d in all_durations
+            for duration in all_durations
         ],
     }
