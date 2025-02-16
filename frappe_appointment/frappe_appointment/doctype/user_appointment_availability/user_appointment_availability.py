@@ -18,7 +18,7 @@ from frappe_appointment.helpers.utils import (
     update_time_of_datetime,
 )
 
-SLUG_REGEX = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
+SLUG_REGEX = re.compile(r"^[a-z0-9_]+(?:-[a-z0-9_]+)*$")
 
 
 class UserAppointmentAvailability(Document):
@@ -43,7 +43,11 @@ class UserAppointmentAvailability(Document):
             frappe.throw(frappe._("Please set a slug before enabling scheduling."))
         if self.slug:
             if not SLUG_REGEX.match(self.slug):
-                frappe.throw(frappe._("Slug can only contain lowercase alphanumeric characters and hyphens."))
+                frappe.throw(
+                    frappe._(
+                        "Slug can only contain lowercase alphanumeric characters, underscores and hyphens, and cannot start or end with a hyphen."
+                    )
+                )
             if frappe.db.exists("User Appointment Availability", {"slug": self.slug, "name": ["!=", self.name]}):
                 frappe.throw(frappe._("Slug already exists. Please set a unique slug."))
         if self.enable_scheduling and self.meeting_provider == "Zoom":
