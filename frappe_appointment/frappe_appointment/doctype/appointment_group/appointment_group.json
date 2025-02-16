@@ -136,6 +136,7 @@
    "fieldtype": "Section Break"
   },
   {
+   "default": "[Default] Appointment Scheduled",
    "fieldname": "response_email_template",
    "fieldtype": "Link",
    "label": "Response Email Template",
@@ -258,7 +259,7 @@
  "has_web_view": 1,
  "is_published_field": "publish_on_website",
  "links": [],
- "modified": "2025-02-16 21:52:38.773549",
+ "modified": "2025-02-17 00:28:15.136064",
  "modified_by": "Administrator",
  "module": "Frappe Appointment",
  "name": "Appointment Group",
