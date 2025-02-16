@@ -45,7 +45,7 @@ class EventOverride(Event):
                     self.appointment_group.event_creator,
                     self.subject,
                     self.starts_on,
-                    self.appointment_group.duration_for_event.seconds // 60,
+                    self.appointment_group.duration_for_event.seconds // 60,  # convert to minutes
                     self.description,
                 )
                 self.description = f"{self.description or ''}\nMeet Link: {meet_url}"

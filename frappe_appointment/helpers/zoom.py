@@ -41,9 +41,7 @@ def reauthorize_zoom():
     return access_token
 
 
-def create_meeting(
-    google_calendar: str, subject, starts_on, duration, description, timezone="Asia/Kolkata", members=None
-):
+def get_zoom_access_token():
     zoom_settings = frappe.get_single("Zoom Settings")
     zoom_settings_link = frappe.utils.get_link_to_form("Zoom Settings", None, "Zoom Settings")
 
@@ -54,6 +52,13 @@ def create_meeting(
 
     if not access_token:
         access_token = reauthorize_zoom()
+    return access_token
+
+
+def create_meeting(
+    google_calendar: str, subject, starts_on, duration, description, timezone="Asia/Kolkata", members=None
+):
+    access_token = get_zoom_access_token()
 
     headers = {"Authorization": f"Bearer {access_token}"}
 
@@ -82,7 +87,7 @@ def create_meeting(
     response = response.json()
 
     if is_error:
-        if "code" in response and response["code"] == 124:
+        if response.get("code") == 124:
             access_token = reauthorize_zoom()
             headers = {"Authorization": f"Bearer {access_token}"}
             response = requests.post(f"https://api.zoom.us/v2/users/{user_email}/meetings", json=data, headers=headers)
@@ -101,16 +106,7 @@ def create_meeting(
 def update_meeting(
     google_calendar: str, meeting_id, subject, starts_on, duration, description, timezone="Asia/Kolkata", members=None
 ):
-    zoom_settings = frappe.get_single("Zoom Settings")
-    zoom_settings_link = frappe.utils.get_link_to_form("Zoom Settings", None, "Zoom Settings")
-
-    if not zoom_settings.enable_zoom:
-        frappe.throw(frappe._(f"Zoom is not enabled. Please enable it from {zoom_settings_link}."))
-
-    access_token = zoom_settings.get_password("access_token", raise_exception=False)
-
-    if not access_token:
-        access_token = reauthorize_zoom(google_calendar)
+    access_token = get_zoom_access_token()
 
     headers = {"Authorization": f"Bearer {access_token}"}
 
@@ -130,7 +126,7 @@ def update_meeting(
     if response.ok:
         return True
     res = response.json()
-    if "code" in res and res["code"] == 124:
+    if res.get("code") == 124:
         access_token = reauthorize_zoom()
         headers = {"Authorization": f"Bearer {access_token}"}
         response = requests.patch(f"https://api.zoom.us/v2/meetings/{meeting_id}", json=data, headers=headers)
@@ -141,13 +137,7 @@ def update_meeting(
 
 
 def delete_meeting(google_calendar: str, meeting_id):
-    zoom_settings = frappe.get_single("Zoom Settings")
-    zoom_settings_link = frappe.utils.get_link_to_form("Zoom Settings", None, "Zoom Settings")
-
-    if not zoom_settings.enable_zoom:
-        frappe.throw(frappe._(f"Zoom is not enabled. Please enable it from {zoom_settings_link}."))
-
-    access_token = zoom_settings.get_password("access_token", raise_exception=False)
+    access_token = get_zoom_access_token()
 
     headers = {"Authorization": f"Bearer {access_token}"}
 
@@ -155,13 +145,13 @@ def delete_meeting(google_calendar: str, meeting_id):
     if response.ok:
         return True
     res = response.json()
-    if "code" in res and res["code"] == 124:
+    if res.get("code") == 124:
         access_token = reauthorize_zoom()
         headers = {"Authorization": f"Bearer {access_token}"}
         response = requests.delete(f"https://api.zoom.us/v2/meetings/{meeting_id}", headers=headers)
         if response.ok:
             return True
         res = response.json()
-    if "code" in res and res["code"] == 3001:  # Meeting not found
+    if res.get("code") == 3001:  # Meeting not found
         return True
     raise Exception(res)
