@@ -8,6 +8,7 @@ import pytz
 
 from frappe_appointment.frappe_appointment.doctype.appointment_group.appointment_group import _get_time_slots_for_day
 from frappe_appointment.helpers.overrides import add_response_code
+from frappe_appointment.helpers.utils import duration_to_string
 from frappe_appointment.overrides.event_override import _create_event_for_appointment_group
 
 
@@ -184,22 +185,6 @@ def book_time_slot(
     )
 
     return data
-
-
-def duration_to_string(duration):
-    seconds = int(duration)
-    minutes = seconds // 60
-    hours = minutes // 60
-    rest_minutes = minutes % 60
-
-    duration_str = ""
-    if hours:
-        duration_str += f"{hours} hour{'s' if hours > 1 else ''}"
-    if rest_minutes:
-        duration_str += f" {rest_minutes} minute{'s' if rest_minutes > 1 else ''}"
-
-    duration_str = duration_str.strip()
-    return duration_str
 
 
 def create_dummy_appointment_group(duration, user_availability):
