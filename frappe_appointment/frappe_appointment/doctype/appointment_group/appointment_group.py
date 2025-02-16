@@ -780,7 +780,7 @@ def get_appointment_groups_from_doctype(doctype: str) -> str:
     return [
         {
             "name": appointment_group.name,
-            "route": frappe.utils.get_url(appointment_group.route, full_address=True),
+            "route": frappe.utils.get_url(f"/schedule/gr/{appointment_group.name}", full_address=True),
         }
         for appointment_group in appointment_groups
     ]
@@ -803,5 +803,5 @@ def get_appointment_group_from_id(appointment_group_id: str) -> object:
 
     return {
         "name": appointment_group.name,
-        "route": frappe.utils.get_url(appointment_group.route, full_address=True),
+        "route": frappe.utils.get_url(f"/schedule/gr/{appointment_group.name}", full_address=True),
     }
