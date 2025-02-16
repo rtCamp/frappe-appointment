@@ -24,9 +24,9 @@ def get_meeting_windows(slug):
     user = ap_availability.get("user")
     if not user:
         return {"error": "No user found"}, 404
+
     user = frappe.get_doc("User", user)
-    if not user:
-        return {"error": "No user found"}, 404
+
     full_name = user.get("full_name")
     profile_pic = user.get("user_image")
     position = None
@@ -62,8 +62,7 @@ def get_meeting_windows(slug):
 @add_response_code
 def get_time_slots(duration_id: str, date: str, user_timezone_offset: str):
     duration = frappe.get_doc("Appointment Slot Duration", duration_id)
-    if not duration:
-        return {"error": "No duration found"}, 404
+
     ap_availability = frappe.get_all(
         "User Appointment Availability", filters={"name": duration.get("parent")}, fields=["*"]
     )
@@ -104,8 +103,7 @@ def book_time_slot(
     **args,
 ):
     duration = frappe.get_doc("Appointment Slot Duration", duration_id)
-    if not duration:
-        return {"error": "No duration found"}, 404
+
     ap_availability = frappe.get_all(
         "User Appointment Availability", filters={"name": duration.get("parent")}, fields=["*"]
     )

@@ -14,13 +14,10 @@ def get_time_slots(appointment_group_id: str, date: str, user_timezone_offset: s
     if not appointment_group_id:
         frappe.throw(_("Appointment Group ID is required"))
 
-    appointment_group = frappe.get_doc(APPOINTMENT_GROUP, appointment_group_id)
-
-    if not appointment_group:
-        frappe.throw(_("Appointment Group not found"))
-
     if not date:
         frappe.throw(_("Date is required"))
+
+    appointment_group = frappe.get_doc(APPOINTMENT_GROUP, appointment_group_id)
 
     time_slots = _get_time_slots_for_day(appointment_group, date, user_timezone_offset)
 
