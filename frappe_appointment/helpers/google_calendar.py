@@ -12,6 +12,8 @@ from frappe.integrations.doctype.google_calendar.google_calendar import (
 from frappe.utils.data import get_datetime
 from googleapiclient.errors import HttpError
 
+from frappe_appointment.helpers import api_urls
+
 
 def insert_event_in_google_calendar_override(
     doc,
@@ -68,7 +70,7 @@ def insert_event_in_google_calendar_override(
                     "conferenceSolution": {
                         "key": {"type": "addOn"},
                         "name": "Zoom Meeting",
-                        "iconUri": "https://lh3.googleusercontent.com/pw/AM-JKLUkiyTEgH-6DiQP85RGtd_BORvAuFnS9katNMgwYQBJUTiDh12qtQxMJFWYH2Dj30hNsNUrr-kzKMl7jX-Qd0FR7JmVSx-Fhruf8xTPPI-wdsMYez6WJE7tz7KmqsORKBEnBTiILtMJXuMvphqKdB9X=s128-no",
+                        "iconUri": api_urls.ZOOM_ICON_URL,
                     },
                     "entryPoints": [
                         {
@@ -118,12 +120,12 @@ def insert_event_in_google_calendar_override(
                     update_modified=False,
                 )
         else:
-            rtn_dict = {
+            update_dict = {
                 "google_calendar_event_id": event.get("id"),
                 "custom_google_calendar_event_url": event.get("htmlLink"),
             }
             if doc.custom_meeting_provider == "Google Meet":
-                rtn_dict.update(
+                update_dict.update(
                     {
                         "google_meet_link": event.get("hangoutLink"),
                         "custom_meet_link": event.get("hangoutLink"),
@@ -137,7 +139,7 @@ def insert_event_in_google_calendar_override(
 
         if update_doc:
             return event.get("id")
-        return event.get("id"), rtn_dict
+        return event.get("id"), update_dict
     except HttpError as err:
         frappe.throw(
             _("Google Calendar - Could not insert event in Google Calendar {0}, error code {1}.").format(
