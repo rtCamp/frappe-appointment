@@ -150,7 +150,7 @@ def get_google_calendar_slots_member(
             ):
                 range_events.append(event)
         except Exception:
-            if "timeZone" not in event["start"] and appointment_group.ignore_all_day_events:
+            if "timeZone" not in event["start"] and google_calendar.custom_ignore_all_day_events:
                 pass
             else:
                 return False

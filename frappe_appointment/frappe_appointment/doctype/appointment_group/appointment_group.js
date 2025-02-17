@@ -12,13 +12,28 @@ frappe.ui.form.on("Appointment Group", {
     });
   },
   refresh: function (frm) {
-    if (!frm.doc.available_slots_data) {
-      $(".available-slots-section").remove();
+    if (frm.doc.__islocal) {
+      frappe.call({
+        method:
+          "frappe_appointment.frappe_appointment.doctype.scheduler_settings.scheduler_settings.get_default_email_template",
+        callback: function (r) {
+          if (r.message?.group) {
+            frm.set_value("response_email_template", r.message.group);
+          }
+          if (r.message?.availability) {
+            frm.set_value("availability_email_template", r.message.availability);
+          }
+        },
+      });
+    } else {
+      if (!frm.doc.available_slots_data) {
+        $(".available-slots-section").remove();
+      }
+      addAvailableSlotsInfo(frm);
+      frm.add_custom_button(__("Update Slots Availability"), function () {
+        update_slots_availability(frm);
+      });
     }
-    addAvailableSlotsInfo(frm);
-    frm.add_custom_button(__("Update Slots Availability"), function () {
-      update_slots_availability(frm);
-    });
   },
 });
 

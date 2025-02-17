@@ -140,3 +140,19 @@ def update_time_of_datetime(dt: datetime, new_time: timedelta):
     seconds = int(total_seconds % 60)
 
     return dt.replace(hour=hours, minute=minutes, second=seconds)
+
+
+def duration_to_string(duration):
+    seconds = int(duration)
+    minutes = seconds // 60
+    hours = minutes // 60
+    rest_minutes = minutes % 60
+
+    duration_str = ""
+    if hours:
+        duration_str += f"{hours} hour{'s' if hours > 1 else ''}"
+    if rest_minutes:
+        duration_str += f" {rest_minutes} minute{'s' if rest_minutes > 1 else ''}"
+
+    duration_str = duration_str.strip()
+    return duration_str
