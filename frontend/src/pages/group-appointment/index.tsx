@@ -10,7 +10,6 @@ import { toast } from "sonner";
 /**
  * Internal dependencies
  */
-import { Calendar } from "@/components/ui/calendar";
 import {
   Tooltip,
   TooltipContent,
@@ -22,6 +21,7 @@ import {
   cn,
   getAllSupportedTimeZones,
   getTimeZoneOffsetFromTimeZoneString,
+  parseDateString,
   parseFrappeErrorMsg,
 } from "@/lib/utils";
 import { TimeFormat } from "../appointment/types";
@@ -37,10 +37,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { getIconForKey, validTitle } from "./utils";
 import { useFrappeGetCall, useFrappePostCall } from "frappe-react-sdk";
 import { MeetingData } from "./types";
-import { disabledDays } from "../appointment/utils";
 import SuccessAlert from "@/components/successAlert";
 import { BookingResponseType } from "@/lib/types";
 import MetaTags from "@/components/metaTags";
+import { CalendarWrapper } from "@/components/calendarWrapper";
 
 const GroupAppointment = () => {
   const { groupId } = useParams();
@@ -52,7 +52,9 @@ const GroupAppointment = () => {
   const [timeFormat, setTimeFormat] = useState<TimeFormat>("12h");
   const [timeZone, setTimeZone] = useState<string>(getLocalTimezone());
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-  const [displayMonth, setDisplayMonth] = useState<Date>(new Date());
+  const [displayMonth, setDisplayMonth] = useState<Date>(
+    parseDateString(date || "")
+  );
   const [selectedSlot, setSelectedSlot] = useState<slotType>();
   const [expanded, setExpanded] = useState(false);
   const [isMobileView, setIsMobileView] = useState(false);
@@ -61,7 +63,7 @@ const GroupAppointment = () => {
     all_available_slots_for_data: [],
     available_days: [],
     date: "",
-    duration: "",
+    duration: "", 
     endtime: "",
     is_invalid_date: true,
     next_valid_date: "",
@@ -95,7 +97,7 @@ const GroupAppointment = () => {
         year: "numeric",
         month: "numeric",
         day: "numeric",
-      }).format(date ? new Date(date) : selectedDate),
+      }).format(date ? parseDateString(date) : selectedDate),
       user_timezone_offset: String(
         getTimeZoneOffsetFromTimeZoneString(timeZone)
       ),
@@ -138,7 +140,7 @@ const GroupAppointment = () => {
 
   useEffect(() => {
     if (date) {
-      const dateObj = new Date(date);
+      const dateObj = parseDateString(date);
       setSelectedDate(dateObj);
       setDisplayMonth(dateObj);
       updateDateQuery(dateObj);
@@ -290,11 +292,17 @@ const GroupAppointment = () => {
               <div className="flex flex-col w-full lg:max-w-96">
                 {/* Calendar View */}
                 <div className="w-full">
-                  <Calendar
-                    mode="single"
-                    selected={selectedDate}
-                    month={displayMonth}
-                    onMonthChange={setDisplayMonth}
+                  <CalendarWrapper
+                    displayMonth={displayMonth}
+                    selectedDate={selectedDate}
+                    loading={loading}
+                    setDisplayMonth={setDisplayMonth}
+                    meetingData={{
+                      valid_start_date: meetingData.valid_start_date,
+                      valid_end_date: meetingData.valid_end_date,
+                      available_days: meetingData.available_days,
+                    }}
+                    setSelectedDate={setSelectedDate}
                     onDayClick={(date) => {
                       setSelectedDate(date);
                       updateDateQuery(date);
@@ -305,48 +313,7 @@ const GroupAppointment = () => {
                         end_time: "",
                       });
                     }}
-                    weekStartsOn={1}
                     className="rounded-md md:border md:h-96 w-full flex lg:px-6 lg:p-2 p-0"
-                    classNames={{
-                      months:
-                        "flex w-full flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0 flex-1",
-                      month: "space-y-4 w-full flex flex-col",
-                      table: "w-full h-full border-collapse space-y-1",
-                      head_row: "",
-                      row: "w-full mt-2",
-                      caption_label: "md:text-xl text-sm",
-                    }}
-                    fromMonth={new Date(meetingData.valid_start_date)}
-                    toMonth={new Date(meetingData.valid_end_date)}
-                    disableNavigation={loading}
-                    disabled={(date) => {
-                      if (loading) {
-                        return true;
-                      }
-                      const disabledDaysList =
-                        disabledDays(meetingData.available_days) || [];
-                      const isPastDate =
-                        date.getTime() <
-                        new Date(meetingData.valid_start_date)?.setHours(
-                          0,
-                          0,
-                          0,
-                          0
-                        );
-                      const isNextDate =
-                        date.getTime() >
-                        new Date(meetingData.valid_end_date)?.setHours(
-                          0,
-                          0,
-                          0,
-                          0
-                        );
-                      return (
-                        isPastDate ||
-                        disabledDaysList.includes(date.getDay()) ||
-                        isNextDate
-                      );
-                    }}
                   />
                 </div>
                 <div className="w-full mt-4 gap-5 flex max-md:flex-col md:justify-between md:items-center ">

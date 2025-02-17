@@ -21,13 +21,13 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { type TimeFormat, type MeetingData } from "../types";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Calendar } from "@/components/ui/calendar";
 import Typography from "@/components/ui/typography";
 import {
   cn,
   convertToMinutes,
   getAllSupportedTimeZones,
   getTimeZoneOffsetFromTimeZoneString,
+  parseDateString,
   parseFrappeErrorMsg,
 } from "@/lib/utils";
 import MeetingForm from "./meetingForm";
@@ -35,7 +35,6 @@ import { useAppContext } from "@/context/app";
 import TimeSlotSkeleton from "./timeSlotSkeleton";
 import TimeZoneSelect from "./timeZoneSelectmenu";
 import { Skeleton } from "@/components/ui/skeleton";
-import { disabledDays } from "../utils";
 import {
   Tooltip,
   TooltipContent,
@@ -46,6 +45,7 @@ import useBack from "@/hooks/useBack";
 import SuccessAlert from "@/components/successAlert";
 import { BookingResponseType } from "@/lib/types";
 import { Icon } from "@/components/icons";
+import { CalendarWrapper } from "@/components/calendarWrapper";
 
 interface BookingProp {
   type: string;
@@ -85,9 +85,7 @@ const Booking = ({ type }: BookingProp) => {
   const date = searchParams.get("date");
   const reschedule = searchParams.get("reschedule") || "";
   const event_token = searchParams.get("event_token") || "";
-  const [displayMonth, setDisplayMonth] = useState(
-    new Date(date || selectedDate)
-  );
+  const [displayMonth, setDisplayMonth] = useState(parseDateString(date || ""));
 
   const handleBackNavigation = () => {
     navigate(location.pathname, { replace: true });
@@ -97,7 +95,7 @@ const Booking = ({ type }: BookingProp) => {
 
   useEffect(() => {
     if (date) {
-      setSelectedDate(new Date(date));
+      setSelectedDate(parseDateString(date));
     }
   }, [date]);
 
@@ -136,7 +134,7 @@ const Booking = ({ type }: BookingProp) => {
         year: "numeric",
         month: "numeric",
         day: "numeric",
-      }).format(date ? new Date(date) : selectedDate),
+      }).format(date ? parseDateString(date) : selectedDate),
       user_timezone_offset: String(
         getTimeZoneOffsetFromTimeZoneString(timeZone || "Asia/Calcutta")
       ),
@@ -321,43 +319,17 @@ const Booking = ({ type }: BookingProp) => {
               <div className="w-full flex max-lg:flex-col gap-4 md:p-6 pb-5">
                 {(!isMobileView || !expanded) && (
                   <div className="flex flex-col w-full lg:w-[25rem] shrink-0">
-                    <Calendar
-                      mode="single"
-                      selected={selectedDate}
-                      month={displayMonth}
-                      onMonthChange={setDisplayMonth}
-                      weekStartsOn={1}
-                      fromMonth={new Date(meetingData.valid_start_date)}
-                      toMonth={new Date(meetingData.valid_end_date)}
-                      disableNavigation={rescheduleLoading}
-                      disabled={(date) => {
-                        if (rescheduleLoading) {
-                          return true;
-                        }
-                        const disabledDaysList =
-                          disabledDays(meetingData.available_days) || [];
-                        const isPastDate =
-                          date.getTime() <
-                          new Date(meetingData.valid_start_date)?.setHours(
-                            0,
-                            0,
-                            0,
-                            0
-                          );
-                        const isNextDate =
-                          date.getTime() >
-                          new Date(meetingData.valid_end_date)?.setHours(
-                            0,
-                            0,
-                            0,
-                            0
-                          );
-                        return (
-                          isPastDate ||
-                          disabledDaysList.includes(date.getDay()) ||
-                          isNextDate
-                        );
+                    <CalendarWrapper
+                      displayMonth={displayMonth}
+                      selectedDate={selectedDate}
+                      loading={rescheduleLoading}
+                      setDisplayMonth={setDisplayMonth}
+                      meetingData={{
+                        valid_start_date: meetingData.valid_start_date,
+                        valid_end_date: meetingData.valid_end_date,
+                        available_days: meetingData.available_days,
                       }}
+                      setSelectedDate={setSelectedDate}
                       onDayClick={(date) => {
                         setSelectedDate(date);
                         updateDateQuery(date);
@@ -370,15 +342,6 @@ const Booking = ({ type }: BookingProp) => {
                         });
                       }}
                       className="rounded-md md:border md:h-96 w-full flex md:px-6 p-0"
-                      classNames={{
-                        months:
-                          "flex w-full flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0 flex-1",
-                        month: "space-y-4 w-full flex flex-col",
-                        table: "w-full h-full border-collapse space-y-1",
-                        head_row: "",
-                        row: "w-full mt-2",
-                        caption_label: "md:text-xl text-sm",
-                      }}
                     />
                     <div className="mt-4  gap-5 flex max-md:flex-col md:justify-between md:items-center ">
                       {/* Timezone */}

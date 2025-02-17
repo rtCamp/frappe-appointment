@@ -1,3 +1,6 @@
+/**
+ * Internal dependencies
+ */
 import { cn } from "@/lib/utils";
 
 type IconProps = {
@@ -47,7 +50,7 @@ const icons = {
 };
 
 export const Icon = ({ name, className }: IconProps) => (
-  <div className={cn("inline-block w-4 h-4 mr-1", className)}>
+  <span className={cn("inline-block w-4 h-4 mr-1", className)}>
     {icons[name]}
-  </div>
+  </span>
 );

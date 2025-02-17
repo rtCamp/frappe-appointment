@@ -58,12 +58,6 @@ const Appointment = () => {
     }
   );
 
-  // Profiles mock data
-  // const profiles: Profile[] = [
-  //   { LinkedIn: "https://www.linkedin.com/in/example" },
-  //   { X: "https://x.com/example" },
-  //   { GitHub: "https://github.com/example" },
-  // ];
 
   useEffect(() => {
     if (meetId) {
