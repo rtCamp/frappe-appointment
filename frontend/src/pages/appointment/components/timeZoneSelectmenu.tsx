@@ -2,7 +2,7 @@
  * External dependencies
  */
 import { useState } from "react";
-import { ChevronDown, Globe } from "lucide-react";
+import { ChevronDown, Globe, RefreshCcw } from "lucide-react";
 
 /**
  * Internal dependencies
@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { getCurrentTime, getTimeZoneOffset } from "../utils";
+import { getLocalTimezone } from "@/lib/utils";
 
 interface TimeZoneSelectProps {
   timeZones: Array<string>;
@@ -63,6 +64,16 @@ export default function TimeZoneSelect({
           <CommandList>
             <CommandEmpty>No timezones found.</CommandEmpty>
             <CommandGroup>
+              <CommandItem
+                onSelect={() => {
+                  setTimeZone(getLocalTimezone());
+                  setOpen(false);
+                }}
+                className="cursor-pointer py-3 px-4 flex items-center gap-2 truncate"
+              >
+                <RefreshCcw className="h-4 w-4 text-muted-foreground" />
+                <span>Reset to Default Timezone</span>
+              </CommandItem>
               {timeZones.map((tz) => (
                 <CommandItem
                   key={tz}
