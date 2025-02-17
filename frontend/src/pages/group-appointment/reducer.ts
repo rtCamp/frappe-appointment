@@ -23,7 +23,6 @@ interface State {
   bookingResponse: BookingResponseType;
 }
 
-// 🟢 Define Action Types
 type Action =
   | { type: "SET_TIMEZONE"; payload: string }
   | { type: "SET_SELECTED_DATE"; payload: Date }
@@ -35,7 +34,6 @@ type Action =
   | { type: "SET_MEETING_DATA"; payload: MeetingData }
   | { type: "SET_BOOKING_RESPONSE"; payload: BookingResponseType };
 
-// 🟢 Define Action Handlers
 const actionHandlers: Record<
   Action["type"],
   (state: State, payload: any) => State
@@ -57,13 +55,11 @@ const actionHandlers: Record<
   }),
 };
 
-// 🟢 Reducer Function
 const reducer = (state: State, action: Action): State => {
   const handler = actionHandlers[action.type];
   return handler ? handler(state, action.payload) : state;
 };
 
-// 🟢 Initial State
 const initialState: State = {
   timeZone: getLocalTimezone(),
   selectedDate: new Date(),

@@ -1,7 +1,7 @@
 /**
  * External dependencies.
  */
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { format, formatDate } from "date-fns";
 import {
   Clock,
@@ -19,7 +19,6 @@ import { toast } from "sonner";
  */
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { type TimeFormat, type MeetingData } from "../types";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import Typography from "@/components/ui/typography";
 import {
@@ -43,9 +42,9 @@ import {
 import Spinner from "@/components/ui/spinner";
 import useBack from "@/hooks/useBack";
 import SuccessAlert from "@/components/successAlert";
-import { BookingResponseType } from "@/lib/types";
 import { Icon } from "@/components/icons";
 import { CalendarWrapper } from "@/components/calendarWrapper";
+import { useBookingReducer } from "../reducer";
 
 interface BookingProp {
   type: string;
@@ -64,28 +63,13 @@ const Booking = ({ type }: BookingProp) => {
     setSelectedSlot,
     meetingId,
   } = useAppContext();
-  const [timeFormat, setTimeFormat] = useState<TimeFormat>("12h");
+  const [state, dispatch] = useBookingReducer();
   const containerRef = useRef<HTMLDivElement>(null);
-  const [expanded, setExpanded] = useState(false);
-  const [isMobileView, setIsMobileView] = useState(false);
-  const [showMeetingForm, setShowMeetingForm] = useState(false);
-  const [showReschedule, setShowReschedule] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
-  const [appointmentScheduled, setAppointmentScheduled] = useState(false);
-  const [bookingResponse, setBookingResponse] = useState<BookingResponseType>({
-    event_id: "",
-    meet_link: "",
-    meeting_provider: "",
-    message: "",
-    reschedule_url: "",
-    google_calendar_event_url: "",
-  });
   const location = useLocation();
-
   const date = searchParams.get("date");
   const reschedule = searchParams.get("reschedule") || "";
   const event_token = searchParams.get("event_token") || "";
-  const [displayMonth, setDisplayMonth] = useState(parseDateString(date || ""));
 
   const handleBackNavigation = () => {
     navigate(location.pathname, { replace: true });
@@ -109,22 +93,6 @@ const Booking = ({ type }: BookingProp) => {
     });
   };
 
-  const [meetingData, setMeetingData] = useState<MeetingData>({
-    all_available_slots_for_data: [],
-    available_days: [],
-    date: "",
-    duration: "",
-    endtime: "",
-    is_invalid_date: true,
-    next_valid_date: "",
-    prev_valid_date: "",
-    starttime: "",
-    total_slots_for_day: 0,
-    user: "",
-    valid_end_date: "",
-    valid_start_date: "",
-    label: "",
-  });
   const navigate = useNavigate();
   const { data, isLoading, error, mutate } = useFrappeGetCall(
     "frappe_appointment.api.personal_meet.get_time_slots",
@@ -173,11 +141,11 @@ const Booking = ({ type }: BookingProp) => {
 
     rescheduleMeeting(meetingData)
       .then((data) => {
-        setShowMeetingForm(false);
-        setExpanded(false);
+        dispatch({ type: "SET_SHOW_MEETING_FORM", payload: false });
+        dispatch({ type: "SET_EXPANDED", payload: false });
         mutate();
-        setBookingResponse(data.message);
-        setAppointmentScheduled(true);
+        dispatch({ type: "SET_BOOKING_RESPONSE", payload: data.message });
+        dispatch({ type: "SET_APPOINTMENT_SCHEDULED", payload: true });
       })
       .catch((err) => {
         const error = parseFrappeErrorMsg(err);
@@ -198,14 +166,14 @@ const Booking = ({ type }: BookingProp) => {
 
   useEffect(() => {
     if (data) {
-      setMeetingData(data.message);
+      dispatch({ type: "SET_MEETING_DATA", payload: data.message });
       setDuration(convertToMinutes(data?.message?.duration).toString());
       const validData = data.message.is_invalid_date
         ? new Date(data.message.next_valid_date)
         : selectedDate;
       setSelectedDate(validData);
       updateDateQuery(validData);
-      setDisplayMonth(validData);
+      dispatch({ type: "SET_DISPLAY_MONTH", payload: validData });
     }
     if (error) {
       const err = parseFrappeErrorMsg(error);
@@ -222,20 +190,20 @@ const Booking = ({ type }: BookingProp) => {
         },
       });
     }
-  }, [data, error, type, navigate, setDuration, setMeetingData, mutate]);
+  }, [data, error, type, navigate, setDuration, dispatch, mutate]);
 
   const formatTimeSlot = (date: Date) => {
     return new Intl.DateTimeFormat("en-US", {
       hour: "numeric",
       minute: "numeric",
-      hour12: timeFormat === "12h",
+      hour12: state.timeFormat === "12h",
       timeZone,
     }).format(date);
   };
 
   useEffect(() => {
     const handleResize = () => {
-      setIsMobileView(window.innerWidth <= 768);
+      dispatch({ type: "SET_MOBILE_VIEW", payload: window.innerWidth <= 768 });
     };
 
     handleResize();
@@ -244,10 +212,10 @@ const Booking = ({ type }: BookingProp) => {
   }, []);
 
   useEffect(() => {
-    if (containerRef.current && isMobileView) {
+    if (containerRef.current && state.isMobileView) {
       containerRef.current.style.width = "100%";
     }
-  }, [isMobileView]);
+  }, [state.isMobileView]);
 
   return (
     <>
@@ -280,10 +248,10 @@ const Booking = ({ type }: BookingProp) => {
                     {userInfo.designation} at {userInfo.organizationName}
                   </Typography>
                 )}
-                {meetingData.label ? (
+                {state.meetingData.label ? (
                   <Typography className="text-sm mt-1">
                     <Tag className="inline-block w-4 h-4 mr-1" />
-                    {meetingData.label}
+                    {state.meetingData.label}
                   </Typography>
                 ) : (
                   <Skeleton className="h-5 w-20" />
@@ -315,27 +283,38 @@ const Booking = ({ type }: BookingProp) => {
               </div>
             </div>
             {/* Calendar and Availability slots */}
-            {!showMeetingForm && (
+            {!state.showMeetingForm && (
               <div className="w-full flex max-lg:flex-col gap-4 md:p-6 pb-5">
-                {(!isMobileView || !expanded) && (
+                {(!state.isMobileView || !state.expanded) && (
                   <div className="flex flex-col w-full lg:w-[25rem] shrink-0">
                     <CalendarWrapper
-                      displayMonth={displayMonth}
+                      displayMonth={state.displayMonth}
                       selectedDate={selectedDate}
                       loading={rescheduleLoading}
-                      setDisplayMonth={setDisplayMonth}
+                      setDisplayMonth={(date) =>
+                        dispatch({ type: "SET_DISPLAY_MONTH", payload: date })
+                      }
                       meetingData={{
-                        valid_start_date: meetingData.valid_start_date,
-                        valid_end_date: meetingData.valid_end_date,
-                        available_days: meetingData.available_days,
+                        valid_start_date: state.meetingData.valid_start_date,
+                        valid_end_date: state.meetingData.valid_end_date,
+                        available_days: state.meetingData.available_days,
                       }}
                       setSelectedDate={setSelectedDate}
                       onDayClick={(date) => {
                         setSelectedDate(date);
                         updateDateQuery(date);
-                        setDisplayMonth(date);
-                        setExpanded(true);
-                        setShowReschedule(false);
+                        dispatch({
+                          type: "SET_DISPLAY_MONTH",
+                          payload: date,
+                        });
+                        dispatch({
+                          type: "SET_EXPANDED",
+                          payload: true,
+                        });
+                        dispatch({
+                          type: "SET_SHOW_RESCHEDULE",
+                          payload: false,
+                        });
                         setSelectedSlot({
                           start_time: "",
                           end_time: "",
@@ -360,10 +339,13 @@ const Booking = ({ type }: BookingProp) => {
                         <Switch
                           disabled={rescheduleLoading}
                           className="data-[state=checked]:bg-blue-500 active:ring-blue-400 focus-visible:ring-blue-400"
-                          checked={timeFormat === "24h"}
-                          onCheckedChange={(checked) =>
-                            setTimeFormat(checked ? "24h" : "12h")
-                          }
+                          checked={state.timeFormat === "24h"}
+                          onCheckedChange={(checked) => {
+                            dispatch({
+                              type: "SET_TIMEFORMAT",
+                              payload: checked ? "24h" : "12h",
+                            });
+                          }}
                         />
                         <Typography className="text-sm text-gray-700">
                           24H
@@ -374,22 +356,24 @@ const Booking = ({ type }: BookingProp) => {
                 )}
 
                 {/* Availability Slots */}
-                {isMobileView && expanded && (
+                {state.isMobileView && state.expanded && (
                   <div className="h-14 fixed bottom-0 left-0 w-screen border z-10 bg-white border-top flex items-center justify-between px-4">
                     <Button
                       variant="link"
                       className="text-blue-500 px-0"
-                      onClick={() => setExpanded(false)}
+                      onClick={() =>
+                        dispatch({ type: "SET_EXPANDED", payload: false })
+                      }
                       disabled={rescheduleLoading}
                     >
                       <ArrowLeft className="h-4 w-4" />
                       Back
                     </Button>
-                    {showReschedule && (
+                    {state.showReschedule && (
                       <Button
                         className="bg-blue-400 hover:bg-blue-500 w-fit px-6"
                         onClick={onReschedule}
-                        disabled={rescheduleLoading || !showReschedule}
+                        disabled={rescheduleLoading || !state.showReschedule}
                       >
                         {rescheduleLoading && <Spinner />} Reschedule
                       </Button>
@@ -401,8 +385,9 @@ const Booking = ({ type }: BookingProp) => {
                 <div
                   className={cn(
                     "w-48 max-lg:w-full overflow-hidden space-y-4 max-md:pb-10  transition-all duration-300 ",
-                    !expanded && "max-md:hidden",
-                    showReschedule && "lg:flex lg:flex-col lg:justify-between"
+                    !state.expanded && "max-md:hidden",
+                    state.showReschedule &&
+                      "lg:flex lg:flex-col lg:justify-between"
                   )}
                 >
                   <h3 className="text-sm font-semibold lg:w-full">
@@ -414,7 +399,7 @@ const Booking = ({ type }: BookingProp) => {
                     <div
                       className={cn(
                         "lg:h-[22rem] overflow-y-auto no-scrollbar space-y-2 transition-transform transform",
-                        showReschedule && "lg:!mt-0"
+                        state.showReschedule && "lg:!mt-0"
                       )}
                       style={{
                         transform: selectedDate
@@ -422,17 +407,24 @@ const Booking = ({ type }: BookingProp) => {
                           : "translateX(-100%)",
                       }}
                     >
-                      {meetingData.all_available_slots_for_data.length > 0 ? (
-                        meetingData.all_available_slots_for_data.map(
+                      {state.meetingData.all_available_slots_for_data.length >
+                      0 ? (
+                        state.meetingData.all_available_slots_for_data.map(
                           (slot, index) => (
                             <Button
                               disabled={rescheduleLoading}
                               key={index}
                               onClick={() => {
                                 if (reschedule && event_token) {
-                                  setShowReschedule(true);
+                                  dispatch({
+                                    type: "SET_SHOW_RESCHEDULE",
+                                    payload: true,
+                                  });
                                 } else {
-                                  setShowMeetingForm(true);
+                                  dispatch({
+                                    type: "SET_SHOW_MEETING_FORM",
+                                    payload: true,
+                                  });
                                 }
                                 setSelectedSlot({
                                   start_time: slot.start_time,
@@ -462,7 +454,7 @@ const Booking = ({ type }: BookingProp) => {
                       )}
                     </div>
                   )}
-                  {showReschedule && (
+                  {state.showReschedule && (
                     <Button
                       className="bg-blue-400 hover:bg-blue-500 lg:!mt-0 max-lg:w-full max-md:hidden"
                       onClick={onReschedule}
@@ -474,18 +466,24 @@ const Booking = ({ type }: BookingProp) => {
                 </div>
               </div>
             )}
-            {showMeetingForm && (
+            {state.showMeetingForm && (
               <MeetingForm
                 onSuccess={(data) => {
-                  setShowMeetingForm(false);
-                  setExpanded(false);
+                  dispatch({ type: "SET_SHOW_MEETING_FORM", payload: false });
+                  dispatch({ type: "SET_EXPANDED", payload: false });
                   mutate();
-                  setBookingResponse(data.message);
-                  setAppointmentScheduled(true);
+                  dispatch({
+                    type: "SET_BOOKING_RESPONSE",
+                    payload: data.message,
+                  });
+                  dispatch({
+                    type: "SET_APPOINTMENT_SCHEDULED",
+                    payload: true,
+                  });
                 }}
                 onBack={() => {
-                  setShowMeetingForm(false);
-                  setExpanded(false);
+                  dispatch({ type: "SET_SHOW_MEETING_FORM", payload: false });
+                  dispatch({ type: "SET_EXPANDED", payload: false });
                   mutate();
                 }}
                 durationId={type}
@@ -496,16 +494,18 @@ const Booking = ({ type }: BookingProp) => {
       </div>
       {selectedSlot?.start_time && (
         <SuccessAlert
-          open={appointmentScheduled}
-          setOpen={setAppointmentScheduled}
+          open={state.appointmentScheduled}
+          setOpen={(open) =>
+            dispatch({ type: "SET_APPOINTMENT_SCHEDULED", payload: open })
+          }
           selectedSlot={selectedSlot}
           onClose={() => {
             navigate(`/in/${meetingId}`);
           }}
-          meetingProvider={bookingResponse.meeting_provider}
-          meetLink={bookingResponse.meet_link}
-          rescheduleLink={bookingResponse.reschedule_url}
-          calendarString={bookingResponse.google_calendar_event_url}
+          meetingProvider={state.bookingResponse.meeting_provider}
+          meetLink={state.bookingResponse.meet_link}
+          rescheduleLink={state.bookingResponse.reschedule_url}
+          calendarString={state.bookingResponse.google_calendar_event_url}
         />
       )}
     </>
