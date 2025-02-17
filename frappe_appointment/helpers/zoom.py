@@ -16,9 +16,9 @@ def reauthorize_zoom():
     if not scheduler_settings.enable_zoom:
         frappe.throw(frappe._(f"Zoom is not enabled. Please enable it from {scheduler_settings_link}."))
 
-    ACCOUNT_ID = scheduler_settings.account_id
-    CLIENT_ID = scheduler_settings.client_id
-    CLIENT_SECRET = scheduler_settings.get_password("client_secret", raise_exception=False)
+    ACCOUNT_ID = scheduler_settings.zoom_account_id
+    CLIENT_ID = scheduler_settings.zoom_client_id
+    CLIENT_SECRET = scheduler_settings.get_password("zoom_client_secret", raise_exception=False)
 
     if not CLIENT_ID or not CLIENT_SECRET or not ACCOUNT_ID:
         frappe.throw(frappe._(f"Please set Zoom Client ID and Secret in {scheduler_settings_link}."))
@@ -35,7 +35,7 @@ def reauthorize_zoom():
     access_token = response["access_token"]
 
     scheduler_settings.reload()
-    scheduler_settings.access_token = access_token
+    scheduler_settings.zoom_access_token = access_token
     scheduler_settings.save(ignore_permissions=True)
 
     return access_token
@@ -48,7 +48,7 @@ def get_zoom_access_token():
     if not scheduler_settings.enable_zoom:
         frappe.throw(frappe._(f"Zoom is not enabled. Please enable it from {scheduler_settings_link}."))
 
-    access_token = scheduler_settings.get_password("access_token", raise_exception=False)
+    access_token = scheduler_settings.get_password("zoom_access_token", raise_exception=False)
 
     if not access_token:
         access_token = reauthorize_zoom()

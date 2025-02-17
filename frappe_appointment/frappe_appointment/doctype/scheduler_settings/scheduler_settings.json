@@ -7,18 +7,18 @@
  "field_order": [
   "zoom_settings_section",
   "enable_zoom",
-  "account_id",
-  "client_id",
-  "client_secret",
+  "zoom_account_id",
+  "zoom_client_id",
+  "zoom_client_secret",
   "column_break_wtbw",
   "section_break_xzxx",
-  "access_token"
+  "zoom_access_token"
  ],
  "fields": [
   {
    "fieldname": "zoom_settings_section",
    "fieldtype": "Section Break",
-   "label": "Scheduler Settings"
+   "label": "Zoom Settings"
   },
   {
    "default": "0",
@@ -35,37 +35,37 @@
    "fieldtype": "Section Break"
   },
   {
-   "fieldname": "access_token",
-   "fieldtype": "Password",
-   "hidden": 1,
-   "label": "Access Token"
-  },
-  {
    "depends_on": "enable_zoom",
-   "fieldname": "account_id",
+   "fieldname": "zoom_account_id",
    "fieldtype": "Data",
    "label": "Account ID",
    "mandatory_depends_on": "enable_zoom"
   },
   {
    "depends_on": "enable_zoom",
-   "fieldname": "client_id",
+   "fieldname": "zoom_client_id",
    "fieldtype": "Data",
    "label": "Client ID",
    "mandatory_depends_on": "enable_zoom"
   },
   {
    "depends_on": "enable_zoom",
-   "fieldname": "client_secret",
+   "fieldname": "zoom_client_secret",
    "fieldtype": "Password",
    "label": "Client Secret",
    "mandatory_depends_on": "enable_zoom"
+  },
+  {
+   "fieldname": "zoom_access_token",
+   "fieldtype": "Password",
+   "hidden": 1,
+   "label": "Access Token"
   }
  ],
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2025-02-17 10:52:24.441185",
+ "modified": "2025-02-17 10:59:31.115381",
  "modified_by": "Administrator",
  "module": "Frappe Appointment",
  "name": "Scheduler Settings",

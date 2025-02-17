@@ -56,9 +56,9 @@ class UserAppointmentAvailability(Document):
             if not scheduler_settings.enable_zoom:
                 return frappe.throw(frappe._(f"Zoom is not enabled. Please enable it from {scheduler_settings_link}."))
             if (
-                not scheduler_settings.client_id
-                or not scheduler_settings.get_password("client_secret")
-                or not scheduler_settings.account_id
+                not scheduler_settings.zoom_client_id
+                or not scheduler_settings.get_password("zoom_client_secret")
+                or not scheduler_settings.zoom_account_id
             ):
                 return frappe.throw(
                     frappe._(f"Please set Zoom Account ID, Client ID and Secret in {scheduler_settings_link}.")
