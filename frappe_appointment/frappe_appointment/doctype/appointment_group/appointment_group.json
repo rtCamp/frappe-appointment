@@ -29,6 +29,7 @@
   "limit_booking_frequency",
   "schedule_only_once",
   "section_break_jbhn",
+  "meet_provider",
   "meet_link",
   "response_email_template",
   "section_break_pudv",
@@ -114,6 +115,7 @@
    "label": "Minimum Buffer Time"
   },
   {
+   "depends_on": "eval:doc.meet_provider===\"Custom\";",
    "fieldname": "meet_link",
    "fieldtype": "Data",
    "label": "Meet Link"
@@ -248,12 +250,19 @@
    "fieldtype": "Link",
    "label": "Link with Doctype",
    "options": "DocType"
+  },
+  {
+   "default": "Custom",
+   "fieldname": "meet_provider",
+   "fieldtype": "Select",
+   "label": "Meet Provider",
+   "options": "None\nCustom\nZoom\nGoogle Meet"
   }
  ],
  "has_web_view": 1,
  "is_published_field": "publish_on_website",
  "links": [],
- "modified": "2025-01-20 11:38:43.494879",
+ "modified": "2025-01-27 17:35:17.949395",
  "modified_by": "Administrator",
  "module": "Frappe Appointment",
  "name": "Appointment Group",

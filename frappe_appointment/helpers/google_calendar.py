@@ -1,3 +1,5 @@
+import json
+
 import frappe
 from frappe import _
 from frappe.integrations.doctype.google_calendar.google_calendar import (
@@ -10,12 +12,15 @@ from frappe.integrations.doctype.google_calendar.google_calendar import (
 from frappe.utils.data import get_datetime
 from googleapiclient.errors import HttpError
 
+from frappe_appointment.helpers import api_urls
+
 
 def insert_event_in_google_calendar_override(
     doc,
     method=None,
     mute_message=False,
     success_msg=None,
+    update_doc=True,
 ):
     """
     Insert Events in Google Calendar if sync_with_google_calendar is checked.
@@ -47,15 +52,36 @@ def insert_event_in_google_calendar_override(
     if doc.repeat_on:
         event.update({"recurrence": repeat_on_to_google_calendar_recurrence_rule(doc)})
 
-    if doc.appointment_group and doc.appointment_group.meet_link:
-        event.update({"location": doc.appointment_group.meet_link})
+    if doc.appointment_group and doc.custom_meet_link:
+        event.update({"location": doc.custom_meet_link})
 
     event.update({"attendees": get_attendees(doc)})
 
     conference_data_version = 0
 
-    if doc.add_video_conferencing:
+    if doc.custom_meeting_provider == "Google Meet":
         event.update({"conferenceData": get_conference_data(doc)})
+        conference_data_version = 1
+    elif doc.custom_meeting_provider == "Zoom":
+        password = json.loads(doc.custom_meet_data).get("password")
+        event.update(
+            {
+                "conferenceData": {
+                    "conferenceSolution": {
+                        "key": {"type": "addOn"},
+                        "name": "Zoom Meeting",
+                        "iconUri": api_urls.ZOOM_ICON_URL,
+                    },
+                    "entryPoints": [
+                        {
+                            "entryPointType": "video",
+                            "passcode": password,
+                            "uri": doc.custom_meet_link,
+                        }
+                    ],
+                }
+            }
+        )
         conference_data_version = 1
 
     try:
@@ -70,20 +96,48 @@ def insert_event_in_google_calendar_override(
             .execute()
         )
 
-        frappe.db.set_value(
-            "Event",
-            doc.name,
-            {
+        if update_doc:
+            frappe.db.set_value(
+                "Event",
+                doc.name,
+                {
+                    "google_calendar_event_id": event.get("id"),
+                },
+                update_modified=False,
+            )
+
+            if doc.custom_meeting_provider == "Google Meet":
+                frappe.db.set_value(
+                    "Event",
+                    doc.name,
+                    {
+                        "google_meet_link": event.get("hangoutLink"),
+                        "custom_meet_link": event.get("hangoutLink"),
+                        "custom_meet_data": json.dumps(event.get("conferenceData", {}), indent=4),
+                        "description": f"{doc.description or ''}\nMeet Link: {event.get('hangoutLink')}",
+                    },
+                    update_modified=False,
+                )
+        else:
+            update_dict = {
                 "google_calendar_event_id": event.get("id"),
-                "google_meet_link": event.get("hangoutLink"),
-            },
-            update_modified=False,
-        )
+            }
+            if doc.custom_meeting_provider == "Google Meet":
+                update_dict.update(
+                    {
+                        "google_meet_link": event.get("hangoutLink"),
+                        "custom_meet_link": event.get("hangoutLink"),
+                        "custom_meet_data": json.dumps(event.get("conferenceData", {}), indent=4),
+                        "description": f"{doc.description or ''}\nMeet Link: {event.get('hangoutLink')}",
+                    }
+                )
 
         if not mute_message:
             frappe.msgprint(success_msg)
 
-        return event.get("id")
+        if update_doc:
+            return event.get("id")
+        return event.get("id"), update_dict
     except HttpError as err:
         frappe.throw(
             _("Google Calendar - Could not insert event in Google Calendar {0}, error code {1}.").format(

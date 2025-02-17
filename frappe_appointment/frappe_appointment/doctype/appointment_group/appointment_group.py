@@ -40,7 +40,23 @@ class AppointmentGroup(WebsiteGenerator):
     def autoname(self):
         self.name = frappe.scrub(self.group_name).replace("_", "-")
 
+    def validate_zoom(self):
+        if self.meet_provider == "Zoom":
+            ap_settings = frappe.get_single("Zoom Settings")
+            zoom_settings_link = frappe.utils.get_link_to_form("Zoom Settings", None, "Zoom Settings")
+            if not ap_settings.enable_zoom:
+                return frappe.throw(frappe._(f"Zoom is not enabled. Please enable it from {zoom_settings_link}."))
+            if not ap_settings.client_id or not ap_settings.get_password("client_secret") or not ap_settings.account_id:
+                return frappe.throw(
+                    frappe._(f"Please set Zoom Account ID, Client ID and Secret in {zoom_settings_link}.")
+                )
+            g_calendar = frappe.get_doc("Google Calendar", self.event_creator, "Google Calendar")
+            if not g_calendar.custom_zoom_user_email:
+                g_calendar_link = frappe.utils.get_link_to_form("Google Calendar", self.event_creator)
+                return frappe.throw(frappe._(f"Please set Zoom User Email in {g_calendar_link}."))
+
     def validate(self):
+        self.validate_zoom()
         self.update_route()
         self.validate_members_list()
 

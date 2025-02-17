@@ -26,6 +26,7 @@ from frappe_appointment.helpers.google_calendar import (
 )
 from frappe_appointment.helpers.ics_file import add_ics_file_in_attachment
 from frappe_appointment.helpers.utils import utc_to_sys_time
+from frappe_appointment.helpers.zoom import create_meeting, delete_meeting, update_meeting
 
 
 class EventOverride(Event):
@@ -39,19 +40,51 @@ class EventOverride(Event):
         """Handle the Appointment Group in Event"""
         if self.custom_appointment_group:
             self.appointment_group = frappe.get_doc(APPOINTMENT_GROUP, self.custom_appointment_group)
-            if self.appointment_group.meet_link:
+            self.custom_meeting_provider = self.appointment_group.meet_provider
+            if self.appointment_group.meet_provider == "Zoom":
+                meet_url, meet_data = create_meeting(
+                    self.appointment_group.event_creator,
+                    self.subject,
+                    self.starts_on,
+                    self.appointment_group.duration_for_event.seconds // 60,  # convert to minutes
+                    self.description,
+                )
+                self.description = f"{self.description or ''}\nMeet Link: {meet_url}"
+                self.custom_meet_link = meet_url
+                self.custom_meet_data = json.dumps(meet_data, indent=4)
+            elif self.appointment_group.meet_provider == "Google Meet":
+                self.add_video_conferencing = 1
+            elif self.appointment_group.meet_provider == "Custom" and self.appointment_group.meet_link:
                 if self.description:
                     self.description = f"\nMeet Link: {self.appointment_group.meet_link}"
                 else:
                     self.description = f"Meet Link: {self.appointment_group.meet_link}"
+                self.custom_meet_link = self.appointment_group.meet_link
             self.update_attendees_for_appointment_group()
 
     def before_save(self):
         super().before_save()
+        if self.is_new():
+            _, updates = insert_event_in_google_calendar_override(self, update_doc=False)
+            for key, value in updates.items():
+                self.set(key, value)
         self.pulled_from_google_calendar = True
         if self.custom_appointment_group:
             self.appointment_group = frappe.get_doc(APPOINTMENT_GROUP, self.custom_appointment_group)
             if self.has_value_changed("starts_on"):
+                if not self.is_new():
+                    if self.custom_meeting_provider == "Zoom":
+                        meet_data = json.loads(self.custom_meet_data)
+                        meet_id = meet_data.get("id")
+                        duration = frappe.utils.time_diff(self.ends_on, self.starts_on).seconds // 60
+                        update_meeting(
+                            self.appointment_group.event_creator,
+                            meet_id,
+                            self.subject,
+                            self.starts_on,
+                            duration,
+                            self.description,
+                        )
                 frappe.enqueue(
                     send_meet_email,
                     timeout=600,
@@ -63,8 +96,13 @@ class EventOverride(Event):
                     metadata=self.event_info if hasattr(self, "event_info") else {},
                 )
 
-    def after_insert(self):
-        insert_event_in_google_calendar_override(self)
+    def on_trash(self):
+        if self.custom_meeting_provider == "Zoom":
+            meet_data = json.loads(self.custom_meet_data)
+            meet_id = meet_data.get("id")
+            self.appointment_group = frappe.get_doc(APPOINTMENT_GROUP, self.custom_appointment_group)
+            delete_meeting(self.appointment_group.event_creator, meet_id)
+        super().on_trash()
 
     def get_recipients_event(self):
         """Get the list of recipients as per event_participants
@@ -187,13 +225,17 @@ def send_meet_email(doc, appointment_group, metadata):
 
     try:
         if (
-            appointment_group.meet_link
+            doc.custom_meet_link
             and appointment_group.response_email_template
             and doc.event_participants
             and doc.custom_doctype_link_with_event
         ):
+            ag_dict = appointment_group.as_dict()
+            ag_dict["meet_link"] = doc.custom_meet_link  # For backward compatibility
+
             args = dict(
-                appointment_group=appointment_group.as_dict(),
+                appointment_group=ag_dict,
+                meet_link=doc.custom_meet_link,
                 event=doc.as_dict(),
                 metadata=metadata,
             )
