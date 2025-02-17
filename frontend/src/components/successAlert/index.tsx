@@ -25,6 +25,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { slotType } from "@/context/app";
 import Typography from "@/components/ui/typography";
+import { cn } from "@/lib/utils";
 
 interface SuccessAlertProps {
   open: boolean;
@@ -35,6 +36,7 @@ interface SuccessAlertProps {
   rescheduleLink: string;
   calendarString: string;
   onClose?: VoidFunction;
+  disableClose: boolean;
 }
 
 const SuccessAlert = ({
@@ -46,6 +48,7 @@ const SuccessAlert = ({
   rescheduleLink,
   calendarString,
   onClose,
+  disableClose,
 }: SuccessAlertProps) => {
   const [copied, setCopied] = useState(false);
 
@@ -59,11 +62,18 @@ const SuccessAlert = ({
     <Dialog
       open={open}
       onOpenChange={(value) => {
-        setOpen(value);
-        onClose?.();
+        if (!disableClose) {
+          setOpen(value);
+          onClose?.();
+        }
       }}
     >
-      <DialogContent className="md:max-w-lg max-md:max-w-full !max-sm:w-full max-md:h-full max-md:place-content-center max-md:[&>button:last-child]:hidden focus-visible:ring-0">
+      <DialogContent
+        className={cn(
+          "md:max-w-lg max-md:max-w-full !max-sm:w-full max-md:h-full max-md:place-content-center max-md:[&>button:last-child]:hidden focus-visible:ring-0",
+          disableClose && "[&>button:last-child]:hidden"
+        )}
+      >
         <DialogHeader>
           <div className="flex justify-center">
             <div className="w-14 h-14 bg-blue-100 rounded-full flex items-center justify-center">
@@ -134,7 +144,11 @@ const SuccessAlert = ({
 
         <DialogFooter className="flex max-md:flex-col w-full sm:justify-start gap-4 md:mt-6 ">
           {rescheduleLink && (
-            <a href={rescheduleLink} target="_blank">
+            <a
+              href={rescheduleLink}
+              target="_blank"
+              className={cn(disableClose && "w-full")}
+            >
               <Button
                 variant="ghost"
                 onClick={(e) => e.stopPropagation()}
@@ -145,16 +159,19 @@ const SuccessAlert = ({
               </Button>
             </a>
           )}
-          <Button
-            onClick={() => {
-              setOpen(false);
-              onClose?.();
-            }}
-            size="sm"
-            className="bg-blue-500 w-full hover:bg-blue-600 p-4 rounded-full text-sm"
-          >
-            Close
-          </Button>
+          {!disableClose && (
+            <Button
+              disabled={disableClose}
+              onClick={() => {
+                setOpen(false);
+                onClose?.();
+              }}
+              size="sm"
+              className="bg-blue-500 w-full hover:bg-blue-600 p-4 rounded-full text-sm"
+            >
+              Close
+            </Button>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>

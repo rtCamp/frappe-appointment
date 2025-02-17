@@ -18,4 +18,14 @@ export interface MeetingData {
     reference_docname: string;
     round: string;
   };
+  booked_slot?: bookedSlotType;
+}
+
+export interface bookedSlotType {
+  start_time: string;
+  end_time: string;
+  meeting_provider: string;
+  google_calendar_event_url: string;
+  meet_link: string;
+  reschedule_url: string;
 }

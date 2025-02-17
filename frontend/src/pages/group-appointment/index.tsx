@@ -96,6 +96,34 @@ const GroupAppointment = () => {
   }, [data, fetchError, mutate, navigate, dispatch]);
 
   useEffect(() => {
+    if (
+      state.meetingData.booked_slot &&
+      Object.keys(state.meetingData.booked_slot).length > 0
+    ) {
+      dispatch({ type: "SET_APPOINTMENT_SCHEDULED", payload: true });
+      dispatch({
+        type: "SET_SELECTED_SLOT",
+        payload: {
+          start_time: state.meetingData.booked_slot.start_time,
+          end_time: state.meetingData.booked_slot.end_time,
+        },
+      });
+      dispatch({
+        type: "SET_BOOKING_RESPONSE",
+        payload: {
+          meet_link: state.meetingData.booked_slot.meet_link,
+          meeting_provider: state.meetingData.booked_slot.meeting_provider,
+          reschedule_url: state.meetingData.booked_slot.reschedule_url,
+          google_calendar_event_url:
+            state.meetingData.booked_slot.google_calendar_event_url,
+          message: "Event scheduled",
+          event_id: state.meetingData.booked_slot.reschedule_url,
+        },
+      });
+    }
+  }, [state.meetingData.booked_slot]);
+
+  useEffect(() => {
     const handleResize = () => {
       dispatch({ type: "SET_MOBILE_VIEW", payload: window.innerWidth <= 768 });
     };
@@ -181,24 +209,24 @@ const GroupAppointment = () => {
         description={`Book appointment with ${validTitle(
           state.meetingData.appointment_group_id
         )}`}
-        keywords="Group appointment"
-        author={state.meetingData.appointment_group_id}
-        robots="index, follow"
-        ogTitle={`${
-          capitalizeWords(validTitle(state.meetingData.appointment_group_id)) ||
-          "Group"
-        } | Scheduler`}
-        ogDescription={`Book appointment with ${validTitle(
-          state.meetingData.appointment_group_id
-        )}`}
-        twitterCard="summary_large_image"
-        twitterTitle={`${
-          capitalizeWords(validTitle(state.meetingData.appointment_group_id)) ||
-          "Group"
-        } | Scheduler`}
-        twitterDescription={`Book appointment with ${validTitle(
-          state.meetingData.appointment_group_id
-        )}`}
+        // keywords="Group appointment"
+        // author={state.meetingData.appointment_group_id}
+        // robots="index, follow"
+        // ogTitle={`${
+        //   capitalizeWords(validTitle(state.meetingData.appointment_group_id)) ||
+        //   "Group"
+        // } | Scheduler`}
+        // ogDescription={`Book appointment with ${validTitle(
+        //   state.meetingData.appointment_group_id
+        // )}`}
+        // twitterCard="summary_large_image"
+        // twitterTitle={`${
+        //   capitalizeWords(validTitle(state.meetingData.appointment_group_id)) ||
+        //   "Group"
+        // } | Scheduler`}
+        // twitterDescription={`Book appointment with ${validTitle(
+        //   state.meetingData.appointment_group_id
+        // )}`}
       />
       <div className="w-full flex justify-center items-center">
         <div className="w-full xl:w-4/5 2xl:w-3/5 lg:py-16 p-6 px-4">
@@ -471,6 +499,12 @@ const GroupAppointment = () => {
           meetLink={state.bookingResponse.meet_link}
           rescheduleLink={state.bookingResponse.reschedule_url}
           calendarString={state.bookingResponse.google_calendar_event_url}
+          disableClose={
+            state.meetingData.booked_slot &&
+            Object.keys(state.meetingData.booked_slot).length > 0
+              ? true
+              : false
+          }
         />
       )}
     </>
