@@ -20,7 +20,6 @@ from frappe_appointment.frappe_appointment.doctype.appointment_time_slot.appoint
     get_all_unavailable_google_calendar_slots_for_day,
 )
 from frappe_appointment.helpers.utils import (
-    convert_datetime_to_utc,
     convert_timezone_to_utc,
     get_utc_datatime_with_time,
     get_weekday,
@@ -440,9 +439,6 @@ def get_booking_frequency_reached(datetime: datetime, appointment_group: object)
         "events": [],
     }
 
-    if int(appointment_group.limit_booking_frequency) < 0:
-        return res
-
     # Get today's data and the range for the next day to fetch events.
     start_datetime, end_datetime = get_datetime_str(datetime), get_datetime_str(add_days(datetime, 1))
 
@@ -456,7 +452,7 @@ def get_booking_frequency_reached(datetime: datetime, appointment_group: object)
                 ["ends_on", ">=", start_datetime],
                 ["ends_on", "<", end_datetime],
             ],
-            fields=["starts_on", "ends_on"],
+            fields=["starts_on", "ends_on", "google_calendar_event_id"],
             order_by="starts_on asc",
             ignore_permissions=True,
         )
@@ -470,7 +466,7 @@ def get_booking_frequency_reached(datetime: datetime, appointment_group: object)
                 ["ends_on", ">=", start_datetime],
                 ["ends_on", "<", end_datetime],
             ],
-            fields=["starts_on", "ends_on"],
+            fields=["starts_on", "ends_on", "google_calendar_event_id"],
             order_by="starts_on asc",
             ignore_permissions=True,
         )
@@ -559,10 +555,7 @@ def update_cal_slots_with_events(all_slots: list, all_events: list) -> list:
             currernt_slot["end"]["dateTime"], currernt_slot["end"]["timeZone"]
         )
         for event in all_events:
-            # Compare the start and end date of event and slots
-            if convert_datetime_to_utc(event["starts_on"]) == updated_slot["starts_on"] and updated_slot[
-                "ends_on"
-            ] == convert_datetime_to_utc(event["ends_on"]):
+            if event["google_calendar_event_id"] == currernt_slot["id"]:
                 updated_slot["is_frappe_event"] = True
                 break
 
