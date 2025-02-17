@@ -506,6 +506,7 @@ const Booking = ({ type }: BookingProp) => {
           meetLink={state.bookingResponse.meet_link}
           rescheduleLink={state.bookingResponse.reschedule_url}
           calendarString={state.bookingResponse.google_calendar_event_url}
+          disableClose={false}
         />
       )}
     </>

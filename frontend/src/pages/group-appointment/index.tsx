@@ -96,6 +96,34 @@ const GroupAppointment = () => {
   }, [data, fetchError, mutate, navigate, dispatch]);
 
   useEffect(() => {
+    if (
+      state.meetingData.booked_slot &&
+      Object.keys(state.meetingData.booked_slot).length > 0
+    ) {
+      dispatch({ type: "SET_APPOINTMENT_SCHEDULED", payload: true });
+      dispatch({
+        type: "SET_SELECTED_SLOT",
+        payload: {
+          start_time: state.meetingData.booked_slot.start_time,
+          end_time: state.meetingData.booked_slot.end_time,
+        },
+      });
+      dispatch({
+        type: "SET_BOOKING_RESPONSE",
+        payload: {
+          meet_link: state.meetingData.booked_slot.meet_link,
+          meeting_provider: state.meetingData.booked_slot.meeting_provider,
+          reschedule_url: state.meetingData.booked_slot.reschedule_url,
+          google_calendar_event_url:
+            state.meetingData.booked_slot.google_calendar_event_url,
+          message: "Event scheduled",
+          event_id: state.meetingData.booked_slot.reschedule_url,
+        },
+      });
+    }
+  }, [state.meetingData.booked_slot]);
+
+  useEffect(() => {
     const handleResize = () => {
       dispatch({ type: "SET_MOBILE_VIEW", payload: window.innerWidth <= 768 });
     };
@@ -471,6 +499,12 @@ const GroupAppointment = () => {
           meetLink={state.bookingResponse.meet_link}
           rescheduleLink={state.bookingResponse.reschedule_url}
           calendarString={state.bookingResponse.google_calendar_event_url}
+          disableClose={
+            state.meetingData.booked_slot &&
+            Object.keys(state.meetingData.booked_slot).length > 0
+              ? true
+              : false
+          }
         />
       )}
     </>
