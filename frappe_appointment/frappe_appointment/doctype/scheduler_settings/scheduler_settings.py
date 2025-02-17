@@ -15,4 +15,5 @@ def get_default_email_template():
     return {
         "personal": scheduler_settings.default_personal_email_template,
         "group": scheduler_settings.default_group_email_template,
+        "availability": scheduler_settings.default_availability_alerts_email_template,
     }

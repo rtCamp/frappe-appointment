@@ -20,6 +20,9 @@ frappe.ui.form.on("Appointment Group", {
           if (r.message?.group) {
             frm.set_value("response_email_template", r.message.group);
           }
+          if (r.message?.availability) {
+            frm.set_value("availability_email_template", r.message.availability);
+          }
         },
       });
     } else {
