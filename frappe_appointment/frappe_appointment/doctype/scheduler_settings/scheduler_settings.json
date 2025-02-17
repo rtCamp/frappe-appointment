@@ -5,6 +5,10 @@
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
+  "default_email_templates_section",
+  "default_personal_email_template",
+  "column_break_burh",
+  "default_group_email_template",
   "zoom_settings_section",
   "enable_zoom",
   "zoom_account_id",
@@ -60,12 +64,35 @@
    "fieldtype": "Password",
    "hidden": 1,
    "label": "Access Token"
+  },
+  {
+   "fieldname": "default_email_templates_section",
+   "fieldtype": "Section Break",
+   "label": "Default Email Templates"
+  },
+  {
+   "fieldname": "column_break_burh",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "[Default] Appointment Scheduled",
+   "fieldname": "default_personal_email_template",
+   "fieldtype": "Link",
+   "label": "Personal Meeting",
+   "options": "Email Template"
+  },
+  {
+   "default": "[Default] Appointment Scheduled",
+   "fieldname": "default_group_email_template",
+   "fieldtype": "Link",
+   "label": "Group Meeting",
+   "options": "Email Template"
   }
  ],
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2025-02-17 10:59:31.115381",
+ "modified": "2025-02-17 11:44:16.860759",
  "modified_by": "Administrator",
  "module": "Frappe Appointment",
  "name": "Scheduler Settings",
