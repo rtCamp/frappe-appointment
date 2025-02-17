@@ -97,11 +97,11 @@ class EventOverride(Event):
                     "event_organizer": self.user_calendar.get("user"),
                     "members": [{"user": self.user_calendar.get("name"), "is_mandatory": 1}],
                     "duration_for_event": datetime.timedelta(seconds=self.appointment_slot_duration.duration),
-                    "minimum_buffer_time": datetime.timedelta(
-                        seconds=self.appointment_slot_duration.minimum_buffer_time
-                    )
-                    if self.appointment_slot_duration.minimum_buffer_time
-                    else None,
+                    "minimum_buffer_time": (
+                        datetime.timedelta(seconds=self.appointment_slot_duration.minimum_buffer_time)
+                        if self.appointment_slot_duration.minimum_buffer_time
+                        else None
+                    ),
                     "minimum_notice_before_event": self.appointment_slot_duration.minimum_notice_before_event,
                     "event_availability_window": self.appointment_slot_duration.availability_window,
                     "meet_provider": self.user_calendar.get("meeting_provider"),
@@ -138,9 +138,11 @@ class EventOverride(Event):
                         meet_id = meet_data.get("id")
                         duration = frappe.utils.time_diff(self.ends_on, self.starts_on).seconds // 60
                         update_meeting(
-                            self.appointment_group.event_creator
-                            if self.appointment_group
-                            else self.user_calendar.google_calendar,
+                            (
+                                self.appointment_group.event_creator
+                                if self.appointment_group
+                                else self.user_calendar.google_calendar
+                            ),
                             meet_id,
                             self.subject,
                             self.starts_on,
@@ -299,7 +301,7 @@ class EventOverride(Event):
 
             if is_frappe_function:
                 try:
-                    api_res = webhook_function(**body)
+                    api_res = webhook_function(is_api_call=False, **body)
                 except Exception as e:
                     return {"status": False, "message": str(e)}
             else:
@@ -360,9 +362,11 @@ def send_meet_email(doc, appointment_group, user_calendar, metadata):
             send_email_template_mail(
                 send_doc,
                 args,
-                appointment_group.response_email_template
-                if appointment_group
-                else user_calendar.response_email_template,
+                (
+                    appointment_group.response_email_template
+                    if appointment_group
+                    else user_calendar.response_email_template
+                ),
                 recipients=doc.get_recipients_event(),
                 attachments=[{"fid": add_ics_file_in_attachment(doc)}],
             )
