@@ -27,7 +27,9 @@ class UserAppointmentAvailability(Document):
         if self.appointment_time_slot:
             weekdays = []
             for slot in self.appointment_time_slot:
-                if slot.start_time > slot.end_time:
+                start_time = datetime.strptime(slot.start_time, "%H:%M:%S")
+                end_time = datetime.strptime(slot.end_time, "%H:%M:%S")
+                if start_time > end_time:
                     frappe.throw(frappe._("Start time should be less than end time for the day {0}").format(slot.day))
                 if slot.day in weekdays:
                     frappe.throw(
