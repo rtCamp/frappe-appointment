@@ -92,7 +92,7 @@ const GroupAppointment = () => {
     if (fetchError) {
       navigate("/");
     }
-  }, [data, fetchError, mutate, state.selectedDate, navigate]);
+  }, [data, fetchError, mutate, navigate, dispatch]);
 
   useEffect(() => {
     const handleResize = () => {
