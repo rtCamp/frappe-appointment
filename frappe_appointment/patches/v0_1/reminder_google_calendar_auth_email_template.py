@@ -15,11 +15,6 @@ def execute():
                     "response_html": response,
                     "subject": GOOGLE_CALENDAR_AUTH_EMAIL_TEMPLATE,
                     "use_html": 1,
-                    "custom_sender_email": frappe.db.get_value(
-                        "Email Account",
-                        {"default_outgoing": 1, "enable_outgoing": 1},
-                        "email_id",
-                    ),
                     "enabled": 1,
                 }
             ).insert(ignore_permissions=True)
