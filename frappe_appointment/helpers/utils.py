@@ -64,8 +64,17 @@ def convert_timezone_to_utc(date_time: str, time_zone: str) -> datetime:
 
 
 def convert_datetime_to_utc(date_time: datetime) -> datetime:
-    """Converts the given datetime object to a UTC timezone datetime object."""
-    return date_time.astimezone(pytz.utc)
+    """Converts the given datetime object to a UTC timezone datetime object.
+
+    Args:
+    date_time (datetime): Datetime Object
+
+    Returns:
+    datetime: Updated Object
+    """
+    system_timezone = pytz.timezone(get_system_timezone())
+    local_datetime = system_timezone.localize(date_time)
+    return local_datetime.astimezone(pytz.utc)
 
 
 def convert_utc_datetime_to_timezone(date_time: datetime, timezone: str) -> datetime:
@@ -131,3 +140,19 @@ def update_time_of_datetime(dt: datetime, new_time: timedelta):
     seconds = int(total_seconds % 60)
 
     return dt.replace(hour=hours, minute=minutes, second=seconds)
+
+
+def duration_to_string(duration):
+    seconds = int(duration)
+    minutes = seconds // 60
+    hours = minutes // 60
+    rest_minutes = minutes % 60
+
+    duration_str = ""
+    if hours:
+        duration_str += f"{hours} hour{'s' if hours > 1 else ''}"
+    if rest_minutes:
+        duration_str += f" {rest_minutes} minute{'s' if rest_minutes > 1 else ''}"
+
+    duration_str = duration_str.strip()
+    return duration_str

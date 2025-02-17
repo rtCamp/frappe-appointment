@@ -1,0 +1,15 @@
+{
+    "name": "frappe-appointment",
+    "version": "1.0.0",
+    "main": "index.js",
+    "repository": "git@github.com:rtCamp/frappe-appointment.git",
+    "author": "rtCamp",
+    "license": "AGPLv3",
+    "private": true,
+    "scripts": {
+      "dev": "cd frontend && npm run dev",
+      "build": "cd frontend && npm install && npm run build"
+    },
+    "devDependencies": {
+    }
+  }

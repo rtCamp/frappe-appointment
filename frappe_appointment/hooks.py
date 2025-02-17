@@ -6,23 +6,15 @@ app_email = "sys@rtcamp.com"
 app_license = "GNU AFFERO GENERAL PUBLIC LICENSE (v3)"
 # required_apps = []
 
-fixtures = [
-    {
-        "dt": "Custom Field",
-        "filters": [
-            [
-                "module",
-                "in",
-                [
-                    "Frappe Appointment",
-                ],
-            ],
-        ],
-    },
-]
 
 # Includes in <head>
 # ------------------
+website_route_rules = [
+    {
+        "from_route": "/schedule/<path:app_path>",
+        "to_route": "schedule",
+    },
+]
 
 # include js, css files in header of desk.html
 # app_include_css = "/assets/frappe_appointment/css/frappe_appointment.css"
@@ -95,6 +87,19 @@ fixtures = [
                 "in",
                 {
                     "Frappe Appointment",
+                },
+            ]
+        ],
+    },
+    {
+        "dt": "Email Template",
+        "filters": [
+            [
+                "name",
+                "in",
+                {
+                    "[Default] Appointment Scheduled",
+                    "[Default] Appointment Group Availability",
                 },
             ]
         ],
@@ -195,8 +200,6 @@ scheduler_events = {
 # -------
 
 # before_tests = "frappe_appointment.install.before_tests"
-
-update_website_context = "frappe_appointment.overrides.website_context.website_context"
 
 # Overriding Methods
 # ------------------------------
