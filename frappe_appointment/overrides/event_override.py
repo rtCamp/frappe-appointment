@@ -525,6 +525,9 @@ def _create_event_for_appointment_group(
 
     event = frappe.get_doc(calendar_event)
 
+    # skip logging messages
+    frappe.flags.mute_messages = True
+
     webhook_call = event.handle_webhook(
         {
             "event": event.as_dict(),
@@ -532,6 +535,8 @@ def _create_event_for_appointment_group(
             "metadata": event_info,
         }
     )
+    frappe.flags.mute_messages = False
+
     if not webhook_call["status"]:
         return frappe.throw(webhook_call["message"])
 
