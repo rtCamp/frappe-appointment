@@ -144,7 +144,11 @@ const SuccessAlert = ({
 
         <DialogFooter className="flex max-md:flex-col w-full sm:justify-start gap-4 md:mt-6 ">
           {rescheduleLink && (
-            <a href={rescheduleLink} target="_blank">
+            <a
+              href={rescheduleLink}
+              target="_blank"
+              className={cn(disableClose && "w-full")}
+            >
               <Button
                 variant="ghost"
                 onClick={(e) => e.stopPropagation()}
@@ -155,17 +159,19 @@ const SuccessAlert = ({
               </Button>
             </a>
           )}
-          <Button
-            disabled={disableClose}
-            onClick={() => {
-              setOpen(false);
-              onClose?.();
-            }}
-            size="sm"
-            className="bg-blue-500 w-full hover:bg-blue-600 p-4 rounded-full text-sm"
-          >
-            Close
-          </Button>
+          {!disableClose && (
+            <Button
+              disabled={disableClose}
+              onClick={() => {
+                setOpen(false);
+                onClose?.();
+              }}
+              size="sm"
+              className="bg-blue-500 w-full hover:bg-blue-600 p-4 rounded-full text-sm"
+            >
+              Close
+            </Button>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>
