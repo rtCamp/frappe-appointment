@@ -256,7 +256,7 @@ const GroupAppointment = () => {
                       )}
                     <div className="flex cursor-default items-center gap-2 w-full ">
                       <div className="w-full truncate text-gray-600 flex items-center justify-start gap-2">
-                        <Clock className="inline-block w-4 h-4 mr-1" />
+                        <Clock className="h-4 w-4 shrink-0" />
                         <Tooltip>
                           <TooltipTrigger className="text-left truncate">
                             <Typography className="truncate font-medium text-gray-600">
