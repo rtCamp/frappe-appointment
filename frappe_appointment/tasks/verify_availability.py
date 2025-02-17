@@ -86,7 +86,7 @@ def send_availability_email(data):
         if min_slot_threshold >= 0 and total_slots > min_slot_threshold:
             continue
         group_name = doc.group_name
-        if not doc.email_template or not doc.email_address_to_send:
+        if not doc.availability_email_template or not doc.email_address_to_send:
             frappe.log_error(
                 "Error sending email for appointment group",
                 f"Email template or email address not set for appointment group {appointment_group}",
@@ -116,7 +116,7 @@ def send_availability_email(data):
                 "appointment_group_url": appointment_group_url,
                 "min_threshold": min_slot_threshold,
             },
-            doc.email_template,
+            doc.availability_email_template,
             email_addresses,
             None,
         )

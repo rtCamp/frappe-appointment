@@ -99,6 +99,7 @@ fixtures = [
                 "in",
                 {
                     "[Default] Appointment Scheduled",
+                    "[Default] Appointment Group Availability",
                 },
             ]
         ],

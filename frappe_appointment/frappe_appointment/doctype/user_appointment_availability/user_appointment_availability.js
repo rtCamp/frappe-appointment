@@ -8,6 +8,15 @@ frappe.ui.form.on("User Appointment Availability", {
     og_slug = frm.doc.slug;
     if (frm.doc.__islocal) {
       frm.set_value("user", frappe.session.user);
+      frappe.call({
+        method:
+          "frappe_appointment.frappe_appointment.doctype.scheduler_settings.scheduler_settings.get_default_email_template",
+        callback: function (r) {
+          if (r.message?.personal) {
+            frm.set_value("response_email_template", r.message.personal);
+          }
+        },
+      });
     }
   },
   slug(frm) {
