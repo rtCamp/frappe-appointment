@@ -371,7 +371,7 @@ const Booking = ({ type }: BookingProp) => {
                     </Button>
                     {state.showReschedule && (
                       <Button
-                        className="bg-blue-400 hover:bg-blue-500 w-fit px-6"
+                        className="bg-blue-500 hover:bg-blue-500 w-fit px-6"
                         onClick={onReschedule}
                         disabled={rescheduleLoading || !state.showReschedule}
                       >
@@ -438,7 +438,7 @@ const Booking = ({ type }: BookingProp) => {
                                   selectedSlot.end_time === slot.end_time &&
                                   reschedule &&
                                   event_token &&
-                                  "bg-blue-500 text-white hover:bg-blue-400 hover:text-white"
+                                  "bg-blue-500 text-white hover:bg-blue-500 hover:text-white"
                               )}
                             >
                               {formatTimeSlot(new Date(slot.start_time))}
@@ -456,7 +456,7 @@ const Booking = ({ type }: BookingProp) => {
                   )}
                   {state.showReschedule && (
                     <Button
-                      className="bg-blue-400 hover:bg-blue-500 lg:!mt-0 max-lg:w-full max-md:hidden"
+                      className="bg-blue-500 hover:bg-blue-500 lg:!mt-0 max-lg:w-full max-md:hidden"
                       onClick={onReschedule}
                       disabled={rescheduleLoading}
                     >

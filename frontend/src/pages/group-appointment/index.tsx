@@ -424,7 +424,7 @@ const GroupAppointment = () => {
                                 slot.start_time &&
                                 state.selectedSlot?.end_time ===
                                   slot.end_time &&
-                                "bg-blue-500 text-white hover:bg-blue-400 hover:text-white"
+                                "bg-blue-500 text-white hover:bg-blue-500 hover:text-white"
                             )}
                           >
                             {formatTimeSlot(new Date(slot.start_time))}
@@ -442,7 +442,7 @@ const GroupAppointment = () => {
                   <Button
                     disabled={loading}
                     className={cn(
-                      "bg-blue-400 hover:bg-blue-500 lg:!mt-0 max-lg:w-full hidden",
+                      "bg-blue-500 hover:bg-blue-500 lg:!mt-0 max-lg:w-full hidden",
                       state.selectedSlot?.start_time &&
                         state.selectedSlot.end_time &&
                         "flex",
