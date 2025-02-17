@@ -26,21 +26,18 @@ import {
 } from "@/lib/utils";
 import { TimeFormat } from "../appointment/types";
 import { Button } from "@/components/ui/button";
-import { getLocalTimezone } from "@/lib/utils";
 import PoweredBy from "@/components/poweredBy";
 import { Switch } from "@/components/ui/switch";
 import TimeZoneSelect from "../appointment/components/timeZoneSelectmenu";
-import { slotType } from "@/context/app";
 import Spinner from "@/components/ui/spinner";
 import GroupMeetSkeleton from "./components/groupMeetSkeleton";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getIconForKey, validTitle } from "./utils";
 import { useFrappeGetCall, useFrappePostCall } from "frappe-react-sdk";
-import { MeetingData } from "./types";
 import SuccessAlert from "@/components/successAlert";
-import { BookingResponseType } from "@/lib/types";
 import MetaTags from "@/components/metaTags";
 import { CalendarWrapper } from "@/components/calendarWrapper";
+import { useMeetingReducer } from "./reducer";
 
 const GroupAppointment = () => {
   const { groupId } = useParams();
@@ -50,38 +47,7 @@ const GroupAppointment = () => {
   const reschedule = searchParams.get("reschedule") || "";
   const event_token = searchParams.get("event_token") || "";
   const [timeFormat, setTimeFormat] = useState<TimeFormat>("12h");
-  const [timeZone, setTimeZone] = useState<string>(getLocalTimezone());
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-  const [displayMonth, setDisplayMonth] = useState<Date>(
-    parseDateString(date || "")
-  );
-  const [selectedSlot, setSelectedSlot] = useState<slotType>();
-  const [expanded, setExpanded] = useState(false);
-  const [isMobileView, setIsMobileView] = useState(false);
-  const [appointmentScheduled, setAppointmentScheduled] = useState(false);
-  const [meetingData, setMeetingData] = useState<MeetingData>({
-    all_available_slots_for_data: [],
-    available_days: [],
-    date: "",
-    duration: "", 
-    endtime: "",
-    is_invalid_date: true,
-    next_valid_date: "",
-    prev_valid_date: "",
-    starttime: "",
-    total_slots_for_day: 0,
-    appointment_group_id: "",
-    valid_end_date: "",
-    valid_start_date: "",
-  });
-  const [bookingResponse, setBookingResponse] = useState<BookingResponseType>({
-    event_id: "",
-    meet_link: "",
-    meeting_provider: "",
-    message: "",
-    reschedule_url: "",
-    google_calendar_event_url: "",
-  });
+  const [state, dispatch] = useMeetingReducer();
 
   const {
     data,
@@ -97,9 +63,9 @@ const GroupAppointment = () => {
         year: "numeric",
         month: "numeric",
         day: "numeric",
-      }).format(date ? parseDateString(date) : selectedDate),
+      }).format(date ? parseDateString(date) : state.selectedDate),
       user_timezone_offset: String(
-        getTimeZoneOffsetFromTimeZoneString(timeZone)
+        getTimeZoneOffsetFromTimeZoneString(state.timeZone)
       ),
     },
     undefined,
@@ -115,22 +81,22 @@ const GroupAppointment = () => {
 
   useEffect(() => {
     if (data) {
-      setMeetingData(data.message);
+      dispatch({ type: "SET_MEETING_DATA", payload: data.message });
       const validData = data.message.is_invalid_date
         ? new Date(data.message.next_valid_date)
-        : selectedDate;
-      setSelectedDate(validData);
-      setDisplayMonth(validData);
+        : state.selectedDate;
+      dispatch({ type: "SET_SELECTED_DATE", payload: validData });
+      dispatch({ type: "SET_DISPLAY_MONTH", payload: validData });
       updateDateQuery(validData);
     }
     if (fetchError) {
       navigate("/");
     }
-  }, [data, fetchError, mutate, selectedDate, navigate]);
+  }, [data, fetchError, mutate, state.selectedDate, navigate]);
 
   useEffect(() => {
     const handleResize = () => {
-      setIsMobileView(window.innerWidth <= 768);
+      dispatch({ type: "SET_MOBILE_VIEW", payload: window.innerWidth <= 768 });
     };
 
     handleResize();
@@ -141,8 +107,8 @@ const GroupAppointment = () => {
   useEffect(() => {
     if (date) {
       const dateObj = parseDateString(date);
-      setSelectedDate(dateObj);
-      setDisplayMonth(dateObj);
+      dispatch({ type: "SET_SELECTED_DATE", payload: dateObj });
+      dispatch({ type: "SET_DISPLAY_MONTH", payload: dateObj });
       updateDateQuery(dateObj);
     }
   }, [date]);
@@ -161,7 +127,7 @@ const GroupAppointment = () => {
       hour: "numeric",
       minute: "numeric",
       hour12: timeFormat === "12h",
-      timeZone: timeZone,
+      timeZone: state.timeZone,
     }).format(date);
   };
 
@@ -173,18 +139,18 @@ const GroupAppointment = () => {
         year: "numeric",
         month: "numeric",
         day: "numeric",
-      }).format(selectedDate),
+      }).format(state.selectedDate),
       user_timezone_offset: String(
-        getTimeZoneOffsetFromTimeZoneString(timeZone)
+        getTimeZoneOffsetFromTimeZoneString(state.timeZone)
       ),
-      start_time: selectedSlot!.start_time,
-      end_time: selectedSlot!.end_time,
+      start_time: state.selectedSlot!.start_time,
+      end_time: state.selectedSlot!.end_time,
     };
 
     bookMeeting(meetingData)
       .then((data) => {
-        setBookingResponse(data.message);
-        setAppointmentScheduled(true);
+        dispatch({ type: "SET_BOOKING_RESPONSE", payload: data.message });
+        dispatch({ type: "SET_APPOINTMENT_SCHEDULED", payload: true });
         mutate();
       })
       .catch((err) => {
@@ -208,36 +174,36 @@ const GroupAppointment = () => {
     <>
       <MetaTags
         title={`${
-          capitalizeWords(validTitle(meetingData.appointment_group_id)) ||
+          capitalizeWords(validTitle(state.meetingData.appointment_group_id)) ||
           "Group"
         } | Scheduler`}
         description={`Book appointment with ${validTitle(
-          meetingData.appointment_group_id
+          state.meetingData.appointment_group_id
         )}`}
         keywords="Group appointment"
-        author={meetingData.appointment_group_id}
+        author={state.meetingData.appointment_group_id}
         robots="index, follow"
         ogTitle={`${
-          capitalizeWords(validTitle(meetingData.appointment_group_id)) ||
+          capitalizeWords(validTitle(state.meetingData.appointment_group_id)) ||
           "Group"
         } | Scheduler`}
         ogDescription={`Book appointment with ${validTitle(
-          meetingData.appointment_group_id
+          state.meetingData.appointment_group_id
         )}`}
         twitterCard="summary_large_image"
         twitterTitle={`${
-          capitalizeWords(validTitle(meetingData.appointment_group_id)) ||
+          capitalizeWords(validTitle(state.meetingData.appointment_group_id)) ||
           "Group"
         } | Scheduler`}
         twitterDescription={`Book appointment with ${validTitle(
-          meetingData.appointment_group_id
+          state.meetingData.appointment_group_id
         )}`}
       />
       <div className="w-full flex justify-center items-center">
         <div className="w-full xl:w-4/5 2xl:w-3/5 lg:py-16 p-6 px-4">
           <div className="h-fit flex w-full max-lg:flex-col md:border md:rounded-lg md:p-6 md:px-4 max-lg:gap-5 ">
             {/* Group Meet Details */}
-            {!meetingData.appointment_group_id ? (
+            {!state.meetingData.appointment_group_id ? (
               <GroupMeetSkeleton />
             ) : (
               <div className="flex flex-col w-full lg:w-3/4 gap-3 ">
@@ -245,11 +211,11 @@ const GroupAppointment = () => {
                   variant="h2"
                   className="text-3xl font-semibold text-left w-full capitalize"
                 >
-                  {validTitle(meetingData.appointment_group_id)}
+                  {validTitle(state.meetingData.appointment_group_id)}
                 </Typography>
-                {meetingData.meeting_details && (
+                {state.meetingData.meeting_details && (
                   <div className="w-full flex flex-col gap-2 mt-3">
-                    {Object.entries(meetingData.meeting_details).map(
+                    {Object.entries(state.meetingData.meeting_details).map(
                       ([key, value]) => {
                         const Icon = getIconForKey(key);
                         return (
@@ -288,30 +254,37 @@ const GroupAppointment = () => {
               </div>
             )}
             <hr className="w-full bg-muted md:hidden" />
-            {(!isMobileView || !expanded) && (
+            {(!state.isMobileView || !state.expanded) && (
               <div className="flex flex-col w-full lg:max-w-96">
                 {/* Calendar View */}
                 <div className="w-full">
                   <CalendarWrapper
-                    displayMonth={displayMonth}
-                    selectedDate={selectedDate}
+                    displayMonth={state.displayMonth}
+                    selectedDate={state.selectedDate}
                     loading={loading}
-                    setDisplayMonth={setDisplayMonth}
+                    setDisplayMonth={(date) =>
+                      dispatch({ type: "SET_DISPLAY_MONTH", payload: date })
+                    }
                     meetingData={{
-                      valid_start_date: meetingData.valid_start_date,
-                      valid_end_date: meetingData.valid_end_date,
-                      available_days: meetingData.available_days,
+                      valid_start_date: state.meetingData.valid_start_date,
+                      valid_end_date: state.meetingData.valid_end_date,
+                      available_days: state.meetingData.available_days,
                     }}
-                    setSelectedDate={setSelectedDate}
+                    setSelectedDate={(date) =>
+                      dispatch({ type: "SET_SELECTED_DATE", payload: date })
+                    }
                     onDayClick={(date) => {
-                      setSelectedDate(date);
-                      updateDateQuery(date);
-                      setDisplayMonth(date);
-                      setExpanded(true);
-                      setSelectedSlot({
-                        start_time: "",
-                        end_time: "",
+                      dispatch({ type: "SET_SELECTED_DATE", payload: date });
+                      dispatch({ type: "SET_DISPLAY_MONTH", payload: date });
+                      dispatch({ type: "SET_EXPANDED", payload: true });
+                      dispatch({
+                        type: "SET_SELECTED_SLOT",
+                        payload: {
+                          start_time: "",
+                          end_time: "",
+                        },
                       });
+                      updateDateQuery(date);
                     }}
                     className="rounded-md md:border md:h-96 w-full flex lg:px-6 lg:p-2 p-0"
                   />
@@ -321,8 +294,10 @@ const GroupAppointment = () => {
 
                   <TimeZoneSelect
                     timeZones={getAllSupportedTimeZones()}
-                    setTimeZone={setTimeZone}
-                    timeZone={timeZone}
+                    setTimeZone={(tz) =>
+                      dispatch({ type: "SET_TIMEZONE", payload: tz })
+                    }
+                    timeZone={state.timeZone}
                   />
 
                   {/* Time Format Toggle */}
@@ -345,12 +320,14 @@ const GroupAppointment = () => {
                 </div>
               </div>
             )}
-            {isMobileView && expanded && (
+            {state.isMobileView && state.expanded && (
               <div className="h-14 fixed bottom-0 left-0 w-screen border z-10 bg-white border-top flex items-center justify-between px-4">
                 <Button
                   variant="link"
                   className="text-blue-500 px-0"
-                  onClick={() => setExpanded(false)}
+                  onClick={() =>
+                    dispatch({ type: "SET_EXPANDED", payload: false })
+                  }
                   disabled={loading}
                 >
                   <ArrowLeft className="h-4 w-4 " />
@@ -358,7 +335,8 @@ const GroupAppointment = () => {
                 </Button>
                 <Button
                   disabled={
-                    (selectedSlot?.start_time && selectedSlot?.end_time
+                    (state.selectedSlot?.start_time &&
+                    state.selectedSlot?.end_time
                       ? false
                       : true) || loading
                   }
@@ -377,14 +355,14 @@ const GroupAppointment = () => {
             <div
               className={cn(
                 "w-full flex flex-col lg:w-1/2 gap-2 lg:px-5",
-                !expanded && "max-md:hidden"
+                !state.expanded && "max-md:hidden"
               )}
             >
               <Typography
                 variant="h3"
                 className="text-sm font-semibold lg:w-full truncate"
               >
-                {format(selectedDate, "EEEE, d MMMM yyyy")}
+                {format(state.selectedDate, "EEEE, d MMMM yyyy")}
               </Typography>
 
               {dataIsLoading ? (
@@ -396,23 +374,29 @@ const GroupAppointment = () => {
               ) : (
                 <>
                   <div className="lg:h-[22rem] mb-3 overflow-y-auto no-scrollbar space-y-2">
-                    {meetingData.all_available_slots_for_data.length > 0 ? (
-                      meetingData.all_available_slots_for_data.map(
+                    {state.meetingData.all_available_slots_for_data.length >
+                    0 ? (
+                      state.meetingData.all_available_slots_for_data.map(
                         (slot, index) => (
                           <Button
                             key={index}
                             onClick={() => {
-                              setSelectedSlot({
-                                start_time: slot.start_time,
-                                end_time: slot.end_time,
+                              dispatch({
+                                type: "SET_SELECTED_SLOT",
+                                payload: {
+                                  start_time: slot.start_time,
+                                  end_time: slot.end_time,
+                                },
                               });
                             }}
                             disabled={loading}
                             variant="outline"
                             className={cn(
                               "w-full font-normal border border-blue-500 text-blue-500 hover:text-blue-500 hover:bg-blue-50 transition-colors ",
-                              selectedSlot?.start_time === slot.start_time &&
-                                selectedSlot?.end_time === slot.end_time &&
+                              state.selectedSlot?.start_time ===
+                                slot.start_time &&
+                                state.selectedSlot?.end_time ===
+                                  slot.end_time &&
                                 "bg-blue-500 text-white hover:bg-blue-400 hover:text-white"
                             )}
                           >
@@ -432,8 +416,8 @@ const GroupAppointment = () => {
                     disabled={loading}
                     className={cn(
                       "bg-blue-400 hover:bg-blue-500 lg:!mt-0 max-lg:w-full hidden",
-                      selectedSlot?.start_time &&
-                        selectedSlot.end_time &&
+                      state.selectedSlot?.start_time &&
+                        state.selectedSlot.end_time &&
                         "flex",
                       "max-md:hidden"
                     )}
@@ -449,15 +433,17 @@ const GroupAppointment = () => {
         </div>
       </div>
       <PoweredBy />
-      {selectedSlot?.start_time && (
+      {state.selectedSlot?.start_time && (
         <SuccessAlert
-          open={appointmentScheduled}
-          setOpen={setAppointmentScheduled}
-          selectedSlot={selectedSlot}
-          meetingProvider={bookingResponse.meeting_provider}
-          meetLink={bookingResponse.meet_link}
-          rescheduleLink={bookingResponse.reschedule_url}
-          calendarString={bookingResponse.google_calendar_event_url}
+          open={state.appointmentScheduled}
+          setOpen={(open) =>
+            dispatch({ type: "SET_APPOINTMENT_SCHEDULED", payload: open })
+          }
+          selectedSlot={state.selectedSlot}
+          meetingProvider={state.bookingResponse.meeting_provider}
+          meetLink={state.bookingResponse.meet_link}
+          rescheduleLink={state.bookingResponse.reschedule_url}
+          calendarString={state.bookingResponse.google_calendar_event_url}
         />
       )}
     </>
