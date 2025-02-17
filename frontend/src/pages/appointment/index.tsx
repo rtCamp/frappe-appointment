@@ -58,7 +58,6 @@ const Appointment = () => {
     }
   );
 
-
   useEffect(() => {
     if (meetId) {
       setMeetingId(meetId);
@@ -88,16 +87,16 @@ const Appointment = () => {
       <MetaTags
         title={`${userInfo.name} | Scheduler`}
         description={`Book appointment with ${userInfo.name}`}
-        keywords="Personal meeting scheduling"
-        author={userInfo.name}
-        robots="index, follow"
-        ogTitle={`${userInfo.name} | Scheduler`}
-        ogDescription={`Book appointment with ${userInfo.name}`}
-        ogImage={userInfo.userImage}
-        twitterCard="summary_large_image"
-        twitterTitle={`${userInfo.name} | Scheduler`}
-        twitterDescription={`Book appointment with ${userInfo.name}`}
-        twitterImage={userInfo.userImage}
+        // keywords="Personal meeting scheduling"
+        // author={userInfo.name}
+        // robots="index, follow"
+        // ogTitle={`${userInfo.name} | Scheduler`}
+        // ogDescription={`Book appointment with ${userInfo.name}`}
+        // ogImage={userInfo.userImage}
+        // twitterCard="summary_large_image"
+        // twitterTitle={`${userInfo.name} | Scheduler`}
+        // twitterDescription={`Book appointment with ${userInfo.name}`}
+        // twitterImage={userInfo.userImage}
       />
       {!type || isLoading ? (
         <div className="w-full h-full max-md:h-fit flex justify-center">

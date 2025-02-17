@@ -209,24 +209,24 @@ const GroupAppointment = () => {
         description={`Book appointment with ${validTitle(
           state.meetingData.appointment_group_id
         )}`}
-        keywords="Group appointment"
-        author={state.meetingData.appointment_group_id}
-        robots="index, follow"
-        ogTitle={`${
-          capitalizeWords(validTitle(state.meetingData.appointment_group_id)) ||
-          "Group"
-        } | Scheduler`}
-        ogDescription={`Book appointment with ${validTitle(
-          state.meetingData.appointment_group_id
-        )}`}
-        twitterCard="summary_large_image"
-        twitterTitle={`${
-          capitalizeWords(validTitle(state.meetingData.appointment_group_id)) ||
-          "Group"
-        } | Scheduler`}
-        twitterDescription={`Book appointment with ${validTitle(
-          state.meetingData.appointment_group_id
-        )}`}
+        // keywords="Group appointment"
+        // author={state.meetingData.appointment_group_id}
+        // robots="index, follow"
+        // ogTitle={`${
+        //   capitalizeWords(validTitle(state.meetingData.appointment_group_id)) ||
+        //   "Group"
+        // } | Scheduler`}
+        // ogDescription={`Book appointment with ${validTitle(
+        //   state.meetingData.appointment_group_id
+        // )}`}
+        // twitterCard="summary_large_image"
+        // twitterTitle={`${
+        //   capitalizeWords(validTitle(state.meetingData.appointment_group_id)) ||
+        //   "Group"
+        // } | Scheduler`}
+        // twitterDescription={`Book appointment with ${validTitle(
+        //   state.meetingData.appointment_group_id
+        // )}`}
       />
       <div className="w-full flex justify-center items-center">
         <div className="w-full xl:w-4/5 2xl:w-3/5 lg:py-16 p-6 px-4">
