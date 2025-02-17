@@ -25,9 +25,11 @@ def send_email_template_mail(doc, args, email_template, recipients=None, attachm
     message = frappe.render_template(email_message, args)
     subject = frappe.render_template(email_subject, args)
 
-    send_after = get_send_after(email_template)
+    send_after = None
+    if email_template.get("custom_time_to_send_email"):
+        send_after = get_send_after(email_template)
 
-    sender = email_template.custom_sender_email
+    sender = email_template.get("custom_sender_email", None)
 
     # Create Communication Entry while sending the mail. This will require to show the email in Job Applicant DocType
     comm = frappe.get_doc(

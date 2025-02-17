@@ -8,6 +8,7 @@ import {
   RouterProvider,
 } from "react-router-dom";
 import { FrappeProvider } from "frappe-react-sdk";
+import { HelmetProvider } from "react-helmet-async";
 
 /**
  * Internal dependencies.
@@ -26,21 +27,23 @@ const App = () => {
   return (
     <>
       <AppProvider>
-        <FrappeProvider
-          url={import.meta.env.VITE_BASE_URL ?? ""}
-          socketPort={import.meta.env.VITE_SOCKET_PORT}
-          enableSocket={
-            import.meta.env.VITE_ENABLE_SOCKET === "true" ? true : false
-          }
-          siteName={getSiteName()}
-        >
-          <TooltipProvider>
-            <Suspense fallback={<></>}>
-              <RouterProvider router={router} />
-              <Toaster />
-            </Suspense>
-          </TooltipProvider>
-        </FrappeProvider>
+        <HelmetProvider>
+          <FrappeProvider
+            url={import.meta.env.VITE_BASE_URL ?? ""}
+            socketPort={import.meta.env.VITE_SOCKET_PORT}
+            enableSocket={
+              import.meta.env.VITE_ENABLE_SOCKET === "true" ? true : false
+            }
+            siteName={getSiteName()}
+          >
+            <TooltipProvider>
+              <Suspense fallback={<></>}>
+                <RouterProvider router={router} />
+                <Toaster />
+              </Suspense>
+            </TooltipProvider>
+          </FrappeProvider>
+        </HelmetProvider>
       </AppProvider>
     </>
   );

@@ -102,6 +102,7 @@ def insert_event_in_google_calendar_override(
                 doc.name,
                 {
                     "google_calendar_event_id": event.get("id"),
+                    "custom_google_calendar_event_url": event.get("htmlLink"),
                 },
                 update_modified=False,
             )
@@ -121,6 +122,7 @@ def insert_event_in_google_calendar_override(
         else:
             update_dict = {
                 "google_calendar_event_id": event.get("id"),
+                "custom_google_calendar_event_url": event.get("htmlLink"),
             }
             if doc.custom_meeting_provider == "Google Meet":
                 update_dict.update(

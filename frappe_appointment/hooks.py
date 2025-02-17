@@ -99,6 +99,7 @@ fixtures = [
                 "in",
                 {
                     "[Default] Appointment Scheduled",
+                    "[Default] Appointment Group Availability",
                 },
             ]
         ],
@@ -199,8 +200,6 @@ scheduler_events = {
 # -------
 
 # before_tests = "frappe_appointment.install.before_tests"
-
-update_website_context = "frappe_appointment.overrides.website_context.website_context"
 
 # Overriding Methods
 # ------------------------------

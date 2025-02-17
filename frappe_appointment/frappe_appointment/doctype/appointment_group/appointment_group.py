@@ -20,7 +20,6 @@ from frappe_appointment.frappe_appointment.doctype.appointment_time_slot.appoint
     get_all_unavailable_google_calendar_slots_for_day,
 )
 from frappe_appointment.helpers.utils import (
-    convert_datetime_to_utc,
     convert_timezone_to_utc,
     get_utc_datatime_with_time,
     get_weekday,
@@ -42,13 +41,17 @@ class AppointmentGroup(WebsiteGenerator):
 
     def validate_zoom(self):
         if self.meet_provider == "Zoom":
-            ap_settings = frappe.get_single("Zoom Settings")
-            zoom_settings_link = frappe.utils.get_link_to_form("Zoom Settings", None, "Zoom Settings")
-            if not ap_settings.enable_zoom:
-                return frappe.throw(frappe._(f"Zoom is not enabled. Please enable it from {zoom_settings_link}."))
-            if not ap_settings.client_id or not ap_settings.get_password("client_secret") or not ap_settings.account_id:
+            scheduler_settings = frappe.get_single("Scheduler Settings")
+            scheduler_settings_link = frappe.utils.get_link_to_form("Scheduler Settings", None, "Scheduler Settings")
+            if not scheduler_settings.enable_zoom:
+                return frappe.throw(frappe._(f"Zoom is not enabled. Please enable it from {scheduler_settings_link}."))
+            if (
+                not scheduler_settings.zoom_client_id
+                or not scheduler_settings.get_password("zoom_client_secret")
+                or not scheduler_settings.zoom_account_id
+            ):
                 return frappe.throw(
-                    frappe._(f"Please set Zoom Account ID, Client ID and Secret in {zoom_settings_link}.")
+                    frappe._(f"Please set Zoom Account ID, Client ID and Secret in {scheduler_settings_link}.")
                 )
             g_calendar = frappe.get_doc("Google Calendar", self.event_creator, "Google Calendar")
             if not g_calendar.custom_zoom_user_email:
@@ -439,22 +442,36 @@ def get_booking_frequency_reached(datetime: datetime, appointment_group: object)
     # Get today's data and the range for the next day to fetch events.
     start_datetime, end_datetime = get_datetime_str(datetime), get_datetime_str(add_days(datetime, 1))
 
-    if not appointment_group.name:
+    if appointment_group.get("is_personal_meeting", False):
+        all_events = frappe.get_list(
+            "Event",
+            filters=[
+                ["custom_appointment_slot_duration", "=", appointment_group.duration_id],
+                ["starts_on", ">=", start_datetime],
+                ["starts_on", "<", end_datetime],
+                ["ends_on", ">=", start_datetime],
+                ["ends_on", "<", end_datetime],
+            ],
+            fields=["starts_on", "ends_on", "google_calendar_event_id"],
+            order_by="starts_on asc",
+            ignore_permissions=True,
+        )
+    elif appointment_group.name:
+        all_events = frappe.get_list(
+            "Event",
+            filters=[
+                ["custom_appointment_group", "=", appointment_group.name],
+                ["starts_on", ">=", start_datetime],
+                ["starts_on", "<", end_datetime],
+                ["ends_on", ">=", start_datetime],
+                ["ends_on", "<", end_datetime],
+            ],
+            fields=["starts_on", "ends_on", "google_calendar_event_id"],
+            order_by="starts_on asc",
+            ignore_permissions=True,
+        )
+    else:
         return res
-
-    all_events = frappe.get_list(
-        "Event",
-        filters=[
-            ["custom_appointment_group", "=", appointment_group.name],
-            ["starts_on", ">=", start_datetime],
-            ["starts_on", "<", end_datetime],
-            ["ends_on", ">=", start_datetime],
-            ["ends_on", "<", end_datetime],
-        ],
-        fields=["starts_on", "ends_on"],
-        order_by="starts_on asc",
-        ignore_permissions=True,
-    )
 
     all_events = sorted(
         all_events,
@@ -538,10 +555,7 @@ def update_cal_slots_with_events(all_slots: list, all_events: list) -> list:
             currernt_slot["end"]["dateTime"], currernt_slot["end"]["timeZone"]
         )
         for event in all_events:
-            # Compare the start and end date of event and slots
-            if convert_datetime_to_utc(event["starts_on"]) == updated_slot["starts_on"] and updated_slot[
-                "ends_on"
-            ] == convert_datetime_to_utc(event["ends_on"]):
+            if event["google_calendar_event_id"] == currernt_slot["id"]:
                 updated_slot["is_frappe_event"] = True
                 break
 
@@ -754,7 +768,7 @@ def get_appointment_groups_from_doctype(doctype: str) -> str:
     return [
         {
             "name": appointment_group.name,
-            "route": frappe.utils.get_url(appointment_group.route, full_address=True),
+            "route": frappe.utils.get_url(f"/schedule/gr/{appointment_group.name}", full_address=True),
         }
         for appointment_group in appointment_groups
     ]
@@ -777,5 +791,5 @@ def get_appointment_group_from_id(appointment_group_id: str) -> object:
 
     return {
         "name": appointment_group.name,
-        "route": frappe.utils.get_url(appointment_group.route, full_address=True),
+        "route": frappe.utils.get_url(f"/schedule/gr/{appointment_group.name}", full_address=True),
     }

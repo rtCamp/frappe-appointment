@@ -5,6 +5,7 @@ import re
 import frappe
 import frappe.utils
 import pytz
+from frappe.twofactor import encrypt
 
 from frappe_appointment.frappe_appointment.doctype.appointment_group.appointment_group import _get_time_slots_for_day
 from frappe_appointment.helpers.overrides import add_response_code
@@ -24,9 +25,9 @@ def get_meeting_windows(slug):
     user = user_availability.get("user")
     if not user:
         return {"error": "No user found"}, 404
+
     user = frappe.get_doc("User", user)
-    if not user:
-        return {"error": "No user found"}, 404
+
     full_name = user.get("full_name")
     profile_pic = user.get("user_image")
     position = None
@@ -64,8 +65,7 @@ def get_meeting_windows(slug):
 @add_response_code
 def get_time_slots(duration_id: str, date: str, user_timezone_offset: str):
     duration = frappe.get_doc("Appointment Slot Duration", duration_id)
-    if not duration:
-        return {"error": "No duration found"}, 404
+
     user_availability = frappe.get_all(
         "User Appointment Availability", filters={"name": duration.get("parent")}, fields=["*"]
     )
@@ -80,6 +80,9 @@ def get_time_slots(duration_id: str, date: str, user_timezone_offset: str):
     appointment_group = frappe.get_doc(appointment_group_obj)
 
     data = _get_time_slots_for_day(appointment_group, date, user_timezone_offset)
+
+    if not data:
+        return None
 
     if "appointment_group_id" in data:
         del data["appointment_group_id"]
@@ -103,8 +106,7 @@ def book_time_slot(
     **args,
 ):
     duration = frappe.get_doc("Appointment Slot Duration", duration_id)
-    if not duration:
-        return {"error": "No duration found"}, 404
+
     user_availability = frappe.get_all(
         "User Appointment Availability", filters={"name": duration.get("parent")}, fields=["*"]
     )
@@ -175,7 +177,7 @@ def book_time_slot(
     if args.get("event_token"):
         success_message = "Appointment has been rescheduled."
 
-    data = _create_event_for_appointment_group(
+    response = _create_event_for_appointment_group(
         appointment_group,
         date,
         start_time,
@@ -183,10 +185,20 @@ def book_time_slot(
         user_timezone_offset,
         json.dumps(event_participants),
         success_message=success_message,
+        return_event_id=True,
         **args,
     )
-
-    return data
+    event_token = encrypt(response["event_id"])
+    event = frappe.get_doc("Event", response["event_id"])
+    response["meeting_provider"] = event.custom_meeting_provider
+    response["meet_link"] = event.custom_meet_link
+    response["reschedule_url"] = frappe.utils.get_url(
+        "/schedule/in/{0}?type={1}&reschedule=1&event_token={2}".format(
+            user_availability.get("slug"), duration_id, event_token
+        )
+    )
+    response["google_calendar_event_url"] = event.custom_google_calendar_event_url
+    return response
 
 
 def create_dummy_appointment_group(duration, user_availability):
@@ -206,7 +218,9 @@ def create_dummy_appointment_group(duration, user_availability):
         "meet_link": user_availability.get("meeting_link"),
         "response_email_template": user_availability.get("response_email_template"),
         "linked_doctype": user_availability.get("name"),
-        "limit_booking_frequency": -1,
+        "limit_booking_frequency": duration.limit_booking_frequency,
+        "is_personal_meeting": 1,
+        "duration_id": duration.name,
     }
 
     return appointment_group_obj

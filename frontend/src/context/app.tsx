@@ -26,7 +26,7 @@ type durationCard = {
   duration: number;
 };
 
-interface slotType {
+export interface slotType {
   start_time: string;
   end_time: string;
 }

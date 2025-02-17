@@ -8,17 +8,26 @@ frappe.ui.form.on("User Appointment Availability", {
     og_slug = frm.doc.slug;
     if (frm.doc.__islocal) {
       frm.set_value("user", frappe.session.user);
+      frappe.call({
+        method:
+          "frappe_appointment.frappe_appointment.doctype.scheduler_settings.scheduler_settings.get_default_email_template",
+        callback: function (r) {
+          if (r.message?.personal) {
+            frm.set_value("response_email_template", r.message.personal);
+          }
+        },
+      });
     }
   },
   slug(frm) {
-    regex = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+    regex = /^[a-z0-9_]+(?:-[a-z0-9_]+)*$/;
     if (frm.doc.slug === "" || frm.doc.slug === og_slug) {
       frm.set_df_property("slug", "description", "");
     } else if (!regex.test(frm.doc.slug)) {
       frm.set_df_property(
         "slug",
         "description",
-        "<p class='red'>Slug can only contain lowercase letters, numbers and hyphens (-), and cannot start or end with a hyphen.</p>"
+        "<p class='red'>Slug can only contain lowercase letters, numbers, underscores (_) and hyphens (-), and cannot start or end with a hyphen.</p>"
       );
     } else {
       frappe.call({

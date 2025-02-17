@@ -23,6 +23,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import Typography from "@/components/ui/typography";
+import MetaTags from "@/components/metaTags";
 
 const Appointment = () => {
   const { meetId } = useParams();
@@ -57,12 +58,6 @@ const Appointment = () => {
     }
   );
 
-  // Profiles mock data
-  // const profiles: Profile[] = [
-  //   { LinkedIn: "https://www.linkedin.com/in/example" },
-  //   { X: "https://x.com/example" },
-  //   { GitHub: "https://github.com/example" },
-  // ];
 
   useEffect(() => {
     if (meetId) {
@@ -90,6 +85,20 @@ const Appointment = () => {
 
   return (
     <>
+      <MetaTags
+        title={`${userInfo.name} | Scheduler`}
+        description={`Book appointment with ${userInfo.name}`}
+        keywords="Personal meeting scheduling"
+        author={userInfo.name}
+        robots="index, follow"
+        ogTitle={`${userInfo.name} | Scheduler`}
+        ogDescription={`Book appointment with ${userInfo.name}`}
+        ogImage={userInfo.userImage}
+        twitterCard="summary_large_image"
+        twitterTitle={`${userInfo.name} | Scheduler`}
+        twitterDescription={`Book appointment with ${userInfo.name}`}
+        twitterImage={userInfo.userImage}
+      />
       {!type || isLoading ? (
         <div className="w-full h-full max-md:h-fit flex justify-center">
           <div className="container max-w-[74rem] mx-auto p-4 py-8 md:py-16 grid gap-10 md:gap-12">
@@ -118,16 +127,20 @@ const Appointment = () => {
                         <TooltipContent>{userInfo.name}</TooltipContent>
                       </Tooltip>
                     </Typography>
-                    <Tooltip>
-                      <Typography className="text-base text-left text-muted-foreground">
-                        <TooltipTrigger className="text-left">
-                          {userInfo.designation} at {userInfo.organizationName}
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          {userInfo.designation} at {userInfo.organizationName}
-                        </TooltipContent>
-                      </Typography>
-                    </Tooltip>
+                    {userInfo.designation && userInfo.organizationName && (
+                      <Tooltip>
+                        <Typography className="text-base text-left text-muted-foreground">
+                          <TooltipTrigger className="text-left">
+                            {userInfo.designation} at{" "}
+                            {userInfo.organizationName}
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            {userInfo.designation} at{" "}
+                            {userInfo.organizationName}
+                          </TooltipContent>
+                        </Typography>
+                      </Tooltip>
+                    )}
                   </div>
                   <SocialProfiles profiles={userInfo.socialProfiles} />
                 </div>

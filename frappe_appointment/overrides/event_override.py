@@ -287,34 +287,40 @@ class EventOverride(Event):
             return {"status": True, "message": ""}
 
         try:
+            is_frappe_function = False
             try:
                 webhook_function = frappe.get_attr(appointment_group.webhook)
-                if webhook_function:
-                    api_res = webhook_function(body)
-                else:
+                if not webhook_function:
                     raise Exception
+                is_frappe_function = True
             except Exception:
-                # clear all previous logs
-                clear_messages()
+                # clear last message
+                frappe.clear_last_message()
 
+            if is_frappe_function:
+                try:
+                    api_res = webhook_function(**body)
+                except Exception as e:
+                    return {"status": False, "message": str(e)}
+            else:
                 api_res = requests.post(
                     appointment_group.webhook,
                     data=json.dumps(body, default=datetime_serializer),
                 ).json()
 
-            is_exc = False
+                is_exc = False
 
-            if api_res and "exc_type" in api_res:
-                is_exc = True
+                if api_res and "exc_type" in api_res:
+                    is_exc = True
 
-            if not api_res or is_exc:
-                messages = json.loads(api_res["_server_messages"])
-                messages = json.loads(messages[0])
+                if not api_res or is_exc:
+                    messages = json.loads(api_res["_server_messages"])
+                    messages = json.loads(messages[0])
 
-                if len(messages) != 0:
-                    messages = messages["message"]
+                    if len(messages) != 0:
+                        messages = messages["message"]
 
-                return {"status": False, "message": messages}
+                    return {"status": False, "message": messages}
 
             return {"status": True, "message": ""}
 
@@ -375,6 +381,7 @@ def create_event_for_appointment_group(
     user_timezone_offset: str,
     event_participants,
     success_message="",
+    return_event_id=False,
     **args,
 ):
     """API Endpoint to Create the Event
@@ -392,7 +399,7 @@ def create_event_for_appointment_group(
     """
 
     appointment_group = frappe.get_last_doc(APPOINTMENT_GROUP, filters={"route": "appointment/" + appointment_group_id})
-    return _create_event_for_appointment_group(
+    response = _create_event_for_appointment_group(
         appointment_group,
         date,
         start_time,
@@ -400,8 +407,11 @@ def create_event_for_appointment_group(
         user_timezone_offset,
         event_participants,
         success_message=success_message,
+        return_event_id=return_event_id,
         **args,
     )
+
+    return response
 
 
 def _create_event_for_appointment_group(
@@ -410,8 +420,9 @@ def _create_event_for_appointment_group(
     start_time: str,
     end_time: str,
     user_timezone_offset: str,
-    event_participants,
+    event_participants="[]",
     success_message="",
+    return_event_id=False,
     **args,
 ):
     # query parameters
@@ -473,8 +484,18 @@ def _create_event_for_appointment_group(
             clear_messages()
 
             if success_message:
+                if return_event_id:
+                    return {
+                        "message": success_message,
+                        "event_id": event.name,
+                    }
                 return frappe.msgprint(success_message)
 
+            if return_event_id:
+                return {
+                    "message": "Event has been updated successfully.",
+                    "event_id": event.name,
+                }
             return frappe.msgprint(_("Event has been updated successfully."))
         except Exception:
             return frappe.throw(_("Unable to Update an event"))
@@ -522,7 +543,12 @@ def _create_event_for_appointment_group(
     if success_message:
         return frappe.msgprint(success_message)
 
-    return _("Event has been created")
+    if return_event_id:
+        return {
+            "message": _("Event has been created"),
+            "event_id": event.name,
+        }
+    return frappe.msgprint(_("Event has been created"))
 
 
 @frappe.whitelist(allow_guest=True)
@@ -625,6 +651,12 @@ def get_events_from_doc(doctype, docname, past_events=False):
             event["ends_on"] = frappe.utils.format_datetime(ends_on, "MMM dd, yyyy, HH:mm")
 
         event["url"] = "/app/event/" + event["name"]
+        event["reschedule_url"] = frappe.utils.get_url(
+            "/schedule/gr/{0}?reschedule=1&event_token={1}".format(
+                event["custom_appointment_group"],
+                encrypt(event["name"]),
+            )
+        )
         all_events[event["state"]].append(event)
     return all_events
 
