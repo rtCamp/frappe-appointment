@@ -396,8 +396,11 @@ function check_one_time_schedule() {
 
 // Events
 document.addEventListener("DOMContentLoaded", function () {
-  set_date();
-  check_one_time_schedule();
+  // set_date();
+  // check_one_time_schedule();
+  // Redirect to the new UI at '/schedule/gr/:appointment_group_id?...'
+  const appointment_group_id = get_appointment_group();
+  window.location.href = `/schedule/gr/${appointment_group_id}${window.location.search}`;
 });
 
 submit_button.addEventListener("click", function () {

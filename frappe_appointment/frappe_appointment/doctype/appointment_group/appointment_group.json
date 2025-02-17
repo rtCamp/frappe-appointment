@@ -136,6 +136,7 @@
    "fieldtype": "Section Break"
   },
   {
+   "default": "[Default] Appointment Scheduled",
    "fieldname": "response_email_template",
    "fieldtype": "Link",
    "label": "Response Email Template",
@@ -187,27 +188,30 @@
    "label": "Availability Alerts"
   },
   {
+   "depends_on": "send_email_alerts",
    "description": "The template which should be used to send alerts. The following variables will be available:\n<br><br>\n<pre>- total_slots: Number of slots available throughout the event availability window.\n- group_name: The name of the appointment group.\n- daywise_slots_data: A dictionary containing the number of slots available for each day in the event availability window.\n- appointment_group_url: The URL to the appointment group.\n- min_threshold: The minimum number of slots that must be available to send this alert.</pre>",
    "fieldname": "email_template",
    "fieldtype": "Link",
    "label": "Email Template",
-   "mandatory_depends_on": "eval:doc.verify_availability == true;",
+   "mandatory_depends_on": "send_email_alerts",
    "options": "Email Template"
   },
   {
+   "depends_on": "send_email_alerts",
    "description": "Alerts will be sent to this email address along with email addresses of all mandatory members.",
    "fieldname": "email_address_to_send",
    "fieldtype": "Data",
    "label": "Email Address",
-   "mandatory_depends_on": "eval:doc.verify_availability == true;"
+   "mandatory_depends_on": "send_email_alerts"
   },
   {
    "default": "2",
+   "depends_on": "send_email_alerts",
    "description": "Emails will only be sent if total available slots are less than this value. Setting to -1 will always send alerts.  (Defaults to 2)",
    "fieldname": "min_slot_threshold",
    "fieldtype": "Int",
    "label": "Minimum Threshold",
-   "mandatory_depends_on": "eval:doc.verify_availability == true;"
+   "mandatory_depends_on": "send_email_alerts"
   },
   {
    "default": "0",
@@ -255,7 +259,7 @@
  "has_web_view": 1,
  "is_published_field": "publish_on_website",
  "links": [],
- "modified": "2025-01-31 09:26:55.298534",
+ "modified": "2025-02-17 00:28:15.136064",
  "modified_by": "Administrator",
  "module": "Frappe Appointment",
  "name": "Appointment Group",

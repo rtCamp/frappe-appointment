@@ -11,14 +11,14 @@ frappe.ui.form.on("User Appointment Availability", {
     }
   },
   slug(frm) {
-    regex = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+    regex = /^[a-z0-9_]+(?:-[a-z0-9_]+)*$/;
     if (frm.doc.slug === "" || frm.doc.slug === og_slug) {
       frm.set_df_property("slug", "description", "");
     } else if (!regex.test(frm.doc.slug)) {
       frm.set_df_property(
         "slug",
         "description",
-        "<p class='red'>Slug can only contain lowercase letters, numbers and hyphens (-), and cannot start or end with a hyphen.</p>"
+        "<p class='red'>Slug can only contain lowercase letters, numbers, underscores (_) and hyphens (-), and cannot start or end with a hyphen.</p>"
       );
     } else {
       frappe.call({

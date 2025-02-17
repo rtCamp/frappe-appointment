@@ -18,11 +18,24 @@ from frappe_appointment.helpers.utils import (
     update_time_of_datetime,
 )
 
-SLUG_REGEX = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
+SLUG_REGEX = re.compile(r"^[a-z0-9_]+(?:-[a-z0-9_]+)*$")
 
 
 class UserAppointmentAvailability(Document):
     def validate(self):
+        # validate time slots, so that start time is less than end time, and weekdays are unique
+        if self.appointment_time_slot:
+            weekdays = []
+            for slot in self.appointment_time_slot:
+                if slot.start_time > slot.end_time:
+                    frappe.throw(frappe._("Start time should be less than end time for the day {0}").format(slot.day))
+                if slot.day in weekdays:
+                    frappe.throw(
+                        frappe._("Day {0} is repeated in the time slots. Make sure each day is unique.").format(
+                            slot.day
+                        )
+                    )
+                weekdays.append(slot.day)
         calendar = frappe.get_doc("Google Calendar", self.google_calendar)
         if not calendar.custom_is_google_calendar_authorized:
             frappe.throw(frappe._("Please authorize Google Calendar before creating appointment availability."))
@@ -30,7 +43,11 @@ class UserAppointmentAvailability(Document):
             frappe.throw(frappe._("Please set a slug before enabling scheduling."))
         if self.slug:
             if not SLUG_REGEX.match(self.slug):
-                frappe.throw(frappe._("Slug can only contain lowercase alphanumeric characters and hyphens."))
+                frappe.throw(
+                    frappe._(
+                        "Slug can only contain lowercase alphanumeric characters, underscores and hyphens, and cannot start or end with a hyphen."
+                    )
+                )
             if frappe.db.exists("User Appointment Availability", {"slug": self.slug, "name": ["!=", self.name]}):
                 frappe.throw(frappe._("Slug already exists. Please set a unique slug."))
         if self.enable_scheduling and self.meeting_provider == "Zoom":

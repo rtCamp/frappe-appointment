@@ -46,7 +46,7 @@ class EventOverride(Event):
                     self.appointment_group.event_creator,
                     self.subject,
                     self.starts_on,
-                    self.appointment_group.duration_for_event.seconds // 60,
+                    self.appointment_group.duration_for_event.seconds // 60,  # convert to minutes
                     self.description,
                 )
                 self.description = f"{self.description or ''}\nMeet Link: {meet_url}"
@@ -651,6 +651,12 @@ def get_events_from_doc(doctype, docname, past_events=False):
             event["ends_on"] = frappe.utils.format_datetime(ends_on, "MMM dd, yyyy, HH:mm")
 
         event["url"] = "/app/event/" + event["name"]
+        event["reschedule_url"] = frappe.utils.get_url(
+            "/schedule/gr/{0}?reschedule=1&event_token={1}".format(
+                event["custom_appointment_group"],
+                encrypt(event["name"]),
+            )
+        )
         all_events[event["state"]].append(event)
     return all_events
 
