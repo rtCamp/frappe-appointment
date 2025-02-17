@@ -18,7 +18,7 @@
   {
    "fieldname": "zoom_settings_section",
    "fieldtype": "Section Break",
-   "label": "Zoom Settings"
+   "label": "Scheduler Settings"
   },
   {
    "default": "0",
@@ -41,18 +41,21 @@
    "label": "Access Token"
   },
   {
+   "depends_on": "enable_zoom",
    "fieldname": "account_id",
    "fieldtype": "Data",
    "label": "Account ID",
    "mandatory_depends_on": "enable_zoom"
   },
   {
+   "depends_on": "enable_zoom",
    "fieldname": "client_id",
    "fieldtype": "Data",
    "label": "Client ID",
    "mandatory_depends_on": "enable_zoom"
   },
   {
+   "depends_on": "enable_zoom",
    "fieldname": "client_secret",
    "fieldtype": "Password",
    "label": "Client Secret",
@@ -62,10 +65,10 @@
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2025-01-28 13:09:43.959790",
+ "modified": "2025-02-17 10:52:24.441185",
  "modified_by": "Administrator",
  "module": "Frappe Appointment",
- "name": "Zoom Settings",
+ "name": "Scheduler Settings",
  "owner": "Administrator",
  "permissions": [
   {

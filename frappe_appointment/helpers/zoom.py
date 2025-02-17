@@ -10,18 +10,18 @@ def base64_encode(string):
 
 
 def reauthorize_zoom():
-    zoom_settings = frappe.get_single("Zoom Settings")
-    zoom_settings_link = frappe.utils.get_link_to_form("Zoom Settings", None, "Zoom Settings")
+    scheduler_settings = frappe.get_single("Scheduler Settings")
+    scheduler_settings_link = frappe.utils.get_link_to_form("Scheduler Settings", None, "Scheduler Settings")
 
-    if not zoom_settings.enable_zoom:
-        frappe.throw(frappe._(f"Zoom is not enabled. Please enable it from {zoom_settings_link}."))
+    if not scheduler_settings.enable_zoom:
+        frappe.throw(frappe._(f"Zoom is not enabled. Please enable it from {scheduler_settings_link}."))
 
-    ACCOUNT_ID = zoom_settings.account_id
-    CLIENT_ID = zoom_settings.client_id
-    CLIENT_SECRET = zoom_settings.get_password("client_secret", raise_exception=False)
+    ACCOUNT_ID = scheduler_settings.account_id
+    CLIENT_ID = scheduler_settings.client_id
+    CLIENT_SECRET = scheduler_settings.get_password("client_secret", raise_exception=False)
 
     if not CLIENT_ID or not CLIENT_SECRET or not ACCOUNT_ID:
-        frappe.throw(frappe._(f"Please set Zoom Client ID and Secret in {zoom_settings_link}."))
+        frappe.throw(frappe._(f"Please set Zoom Client ID and Secret in {scheduler_settings_link}."))
 
     data = {"grant_type": "account_credentials", "account_id": ACCOUNT_ID}
     headers = {"Authorization": f"Basic {base64_encode(f'{CLIENT_ID}:{CLIENT_SECRET}')}"}
@@ -34,21 +34,21 @@ def reauthorize_zoom():
 
     access_token = response["access_token"]
 
-    zoom_settings.reload()
-    zoom_settings.access_token = access_token
-    zoom_settings.save(ignore_permissions=True)
+    scheduler_settings.reload()
+    scheduler_settings.access_token = access_token
+    scheduler_settings.save(ignore_permissions=True)
 
     return access_token
 
 
 def get_zoom_access_token():
-    zoom_settings = frappe.get_single("Zoom Settings")
-    zoom_settings_link = frappe.utils.get_link_to_form("Zoom Settings", None, "Zoom Settings")
+    scheduler_settings = frappe.get_single("Scheduler Settings")
+    scheduler_settings_link = frappe.utils.get_link_to_form("Scheduler Settings", None, "Scheduler Settings")
 
-    if not zoom_settings.enable_zoom:
-        frappe.throw(frappe._(f"Zoom is not enabled. Please enable it from {zoom_settings_link}."))
+    if not scheduler_settings.enable_zoom:
+        frappe.throw(frappe._(f"Zoom is not enabled. Please enable it from {scheduler_settings_link}."))
 
-    access_token = zoom_settings.get_password("access_token", raise_exception=False)
+    access_token = scheduler_settings.get_password("access_token", raise_exception=False)
 
     if not access_token:
         access_token = reauthorize_zoom()

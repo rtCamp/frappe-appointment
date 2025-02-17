@@ -2,10 +2,10 @@
 # For license information, please see license.txt
 
 import re
-import urllib.parse
 from datetime import datetime
 
 import frappe
+import frappe.utils
 from frappe.model.document import Document
 from frappe.utils.data import add_to_date
 
@@ -51,25 +51,23 @@ class UserAppointmentAvailability(Document):
             if frappe.db.exists("User Appointment Availability", {"slug": self.slug, "name": ["!=", self.name]}):
                 frappe.throw(frappe._("Slug already exists. Please set a unique slug."))
         if self.enable_scheduling and self.meeting_provider == "Zoom":
-            ap_settings = frappe.get_single("Zoom Settings")
-            if not ap_settings.enable_zoom:
+            scheduler_settings = frappe.get_single("Scheduler Settings")
+            scheduler_settings_link = frappe.utils.get_link_to_form("Scheduler Settings", None, "Scheduler Settings")
+            if not scheduler_settings.enable_zoom:
+                return frappe.throw(frappe._(f"Zoom is not enabled. Please enable it from {scheduler_settings_link}."))
+            if (
+                not scheduler_settings.client_id
+                or not scheduler_settings.get_password("client_secret")
+                or not scheduler_settings.account_id
+            ):
                 return frappe.throw(
-                    frappe._(
-                        "Zoom is not enabled. Please enable it from <a href='/app/zoom-settings'>Zoom Settings</a>."
-                    )
-                )
-            if not ap_settings.client_id or not ap_settings.get_password("client_secret") or not ap_settings.account_id:
-                return frappe.throw(
-                    frappe._(
-                        "Please set Zoom Account ID, Client ID and Secret in <a href='/app/zoom-settings'>Zoom Settings</a>."
-                    )
+                    frappe._(f"Please set Zoom Account ID, Client ID and Secret in {scheduler_settings_link}.")
                 )
             if not calendar.custom_zoom_user_email:
-                return frappe.throw(
-                    frappe._(
-                        f"Please set Zoom User Email in <a href='/app/google-calendar/{urllib.parse.quote(calendar.name)}'>Google Calendar</a>."
-                    )
+                google_calendar_link = frappe.utils.get_link_to_form(
+                    "Google Calendar", calendar.name, "Google Calendar"
                 )
+                return frappe.throw(frappe._(f"Please set Zoom User Email in {google_calendar_link}."))
 
 
 def suggest_slug(og_slug: str):

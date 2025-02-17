@@ -5,5 +5,5 @@
 from frappe.model.document import Document
 
 
-class ZoomSettings(Document):
+class SchedulerSettings(Document):
     pass
