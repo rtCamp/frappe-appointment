@@ -36,7 +36,7 @@
   "min_slot_threshold",
   "available_slots_data",
   "column_break_hpry",
-  "email_template",
+  "availability_email_template",
   "email_address_to_send",
   "slots_data_updated_at",
   "section_break_ovbf",
@@ -136,7 +136,6 @@
    "fieldtype": "Section Break"
   },
   {
-   "default": "[Default] Appointment Scheduled",
    "fieldname": "response_email_template",
    "fieldtype": "Link",
    "label": "Response Email Template",
@@ -186,15 +185,6 @@
    "fieldname": "section_break_pudv",
    "fieldtype": "Section Break",
    "label": "Availability Alerts"
-  },
-  {
-   "depends_on": "send_email_alerts",
-   "description": "The template which should be used to send alerts. The following variables will be available:\n<br><br>\n<pre>- total_slots: Number of slots available throughout the event availability window.\n- group_name: The name of the appointment group.\n- daywise_slots_data: A dictionary containing the number of slots available for each day in the event availability window.\n- appointment_group_url: The URL to the appointment group.\n- min_threshold: The minimum number of slots that must be available to send this alert.</pre>",
-   "fieldname": "email_template",
-   "fieldtype": "Link",
-   "label": "Email Template",
-   "mandatory_depends_on": "send_email_alerts",
-   "options": "Email Template"
   },
   {
    "depends_on": "send_email_alerts",
@@ -254,12 +244,21 @@
    "fieldtype": "Select",
    "label": "Meet Provider",
    "options": "None\nCustom\nZoom\nGoogle Meet"
+  },
+  {
+   "depends_on": "send_email_alerts",
+   "description": "The template which should be used to send alerts. The following variables will be available:\n<br><br>\n<pre>- total_slots: Number of slots available throughout the event availability window.\n- group_name: The name of the appointment group.\n- daywise_slots_data: A dictionary containing the number of slots available for each day in the event availability window.\n- appointment_group_url: The URL to the appointment group.\n- min_threshold: The minimum number of slots that must be available to send this alert.</pre>",
+   "fieldname": "availability_email_template",
+   "fieldtype": "Link",
+   "label": "Email Template",
+   "mandatory_depends_on": "send_email_alerts",
+   "options": "Email Template"
   }
  ],
  "has_web_view": 1,
  "is_published_field": "publish_on_website",
  "links": [],
- "modified": "2025-02-17 00:28:15.136064",
+ "modified": "2025-02-17 12:06:03.449363",
  "modified_by": "Administrator",
  "module": "Frappe Appointment",
  "name": "Appointment Group",
