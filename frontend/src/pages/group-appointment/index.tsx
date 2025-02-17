@@ -4,7 +4,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { format } from "date-fns";
-import { ArrowLeft, CircleAlert } from "lucide-react";
+import { ArrowLeft, CircleAlert, Clock } from "lucide-react";
 import { toast } from "sonner";
 
 /**
@@ -19,6 +19,7 @@ import Typography from "@/components/ui/typography";
 import {
   capitalizeWords,
   cn,
+  convertToMinutes,
   getAllSupportedTimeZones,
   getTimeZoneOffsetFromTimeZoneString,
   parseDateString,
@@ -213,42 +214,68 @@ const GroupAppointment = () => {
                 >
                   {validTitle(state.meetingData.appointment_group_id)}
                 </Typography>
-                {state.meetingData.meeting_details && (
+                {state.meetingData && (
                   <div className="w-full flex flex-col gap-2 mt-3">
-                    {Object.entries(state.meetingData.meeting_details).map(
-                      ([key, value]) => {
-                        const Icon = getIconForKey(key);
-                        return (
-                          <div
-                            key={key}
-                            className="flex cursor-default items-center gap-2 w-full "
-                          >
-                            <div className="w-full truncate text-gray-600 flex items-center justify-start gap-2">
-                              <Icon className="h-4 w-4 shrink-0" />
-                              <Tooltip>
-                                <TooltipTrigger className="text-left truncate">
-                                  <Typography
-                                    className={cn(
-                                      "truncate font-medium text-gray-600",
-                                      key.includes("name") && "text-foreground",
-                                      key.includes("email") ? "" : "capitalize"
-                                    )}
-                                  >
-                                    {value}
-                                  </Typography>
-                                </TooltipTrigger>
-                                <TooltipContent className="capitalize">
-                                  <span className="text-blue-600">
-                                    {validTitle(key)}
-                                  </span>{" "}
-                                  : {value}
-                                </TooltipContent>
-                              </Tooltip>
+                    {state.meetingData.meeting_details &&
+                      Object.entries(state.meetingData.meeting_details).map(
+                        ([key, value]) => {
+                          const Icon = getIconForKey(key);
+                          return (
+                            <div
+                              key={key}
+                              className="flex cursor-default items-center gap-2 w-full "
+                            >
+                              <div className="w-full truncate text-gray-600 flex items-center justify-start gap-2">
+                                <Icon className="h-4 w-4 shrink-0" />
+                                <Tooltip>
+                                  <TooltipTrigger className="text-left truncate">
+                                    <Typography
+                                      className={cn(
+                                        "truncate font-medium text-gray-600",
+                                        key.includes("name") &&
+                                          "text-foreground",
+                                        key.includes("email")
+                                          ? ""
+                                          : "capitalize"
+                                      )}
+                                    >
+                                      {value}
+                                    </Typography>
+                                  </TooltipTrigger>
+                                  <TooltipContent className="capitalize">
+                                    <span className="text-blue-600">
+                                      {validTitle(key)}
+                                    </span>{" "}
+                                    : {value}
+                                  </TooltipContent>
+                                </Tooltip>
+                              </div>
                             </div>
-                          </div>
-                        );
-                      }
-                    )}
+                          );
+                        }
+                      )}
+                    <div className="flex cursor-default items-center gap-2 w-full ">
+                      <div className="w-full truncate text-gray-600 flex items-center justify-start gap-2">
+                        <Clock className="inline-block w-4 h-4 mr-1" />
+                        <Tooltip>
+                          <TooltipTrigger className="text-left truncate">
+                            <Typography className="truncate font-medium text-gray-600">
+                              {convertToMinutes(
+                                state.meetingData.duration
+                              ).toString()}{" "}
+                              Minute Meeting
+                            </Typography>
+                          </TooltipTrigger>
+                          <TooltipContent className="capitalize">
+                            <span className="text-blue-600">duration</span> :{" "}
+                            {convertToMinutes(
+                              state.meetingData.duration
+                            ).toString()}{" "}
+                            Minute Meeting
+                          </TooltipContent>
+                        </Tooltip>
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>
