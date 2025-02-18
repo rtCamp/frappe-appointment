@@ -1,3 +1,5 @@
+from urllib.parse import quote_plus
+
 import frappe
 import frappe.utils
 from frappe import _
@@ -49,7 +51,7 @@ def book_time_slot(
     resp["meeting_provider"] = event.custom_meeting_provider
     resp["meet_link"] = event.custom_meet_link
     resp["reschedule_url"] = frappe.utils.get_url(
-        "/schedule/gr/{0}?reschedule=1&event_token={1}".format(appointment_group_id, event_token)
+        "/schedule/gr/{0}?reschedule=1&event_token={1}".format(quote_plus(appointment_group_id), event_token)
     )
     resp["google_calendar_event_url"] = event.custom_google_calendar_event_url
     return resp

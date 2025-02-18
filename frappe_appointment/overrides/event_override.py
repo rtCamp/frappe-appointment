@@ -1,5 +1,6 @@
 import datetime
 import json
+from urllib.parse import quote_plus
 
 import frappe
 import frappe.utils
@@ -662,7 +663,7 @@ def get_events_from_doc(doctype, docname, past_events=False):
         event["url"] = "/app/event/" + event["name"]
         event["reschedule_url"] = frappe.utils.get_url(
             "/schedule/gr/{0}?reschedule=1&event_token={1}".format(
-                event["custom_appointment_group"],
+                quote_plus(event["custom_appointment_group"]),
                 encrypt(event["name"]),
             )
         )
@@ -767,7 +768,7 @@ def get_personal_meetings(user, past_events=False):
         event["url"] = "/app/event/" + event["name"]
         event["reschedule_url"] = (
             frappe.utils.get_url("/schedule/in/{0}".format(user_availability.get("slug")))
-            + f"?type={event['custom_appointment_slot_duration']}&reschedule=1&event_token={encrypt(event['name'])}"
+            + f"?type={quote_plus(event['custom_appointment_slot_duration'])}&reschedule=1&event_token={encrypt(event['name'])}"
         )
         all_events[event["state"]].append(event)
 
