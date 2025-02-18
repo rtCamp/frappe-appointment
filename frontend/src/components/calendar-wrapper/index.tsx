@@ -1,3 +1,6 @@
+/**
+ * Internal dependencies.
+ */
 import { Calendar } from "@/components/ui/calendar";
 import { cn, disabledDays } from "@/lib/utils";
 
@@ -49,7 +52,7 @@ export const CalendarWrapper = ({
         );
       }}
       onDayClick={onDayClick}
-      className={cn(className)}
+      className={cn("[&_*_table]:flex-1 [&_*_table]:h-fit",className)}
       classNames={{
         months:
           "flex w-full flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0 flex-1",

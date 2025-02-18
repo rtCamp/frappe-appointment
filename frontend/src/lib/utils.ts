@@ -1,3 +1,6 @@
+/**
+ * External dependencies.
+ */
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { Error } from "frappe-js-sdk/lib/frappe_app/types";
@@ -142,6 +145,21 @@ export const disabledDays = (availableDays?: string[]) => {
 };
 
 export const parseDateString = (dateString: string): Date => {
-  const date = new Date(dateString);
-  return isNaN(date.getTime()) ? new Date() : date;
+  const datePattern = /^(\d{4})-(\d{1,2})-(\d{1,2})$/;
+  if (!datePattern.test(dateString)) {
+    return new Date();
+  }
+  const [, year, month, day] = dateString.match(datePattern)!;
+  // Create a Date object using the extracted values
+  // Note: JavaScript months are 0-based, so we subtract 1 from the month
+  const date = new Date(Number(year), Number(month) - 1, Number(day));
+  if (
+    date.getFullYear() === Number(year) &&
+    date.getMonth() === Number(month) - 1 &&
+    date.getDate() === Number(day)
+  ) {
+    return date;
+  } else {
+    return new Date();
+  }
 };

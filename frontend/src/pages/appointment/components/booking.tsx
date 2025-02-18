@@ -41,9 +41,9 @@ import {
 } from "@/components/ui/tooltip";
 import Spinner from "@/components/ui/spinner";
 import useBack from "@/hooks/useBack";
-import SuccessAlert from "@/components/successAlert";
+import SuccessAlert from "@/components/success-alert";
 import { Icon } from "@/components/icons";
-import { CalendarWrapper } from "@/components/calendarWrapper";
+import { CalendarWrapper } from "@/components/calendar-wrapper";
 import { useBookingReducer } from "../reducer";
 
 interface BookingProp {
