@@ -1,4 +1,4 @@
-## Frappe Appointments
+## Frappe Scheduler
 
 The appointment scheduling app supports team functionality, allowing users to create groups with a shared calendar feature. This feature enables selecting time slots to generate meetings.
 
@@ -9,13 +9,13 @@ The appointment scheduling app supports team functionality, allowing users to cr
 ## Install The App 
 
 ```bash
-bench get-app git@github.com:rtCamp/frappe-appointment.git
-bench --site {sitename} install-app frappe-appointment
+bench get-app git@github.com:rtCamp/frappe-scheduler.git
+bench --site {sitename} install-app frappe-scheduler
 ```
 
 ## Setup App on Frappe Site
 
-[Link](https://github.com/rtCamp/frappe-appointments/wiki#setup-app-on-frappe-site)
+[Link](https://github.com/rtCamp/frappe-schedulers/wiki#setup-app-on-frappe-site)
 
 ## Contribution Guide
 

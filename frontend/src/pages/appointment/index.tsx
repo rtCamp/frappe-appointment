@@ -47,7 +47,7 @@ const Appointment = () => {
   } = useAppContext();
 
   const { data, isLoading, error } = useFrappeGetCall(
-    "frappe_appointment.api.personal_meet.get_meeting_windows",
+    "frappe_scheduler.api.personal_meet.get_meeting_windows",
     {
       slug: meetId,
     },
