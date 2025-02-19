@@ -1,25 +1,45 @@
-## Frappe Scheduler
+<div align="center">
+<img src="frappe_scheduler/public/frappe-scheduler-logo.png" height="128" alt="Frappe Scheduler">
+<h2>Frappe Scheduler</h2>
+   Frappe app designed to streamline meeting scheduling with smart integrations.
+</div>
+<br>
+<div align="center">
+<img src="frappe_scheduler/public/featured-image.png" style="width:80%" alt="Frappe Scheduler">
+</div>
 
-The appointment scheduling app supports team functionality, allowing users to create groups with a shared calendar feature. This feature enables selecting time slots to generate meetings.
+## Key Features
 
-## ERD
+- **Google Calendar Integration**: Syncs with Google Calendar to prevent scheduling conflicts.
+- **ERPNext Leave Integration**: Blocks time slots based on ERPNext leave records.
+- **Zoom & Google Meet Integration**: Auto-generates meeting links for Zoom and Google Meet.
+- **Rescheduling Support**: Enables participants to reschedule meetings easily.
 
-[Link](https://dbdiagram.io/d/ERD_frappe_appointment-6548d5667d8bbd64659355e6)
 
-## Install The App 
+## Installation
+
+Run the following command to install the app.
 
 ```bash
 bench get-app git@github.com:rtCamp/frappe-scheduler.git
-bench --site {sitename} install-app frappe-scheduler
+bench --site [site-name] install-app frappe-scheduler
+bench --site [site-name] migrate
+bench restart
 ```
 
-## Setup App on Frappe Site
+For local development, check out our dev-tool for seamlessly building Frappe apps: [frappe-manager](https://github.com/rtCamp/Frappe-Manager)  
+NOTE: If using `frappe-manager`, you might require to `fm restart` to provision the worker queues.
 
-[Link](https://github.com/rtCamp/frappe-schedulers/wiki#setup-app-on-frappe-site)
+## System Setup
+Visit the detailed [System Setup Guide](https://github.com/rtCamp/frappe-scheduler/wiki/System-Setup) on wiki.
+
+## Documentation
+
+Please refer to our [Wiki](https://github.com/rtCamp/frappe-scheduler/wiki/) for details.
 
 ## Contribution Guide
 
-Please read [CONTRIBUTING.md](./CONTRIBUTING.md) for details.
+Please read [contribution.md](./CONTRIBUTING.md) for details.
 
 ## License
 
