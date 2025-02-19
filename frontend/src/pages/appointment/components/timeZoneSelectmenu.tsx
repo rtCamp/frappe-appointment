@@ -28,18 +28,20 @@ interface TimeZoneSelectProps {
   timeZones: Array<string>;
   timeZone: string;
   setTimeZone: (tz: string) => void;
+  disable:boolean;
 }
 
 export default function TimeZoneSelect({
   timeZones,
   timeZone,
   setTimeZone,
+  disable=false,
 }: TimeZoneSelectProps) {
   const [open, setOpen] = useState(false);
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
+      <PopoverTrigger disabled={disable} asChild>
         <Button
           variant="outline"
           className="w-full md:w-fit md:border-none md:focus:ring-0 text-gray-600 md:focus:ring-offset-0 "

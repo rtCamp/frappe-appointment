@@ -249,7 +249,7 @@ const MeetingForm = ({ onBack, durationId, onSuccess }: MeetingFormProps) => {
             </Button>
             <Button
               disabled={loading}
-              className="bg-blue-400 hover:bg-blue-500"
+              className="bg-blue-500 hover:bg-blue-500"
               type="submit"
             >
               {loading && <Spinner />} Schedule Meeting

@@ -22,7 +22,8 @@ def get_time_slots(appointment_group_id: str, date: str, user_timezone_offset: s
     appointment_group = frappe.get_doc(APPOINTMENT_GROUP, appointment_group_id)
 
     time_slots = _get_time_slots_for_day(appointment_group, date, user_timezone_offset)
-
+    if time_slots and isinstance(time_slots, dict):
+        time_slots["title"] = appointment_group.group_name
     return time_slots
 
 

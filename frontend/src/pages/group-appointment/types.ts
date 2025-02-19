@@ -19,6 +19,7 @@ export interface MeetingData {
     round: string;
   };
   booked_slot?: bookedSlotType;
+  title?:string;
 }
 
 export interface bookedSlotType {
