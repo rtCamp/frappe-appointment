@@ -249,7 +249,7 @@ const Booking = ({ type }: BookingProp) => {
                   </Typography>
                 )}
                 {state.meetingData.label ? (
-                  <Typography className="text-sm mt-1">
+                  <Typography className="text-sm mt-1 flex items-center">
                     <Tag className="inline-block w-4 h-4 mr-1" />
                     {state.meetingData.label}
                   </Typography>
@@ -257,14 +257,14 @@ const Booking = ({ type }: BookingProp) => {
                   <Skeleton className="h-5 w-20" />
                 )}
                 {duration ? (
-                  <Typography className="text-sm mt-1">
+                  <Typography className="text-sm mt-1 flex items-center">
                     <Clock className="inline-block w-4 h-4 mr-1" />
                     {duration} Minute Meeting
                   </Typography>
                 ) : (
                   <Skeleton className="h-5 w-24" />
                 )}
-                <Typography className="text-sm  mt-1">
+                <Typography className="text-sm  mt-1 flex items-center">
                   <CalendarIcon className="inline-block w-4 h-4 mr-1" />
                   {formatDate(new Date(), "d MMM, yyyy")}
                 </Typography>
@@ -329,6 +329,7 @@ const Booking = ({ type }: BookingProp) => {
                         timeZones={getAllSupportedTimeZones()}
                         setTimeZone={setTimeZone}
                         timeZone={timeZone}
+                        disable={rescheduleLoading}
                       />
 
                       {/* Time Format Toggle */}
