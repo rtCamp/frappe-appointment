@@ -240,7 +240,7 @@ const GroupAppointment = () => {
                   variant="h2"
                   className="text-3xl font-semibold text-left w-full capitalize"
                 >
-                  {validTitle(state.meetingData.appointment_group_id)}
+                  {validTitle(state.meetingData.title || state.meetingData.appointment_group_id)}
                 </Typography>
                 {state.meetingData && (
                   <div className="w-full flex flex-col gap-2 mt-3">
