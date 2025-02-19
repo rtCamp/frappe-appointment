@@ -41,9 +41,9 @@ import {
 } from "@/components/ui/tooltip";
 import Spinner from "@/components/ui/spinner";
 import useBack from "@/hooks/useBack";
-import SuccessAlert from "@/components/successAlert";
+import SuccessAlert from "@/components/success-alert";
 import { Icon } from "@/components/icons";
-import { CalendarWrapper } from "@/components/calendarWrapper";
+import { CalendarWrapper } from "@/components/calendar-wrapper";
 import { useBookingReducer } from "../reducer";
 
 interface BookingProp {
@@ -95,7 +95,7 @@ const Booking = ({ type }: BookingProp) => {
 
   const navigate = useNavigate();
   const { data, isLoading, error, mutate } = useFrappeGetCall(
-    "frappe_appointment.api.personal_meet.get_time_slots",
+    "frappe_scheduler.api.personal_meet.get_time_slots",
     {
       duration_id: type,
       date: new Intl.DateTimeFormat("en-CA", {
@@ -113,7 +113,7 @@ const Booking = ({ type }: BookingProp) => {
     }
   );
   const { call: rescheduleMeeting, loading: rescheduleLoading } =
-    useFrappePostCall("frappe_appointment.api.personal_meet.book_time_slot");
+    useFrappePostCall("frappe_scheduler.api.personal_meet.book_time_slot");
 
   const onReschedule = () => {
     const extraArgs: Record<string, string> = {};
@@ -249,7 +249,7 @@ const Booking = ({ type }: BookingProp) => {
                   </Typography>
                 )}
                 {state.meetingData.label ? (
-                  <Typography className="text-sm mt-1">
+                  <Typography className="text-sm mt-1 flex items-center">
                     <Tag className="inline-block w-4 h-4 mr-1" />
                     {state.meetingData.label}
                   </Typography>
@@ -257,14 +257,14 @@ const Booking = ({ type }: BookingProp) => {
                   <Skeleton className="h-5 w-20" />
                 )}
                 {duration ? (
-                  <Typography className="text-sm mt-1">
+                  <Typography className="text-sm mt-1 flex items-center">
                     <Clock className="inline-block w-4 h-4 mr-1" />
                     {duration} Minute Meeting
                   </Typography>
                 ) : (
                   <Skeleton className="h-5 w-24" />
                 )}
-                <Typography className="text-sm  mt-1">
+                <Typography className="text-sm  mt-1 flex items-center">
                   <CalendarIcon className="inline-block w-4 h-4 mr-1" />
                   {formatDate(new Date(), "d MMM, yyyy")}
                 </Typography>
@@ -329,6 +329,7 @@ const Booking = ({ type }: BookingProp) => {
                         timeZones={getAllSupportedTimeZones()}
                         setTimeZone={setTimeZone}
                         timeZone={timeZone}
+                        disable={rescheduleLoading}
                       />
 
                       {/* Time Format Toggle */}

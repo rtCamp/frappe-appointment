@@ -51,7 +51,7 @@ const MeetingForm = ({ onBack, durationId, onSuccess }: MeetingFormProps) => {
   const [isGuestsOpen, setIsGuestsOpen] = useState(false);
   const [guestInput, setGuestInput] = useState("");
   const { call: bookMeeting, loading } = useFrappePostCall(
-    `frappe_appointment.api.personal_meet.book_time_slot`
+    `frappe_scheduler.api.personal_meet.book_time_slot`
   );
   const [searchParams] = useSearchParams();
 
@@ -249,7 +249,7 @@ const MeetingForm = ({ onBack, durationId, onSuccess }: MeetingFormProps) => {
             </Button>
             <Button
               disabled={loading}
-              className="bg-blue-400 hover:bg-blue-500"
+              className="bg-blue-500 hover:bg-blue-500"
               type="submit"
             >
               {loading && <Spinner />} Schedule Meeting

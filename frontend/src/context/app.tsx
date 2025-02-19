@@ -1,12 +1,19 @@
 /**
  * External dependencies
  */
-import React, { createContext, useContext, useState, ReactNode } from "react";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  ReactNode,
+  useSyncExternalStore,
+} from "react";
 
 /**
  * Internal dependencies
  */
 import { Profile } from "@/pages/appointment/components/socialProfiles";
+import NetworkDisconnect from "@/components/network-disconnect";
 
 // Define the types for the userInfo and MeetingProviderTypes
 type MeetingProviderTypes = "Google Meet" | "Zoom";
@@ -101,6 +108,27 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
   const [meetingDurationCards, setMeetingDurationCards] = useState<
     durationCard[]
   >(initialAppContextType.meetingDurationCards);
+
+  // network
+
+  const getSnapshot = () => {
+    return navigator.onLine;
+  };
+
+  const subscribe = (callback: () => void) => {
+    window.addEventListener("online", callback);
+    window.addEventListener("offline", callback);
+    return () => {
+      window.removeEventListener("online", callback);
+      window.removeEventListener("offline", callback);
+    };
+  };
+
+  const isOnline = useSyncExternalStore(subscribe, getSnapshot);
+
+  if (!isOnline) {
+    return <NetworkDisconnect />;
+  }
 
   return (
     <AppContext.Provider

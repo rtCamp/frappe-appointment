@@ -39,5 +39,5 @@ export const getIconForKey = (key: string): LucideIcon => {
 };
 
 export const validTitle = (str: string) => {
-  return str.replace(/[-_]/g, " ");
+  return str.replace(/[-_]/g, " ").replace(/\bWordpress\b/gi, "WordPress");
 };

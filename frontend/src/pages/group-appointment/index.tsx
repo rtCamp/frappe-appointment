@@ -27,7 +27,7 @@ import {
 } from "@/lib/utils";
 import { TimeFormat } from "../appointment/types";
 import { Button } from "@/components/ui/button";
-import PoweredBy from "@/components/poweredBy";
+import PoweredBy from "@/components/powered-by";
 import { Switch } from "@/components/ui/switch";
 import TimeZoneSelect from "../appointment/components/timeZoneSelectmenu";
 import Spinner from "@/components/ui/spinner";
@@ -35,9 +35,9 @@ import GroupMeetSkeleton from "./components/groupMeetSkeleton";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getIconForKey, validTitle } from "./utils";
 import { useFrappeGetCall, useFrappePostCall } from "frappe-react-sdk";
-import SuccessAlert from "@/components/successAlert";
-import MetaTags from "@/components/metaTags";
-import { CalendarWrapper } from "@/components/calendarWrapper";
+import SuccessAlert from "@/components/success-alert";
+import MetaTags from "@/components/meta-tags";
+import { CalendarWrapper } from "@/components/calendar-wrapper";
 import { useMeetingReducer } from "./reducer";
 
 const GroupAppointment = () => {
@@ -56,7 +56,7 @@ const GroupAppointment = () => {
     error: fetchError,
     mutate,
   } = useFrappeGetCall(
-    "frappe_appointment.api.group_meet.get_time_slots",
+    "frappe_scheduler.api.group_meet.get_time_slots",
     {
       ...Object.fromEntries(searchParams),
       appointment_group_id: groupId,
@@ -77,7 +77,7 @@ const GroupAppointment = () => {
   );
 
   const { call: bookMeeting, loading } = useFrappePostCall(
-    "frappe_appointment.api.group_meet.book_time_slot"
+    "frappe_scheduler.api.group_meet.book_time_slot"
   );
 
   useEffect(() => {
@@ -240,7 +240,7 @@ const GroupAppointment = () => {
                   variant="h2"
                   className="text-3xl font-semibold text-left w-full capitalize"
                 >
-                  {validTitle(state.meetingData.appointment_group_id)}
+                  {validTitle(state.meetingData.title || state.meetingData.appointment_group_id)}
                 </Typography>
                 {state.meetingData && (
                   <div className="w-full flex flex-col gap-2 mt-3">
@@ -353,6 +353,7 @@ const GroupAppointment = () => {
                       dispatch({ type: "SET_TIMEZONE", payload: tz })
                     }
                     timeZone={state.timeZone}
+                    disable={loading}
                   />
 
                   {/* Time Format Toggle */}
@@ -396,7 +397,7 @@ const GroupAppointment = () => {
                       : true) || loading
                   }
                   className={cn(
-                    "bg-blue-400 flex hover:bg-blue-500 w-fit px-10",
+                    "bg-blue-500 flex hover:bg-blue-500 w-fit px-10",
                     "md:hidden"
                   )}
                   onClick={scheduleMeeting}
