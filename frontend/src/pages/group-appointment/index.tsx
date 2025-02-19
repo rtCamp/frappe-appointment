@@ -353,6 +353,7 @@ const GroupAppointment = () => {
                       dispatch({ type: "SET_TIMEZONE", payload: tz })
                     }
                     timeZone={state.timeZone}
+                    disable={loading}
                   />
 
                   {/* Time Format Toggle */}
@@ -396,7 +397,7 @@ const GroupAppointment = () => {
                       : true) || loading
                   }
                   className={cn(
-                    "bg-blue-400 flex hover:bg-blue-500 w-fit px-10",
+                    "bg-blue-500 flex hover:bg-blue-500 w-fit px-10",
                     "md:hidden"
                   )}
                   onClick={scheduleMeeting}

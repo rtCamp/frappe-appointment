@@ -54,7 +54,7 @@ const MeetingCard = ({ title, duration, onClick }: MeetingCardProps) => {
       <CardContent className="cursor-pointer">
         <Button
           onClick={onClick}
-          className="w-full bg-blue-400 hover:bg-blue-500"
+          className="w-full bg-blue-500 hover:bg-blue-500"
         >
           Schedule Meeting
         </Button>
