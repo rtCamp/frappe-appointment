@@ -3,7 +3,7 @@
  */
 import { lazy } from "react";
 import { Route } from "react-router-dom";
-import ErrorFallback from "./components/errorFallback";
+import ErrorFallback from "./components/error-fallback";
 
 /**
  * Lazy load components.

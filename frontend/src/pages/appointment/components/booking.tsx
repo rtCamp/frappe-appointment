@@ -41,9 +41,9 @@ import {
 } from "@/components/ui/tooltip";
 import Spinner from "@/components/ui/spinner";
 import useBack from "@/hooks/useBack";
-import SuccessAlert from "@/components/successAlert";
+import SuccessAlert from "@/components/success-alert";
 import { Icon } from "@/components/icons";
-import { CalendarWrapper } from "@/components/calendarWrapper";
+import { CalendarWrapper } from "@/components/calendar-wrapper";
 import { useBookingReducer } from "../reducer";
 
 interface BookingProp {
@@ -95,7 +95,7 @@ const Booking = ({ type }: BookingProp) => {
 
   const navigate = useNavigate();
   const { data, isLoading, error, mutate } = useFrappeGetCall(
-    "frappe_appointment.api.personal_meet.get_time_slots",
+    "frappe_scheduler.api.personal_meet.get_time_slots",
     {
       duration_id: type,
       date: new Intl.DateTimeFormat("en-CA", {
@@ -113,7 +113,7 @@ const Booking = ({ type }: BookingProp) => {
     }
   );
   const { call: rescheduleMeeting, loading: rescheduleLoading } =
-    useFrappePostCall("frappe_appointment.api.personal_meet.book_time_slot");
+    useFrappePostCall("frappe_scheduler.api.personal_meet.book_time_slot");
 
   const onReschedule = () => {
     const extraArgs: Record<string, string> = {};

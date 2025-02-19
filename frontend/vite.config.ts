@@ -25,7 +25,7 @@ export default defineConfig(({ command, mode }) => {
       proxy: proxyConfig,
     },
     build: {
-      outDir: "../frappe_appointment/public/frontend",
+      outDir: "../frappe_scheduler/public/frontend",
       emptyOutDir: true,
       target: "es2015",
     },

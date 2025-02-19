@@ -16,14 +16,14 @@ import SocialProfiles from "./components/socialProfiles";
 import { useAppContext } from "@/context/app";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getLocalTimezone } from "@/lib/utils";
-import PoweredBy from "@/components/poweredBy";
+import PoweredBy from "@/components/powered-by";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import Typography from "@/components/ui/typography";
-import MetaTags from "@/components/metaTags";
+import MetaTags from "@/components/meta-tags";
 
 const Appointment = () => {
   const { meetId } = useParams();
@@ -47,7 +47,7 @@ const Appointment = () => {
   } = useAppContext();
 
   const { data, isLoading, error } = useFrappeGetCall(
-    "frappe_appointment.api.personal_meet.get_meeting_windows",
+    "frappe_scheduler.api.personal_meet.get_meeting_windows",
     {
       slug: meetId,
     },

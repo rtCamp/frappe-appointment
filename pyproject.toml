@@ -1,5 +1,5 @@
 [project]
-name = "frappe_appointment"
+name = "frappe_scheduler"
 authors = [
     { name = "rtCamp", email = "sys@rtcamp.com"}
 ]
