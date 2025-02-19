@@ -35,10 +35,6 @@ bench get-app git@github.com:rtCamp/frappe-scheduler.git
 bench --site {sitename} install-app frappe-scheduler
 ```
 
-## Setup App on Frappe Site
-
-[Link](https://github.com/rtCamp/frappe-schedulers/wiki#setup-app-on-frappe-site)
-
 ## Contribution Guide
 
 Please read [CONTRIBUTING.md](./CONTRIBUTING.md) for details.
