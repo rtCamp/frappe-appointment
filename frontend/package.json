@@ -4,9 +4,9 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "copy-html-entry": "cp ../frappe_appointment/public/frontend/index.html ../frappe_appointment/www/schedule/index.html",
+    "copy-html-entry": "cp ../frappe_scheduler/public/frontend/index.html ../frappe_scheduler/www/schedule/index.html",
     "dev": "vite",
-    "build": "npm install && vite build --base=/assets/frappe_appointment/frontend/ && npm run copy-html-entry",
+    "build": "npm install && vite build --base=/assets/frappe_scheduler/frontend/ && npm run copy-html-entry",
     "lint": "eslint .  --report-unused-disable-directives --max-warnings 0",
     "lint:fix": "eslint .  --fix",
     "preview": "vite preview"
