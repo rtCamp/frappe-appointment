@@ -40,6 +40,10 @@ app_include_js = ["/assets/frappe_scheduler/js/appointment_link.js"]
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
 # doctype_calendar_js = {"doctype" : "public/js/doctype_calendar.js"}
 
+doctype_js = {
+    "Google Calendar": "public/js/google_calendar_override.js",
+}
+
 # Home Pages
 # ----------
 
@@ -100,6 +104,18 @@ fixtures = [
                 {
                     "[Default] Appointment Scheduled",
                     "[Default] Appointment Group Availability",
+                },
+            ]
+        ],
+    },
+    {
+        "dt": "Form Tour",
+        "filters": [
+            [
+                "name",
+                "in",
+                {
+                    "Google Calendar Setup",
                 },
             ]
         ],
