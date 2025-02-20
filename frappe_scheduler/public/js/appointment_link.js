@@ -62,71 +62,150 @@ function generate_table(data) {
         </tr>`;
   });
   html += `</tbody></table>`;
-  // html += "<hr>";
   return html;
 }
 
-function generate_appointment_dialogue(r, title) {
-  var data = r.message;
+function create_meetings_section(frm, r, title = "Upcoming & Ongoing Meetings") {
+  if (frm.doctype === "User Appointment Availability") {
+    var html = "<div class='scheduler-meeting-container'>";
+    is_data_available = false;
+    const data = r.message;
+    if (data?.ongoing && data.ongoing.length > 0) {
+      html += `<div class="scheduler-meeting-box scheduler-meeting-github" style="margin-top: 20px;">
+        <h4>Ongoing Meetings</h4>
+        ${generate_table(data.ongoing)}
+      </div>`;
+      is_data_available = true;
+    }
+    if (data?.upcoming && data.upcoming.length > 0) {
+      html += `<div class="scheduler-meeting-box scheduler-meeting-github" style="margin-top: 20px;">
+        <h4>Upcoming Meetings</h4>
+        ${generate_table(data.upcoming)}
+      </div>`;
+      is_data_available = true;
+    }
+    if (!is_data_available) {
+      html += `<div class="scheduler-meeting-box scheduler-meeting-github" style="margin-top: 20px;">
+        <h4>No Meetings Found</h4>
+      </div>`;
+    }
+    html += "</div>";
+
+    var meeting_section = null;
+    const sections = document.querySelectorAll(".form-dashboard-section");
+    sections.forEach((section) => {
+      if (section.querySelector(".scheduler-meeting-container")) {
+        meeting_section = section;
+      }
+    });
+
+    if (meeting_section) {
+      meeting_section.querySelector(".section-body").innerHTML = html;
+    } else {
+      frm.dashboard.add_section(html, __(title));
+    }
+
+    if (is_data_available) {
+      make_section_open();
+    } else {
+      make_section_close();
+    }
+  }
+}
+
+function make_section_open() {
+  const sections = document.querySelectorAll(".form-dashboard-section");
+  sections.forEach((section) => {
+    if (section.querySelector(".scheduler-meeting-container")) {
+      if (section.querySelector(".section-head").classList.contains("collapsed")) {
+        section.querySelector(".section-head").click();
+      }
+    }
+  });
+}
+
+function make_section_close() {
+  const sections = document.querySelectorAll(".form-dashboard-section");
+  sections.forEach((section) => {
+    if (section.querySelector(".scheduler-meeting-container")) {
+      if (!section.querySelector(".section-head").classList.contains("collapsed")) {
+        section.querySelector(".section-head").click();
+      }
+    }
+  });
+}
+
+function generate_appointment_dialogue(
+  r,
+  title,
+  show_upcoming = true,
+  show_past = true,
+  show_ongoing = true,
+  past_collapsed = true,
+  frm = null
+) {
+  const data = r.message;
   if (!data) {
     frappe.msgprint(__("No appointments found"));
     return;
   }
 
+  if (frm) {
+    create_meetings_section(frm, r);
+  }
+
+  var fields = [];
+
+  if (show_ongoing && data.ongoing.length > 0) {
+    fields.push({
+      fieldname: "ongoing_appointments_section",
+      fieldtype: "Section Break",
+      label: __("Ongoing Appointments"),
+    });
+    fields.push({
+      fieldname: "ongoing_appointments",
+      fieldtype: "HTML",
+    });
+  }
+  if (show_upcoming && data.upcoming.length > 0) {
+    fields.push({
+      fieldname: "upcoming_appointments_section",
+      fieldtype: "Section Break",
+      label: __("Upcoming Appointments"),
+    });
+    fields.push({
+      fieldname: "upcoming_appointments",
+      fieldtype: "HTML",
+    });
+  }
+  if (show_past && data.past.length > 0) {
+    fields.push({
+      fieldname: "past_appointments_section",
+      fieldtype: "Section Break",
+      label: __("Past & Closed Appointments"),
+      collapsible: past_collapsed ? 1 : 0,
+      collapsed: past_collapsed ? 1 : 0,
+    });
+    fields.push({
+      fieldname: "past_appointments",
+      fieldtype: "HTML",
+    });
+  }
+
   const dialog = new frappe.ui.Dialog({
     title: __(title || "Appointments"),
-    fields: [
-      // {
-      //   fieldname: "appointments",
-      //   fieldtype: "HTML",
-      // },
-      {
-        fieldname: "ongoing_appointments_section",
-        fieldtype: "Section Break",
-        label: __("Ongoing Appointments"),
-        hidden: data.ongoing.length == 0,
-      },
-      {
-        fieldname: "ongoing_appointments",
-        fieldtype: "HTML",
-        hidden: data.ongoing.length == 0,
-      },
-      {
-        fieldname: "upcoming_appointments_section",
-        fieldtype: "Section Break",
-        label: __("Upcoming Appointments"),
-        hidden: data.upcoming.length == 0,
-      },
-      {
-        fieldname: "upcoming_appointments",
-        fieldtype: "HTML",
-        hidden: data.upcoming.length == 0,
-      },
-      {
-        fieldname: "past_appointments_section",
-        fieldtype: "Section Break",
-        label: __("Past & Closed Appointments"),
-        collapsible: 1,
-        collapsed: 1,
-        hidden: data.past.length == 0,
-      },
-      {
-        fieldname: "past_appointments",
-        fieldtype: "HTML",
-        hidden: data.past.length == 0,
-      },
-    ],
+    fields: fields,
     size: "large",
   });
-  if (data.ongoing.length > 0) {
+  if (show_ongoing && data.ongoing.length > 0) {
     dialog.fields_dict.ongoing_appointments.$wrapper.html(generate_table(data.ongoing));
     dialog.fields_dict.ongoing_appointments_section.wrapper.find(".section-head").css("font-size", "1.25em");
   }
-  if (data.upcoming.length > 0) {
+  if (show_upcoming && data.upcoming.length > 0) {
     dialog.fields_dict.upcoming_appointments.$wrapper.html(generate_table(data.upcoming));
     dialog.fields_dict.upcoming_appointments_section.wrapper.find(".section-head").css("font-size", "1.25em");
   }
-  if (data.past.length > 0) {
+  if (show_past && data.past.length > 0) {
     dialog.fields_dict.past_appointments.$wrapper.html(generate_table(data.past));
     dialog.fields_dict.past_appointments_section.wrapper.find(".section-head").css("font-size", "1.25em");
   }
@@ -150,14 +229,29 @@ $(document).on("form-refresh", function (event, frm) {
 
     frappe.ui.form.on(doctype, {
       refresh: function (frm) {
-        if (doctype == "User Appointment Availability") {
-          const personal_meet_menu = frm.page.add_custom_button_group("Personal Meeting");
-          frm.page.add_custom_menu_item(personal_meet_menu, __("Copy Schedular Link"), function () {
+        if (doctype == "User Appointment Availability" && !frm.doc.__islocal) {
+          frm.add_custom_button(__("Copy Scheduler Link"), function () {
             frm.trigger("copy_scheduler_link");
           });
 
-          frm.page.add_custom_menu_item(personal_meet_menu, __("View Meetings"), function () {
+          const personal_meet_menu = frm.page.add_custom_button_group("Personal Meeting");
+          frm.page.add_custom_menu_item(personal_meet_menu, __("Scheduler Link with Duration"), function () {
+            frm.trigger("copy_scheduler_link_with_duration");
+          });
+
+          frm.page.add_custom_menu_item(personal_meet_menu, __("View Past Meetings"), function () {
             frm.trigger("view_personal_meetings");
+          });
+
+          frappe.call({
+            method: "frappe_scheduler.overrides.event_override.get_personal_meetings",
+            args: {
+              user: frm.doc.name,
+              past_events: true,
+            },
+            callback: function (r) {
+              create_meetings_section(frm, r);
+            },
           });
         }
         frappe.call({
@@ -213,21 +307,33 @@ $(document).on("form-refresh", function (event, frm) {
           freeze: true,
           callback: function (r) {
             if (r.message) {
+              if (!navigator.clipboard) {
+                frappe.msgprint(
+                  __("Clipboard API not supported. Please copy the value manually: {0}", [r.message.url])
+                );
+                return;
+              }
+              navigator.clipboard.writeText(r.message.url).then(function () {
+                frappe.toast(__("Link Copied"));
+              });
+            } else {
+              frappe.msgprint(__("No scheduler link found"));
+            }
+          },
+        });
+      },
+      copy_scheduler_link_with_duration: function (frm) {
+        frappe.call({
+          method: "frappe_scheduler.api.personal_meet.get_schedular_link",
+          args: {
+            user: frm.doc.name,
+          },
+          freeze: true,
+          callback: function (r) {
+            if (r.message) {
               const dialog = new frappe.ui.Dialog({
                 title: __("Scheduler Link"),
                 fields: [
-                  {
-                    fieldname: "scheduler_link",
-                    fieldtype: "Data",
-                    label: __("Scheduler Link"),
-                    read_only: 1,
-                    default: r.message.url,
-                  },
-                  {
-                    fieldname: "copy_scheduler_link",
-                    fieldtype: "Button",
-                    label: __("Copy Link"),
-                  },
                   {
                     fieldname: "section_break_1",
                     fieldtype: "Section Break",
@@ -239,16 +345,7 @@ $(document).on("form-refresh", function (event, frm) {
                   },
                 ],
               });
-              dialog.fields_dict.copy_scheduler_link.$input.on("click", function () {
-                if (!r.message) {
-                  frappe.msgprint(__("No link found"));
-                  return;
-                }
-                if (!navigator.clipboard) return;
-                navigator.clipboard.writeText(r.message.url).then(function () {
-                  frappe.toast(__("Link Copied"));
-                });
-              });
+
               var html = "";
               if (r.message.available_durations.length > 0) {
                 html += "<ul style='display:grid;gap:5px;'>";
@@ -275,7 +372,7 @@ $(document).on("form-refresh", function (event, frm) {
           },
           freeze: true,
           callback: function (r) {
-            generate_appointment_dialogue(r, "Personal Meetings");
+            generate_appointment_dialogue(r, "Past Meetings", false, true, false, false, frm);
           },
         });
       },
