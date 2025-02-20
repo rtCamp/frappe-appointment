@@ -5,7 +5,7 @@
 </div>
 <br>
 <div align="center">
-<img src="frappe_scheduler/public/featured-image.png" style="width:80%" alt="Frappe Scheduler">
+<img src="frappe_scheduler/public/featured-image.png" style="1050" alt="Frappe Scheduler">
 </div>
 
 ## Key Features
