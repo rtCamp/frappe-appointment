@@ -4,40 +4,44 @@
    Frappe app designed to streamline meeting scheduling with smart integrations.
 </div>
 <br>
-<br>
 <div align="center">
-<img src="https://github.com/user-attachments/assets/a5711327-477a-45aa-a9d8-acef1ab00848" width="1050" alt="Frappe Scheduler">
+<img src="https://github.com/user-attachments/assets/a5711327-477a-45aa-a9d8-acef1ab00848" style="width:80%" alt="Frappe Scheduler">
 </div>
-<br>
 
-# Frappe Scheduler  
-
-**Frappe Scheduler** simplifies meeting coordination by letting others book time with you effortlessly—no more email back-and-forth. Stay in control of your availability with flexible scheduling options, whether you're an individual consultant or part of a team. 
-
-## Meeting Types  
+## Key Features
 
 - **[Personal Meetings](https://github.com/rtCamp/frappe-scheduler/wiki/Personal-Meetings)**: Share a personal scheduling link for one-on-one meetings.  
-- **[Group Meetings](https://github.com/rtCamp/frappe-scheduler/wiki/Group-Meetings)**: Share a group scheduling link to coordinate meetings with multiple participants.  
+- **[Group Meetings](https://github.com/rtCamp/frappe-scheduler/wiki/Group-Meetings)**: Share a group scheduling link to coordinate meetings with multiple participants. 
+- **Google Calendar Integration**: Syncs with Google Calendar to prevent scheduling conflicts.
+- **ERPNext Leave Integration**: Blocks time slots based on ERPNext leave records.
+- **Zoom & Google Meet Integration**: Auto-generates meeting links for Zoom and Google Meet.
+- **Rescheduling Support**: Enables participants to reschedule meetings easily.
+ 
 
-## Key Features  
+## Installation
 
-- **Google Calendar Integration** – Prevents conflicts by syncing with Google Calendar.  
-- **ERPNext Leave Integration** – Automatically blocks unavailable time slots based on ERPNext leave records.  
-- **Zoom & Google Meet Integration** – Auto-generates meeting links for seamless virtual meetings.  
-- **Rescheduling Support** – Allows participants to easily modify meeting times if needed.  
-
-For detailed setup and usage instructions, visit the [Frappe Scheduler Setup Guide](https://github.com/rtCamp/frappe-scheduler/wiki/System-Setup).  
-
-## Install The App 
+Run the following command to install the app.
 
 ```bash
 bench get-app git@github.com:rtCamp/frappe-scheduler.git
-bench --site {sitename} install-app frappe-scheduler
+bench --site [site-name] install-app frappe-scheduler
+bench --site [site-name] migrate
+bench restart
 ```
+
+For local development, check out our dev-tool for seamlessly building Frappe apps: [frappe-manager](https://github.com/rtCamp/Frappe-Manager)  
+NOTE: If using `frappe-manager`, you might require to `fm restart` to provision the worker queues.
+
+## System Setup
+Visit the detailed [System Setup Guide](https://github.com/rtCamp/frappe-scheduler/wiki/System-Setup) on wiki.
+
+## Documentation
+
+Please refer to our [Wiki](https://github.com/rtCamp/frappe-scheduler/wiki/) for details.
 
 ## Contribution Guide
 
-Please read [CONTRIBUTING.md](./CONTRIBUTING.md) for details.
+Please read [contribution.md](./CONTRIBUTING.md) for details.
 
 ## License
 
