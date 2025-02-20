@@ -304,9 +304,8 @@ $(document).on("form-refresh", function (event, frm) {
           args: {
             user: frm.doc.name,
           },
-          freeze: true,
           callback: function (r) {
-            if (r.message) {
+            if (r?.message?.url) {
               if (!navigator.clipboard) {
                 frappe.msgprint(
                   __("Clipboard API not supported. Please copy the value manually: {0}", [r.message.url])
@@ -317,7 +316,9 @@ $(document).on("form-refresh", function (event, frm) {
                 frappe.toast(__("Link Copied"));
               });
             } else {
-              frappe.msgprint(__("No scheduler link found"));
+              frappe.msgprint(
+                __("No scheduler link found. Please make sure Personal Meetings are enabled for this user.")
+              );
             }
           },
         });
@@ -330,7 +331,7 @@ $(document).on("form-refresh", function (event, frm) {
           },
           freeze: true,
           callback: function (r) {
-            if (r.message) {
+            if (r.message?.available_durations && r.message.available_durations.length > 0) {
               const dialog = new frappe.ui.Dialog({
                 title: __("Scheduler Link"),
                 fields: [
@@ -359,6 +360,10 @@ $(document).on("form-refresh", function (event, frm) {
               }
               dialog.fields_dict.meeting_durations.$wrapper.html(html);
               dialog.show();
+            } else {
+              frappe.msgprint(
+                __("No scheduler link found. Please make sure Personal Meetings are enabled for this user.")
+              );
             }
           },
         });
