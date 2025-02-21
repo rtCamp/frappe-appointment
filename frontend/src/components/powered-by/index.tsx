@@ -11,7 +11,7 @@ const PoweredBy = () => {
           <Typography variant="p"> Powered by</Typography>
           <Typography variant="p">
             <a
-              href="#"
+              href="https://github.com/rtCamp/frappe-scheduler/"
               target="_blank"
               rel="noopener noreferrer"
               className="font-semibold hover:underline text-blue-500"
