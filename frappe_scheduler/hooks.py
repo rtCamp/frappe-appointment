@@ -42,6 +42,7 @@ app_include_js = ["/assets/frappe_scheduler/js/appointment_link.js"]
 
 doctype_js = {
     "Google Calendar": "public/js/google_calendar_override.js",
+    "User": "public/js/user_override.js",
 }
 
 # Home Pages
