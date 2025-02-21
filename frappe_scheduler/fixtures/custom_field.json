@@ -300,7 +300,7 @@
   "fetch_from": null,
   "fetch_if_empty": 0,
   "fieldname": "custom_google_calendar_event_url",
-  "fieldtype": "Data",
+  "fieldtype": "Small Text",
   "hidden": 0,
   "hide_border": 0,
   "hide_days": 0,

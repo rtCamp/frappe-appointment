@@ -1,22 +1,20 @@
 <div align="center">
-<img src="https://github.com/user-attachments/assets/a34e9ad0-0cba-44d4-a6e5-11b331554294" height="128" alt="Frappe Scheduler">
+<img src="frappe_scheduler/public/frappe-scheduler-logo.png" height="128" alt="Frappe Scheduler">
 <h2>Frappe Scheduler</h2>
    Frappe app designed to streamline meeting scheduling with smart integrations.
 </div>
 <br>
 <div align="center">
-<img src="https://github.com/user-attachments/assets/a5711327-477a-45aa-a9d8-acef1ab00848" style="width:80%" alt="Frappe Scheduler">
+<img src="frappe_scheduler/public/featured-image.png" width="1050" alt="Frappe Scheduler">
 </div>
 
 ## Key Features
 
-- **[Personal Meetings](https://github.com/rtCamp/frappe-scheduler/wiki/Personal-Meetings)**: Share a personal scheduling link for one-on-one meetings.  
-- **[Group Meetings](https://github.com/rtCamp/frappe-scheduler/wiki/Group-Meetings)**: Share a group scheduling link to coordinate meetings with multiple participants. 
 - **Google Calendar Integration**: Syncs with Google Calendar to prevent scheduling conflicts.
 - **ERPNext Leave Integration**: Blocks time slots based on ERPNext leave records.
 - **Zoom & Google Meet Integration**: Auto-generates meeting links for Zoom and Google Meet.
 - **Rescheduling Support**: Enables participants to reschedule meetings easily.
- 
+
 
 ## Installation
 
