@@ -105,23 +105,8 @@ function create_meetings_section(frm, r, title = "Upcoming & Ongoing Meetings") 
       frm.dashboard.add_section(html, __(title));
     }
 
-    if (is_data_available) {
-      make_section_open();
-    } else {
-      make_section_close();
-    }
+    make_section_close();
   }
-}
-
-function make_section_open() {
-  const sections = document.querySelectorAll(".form-dashboard-section");
-  sections.forEach((section) => {
-    if (section.querySelector(".scheduler-meeting-container")) {
-      if (section.querySelector(".section-head").classList.contains("collapsed")) {
-        section.querySelector(".section-head").click();
-      }
-    }
-  });
 }
 
 function make_section_close() {
