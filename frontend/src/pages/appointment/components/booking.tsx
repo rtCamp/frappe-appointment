@@ -110,6 +110,7 @@ const Booking = ({ type }: BookingProp) => {
     undefined,
     {
       revalidateOnFocus: false,
+      errorRetryCount:3,
     }
   );
   const { call: rescheduleMeeting, loading: rescheduleLoading } =

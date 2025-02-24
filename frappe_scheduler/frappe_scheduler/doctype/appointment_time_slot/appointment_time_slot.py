@@ -22,6 +22,10 @@ class AppointmentTimeSlot(Document):
     pass
 
 
+class GoogleBadRequest(Exception):
+    pass
+
+
 def get_all_unavailable_google_calendar_slots_for_day(
     member_time_slots: object,
     starttime: datetime,
@@ -86,7 +90,10 @@ def get_google_calendar_slots_member(
 
     google_calendar = frappe.get_doc("Google Calendar", google_calendar_id)
 
-    google_calendar_api_obj, account = get_google_calendar_object(google_calendar.name)
+    try:
+        google_calendar_api_obj, account = get_google_calendar_object(google_calendar.name)
+    except Exception:
+        raise GoogleBadRequest(_("Google Calendar - Could not create Google Calendar API object."))
 
     events = []
 

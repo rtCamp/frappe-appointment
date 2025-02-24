@@ -63,4 +63,10 @@ frappe.ui.form.on("User Appointment Availability", {
       });
     }
   },
+  onload(frm) {
+    if (frm.doc.__islocal) {
+      const tour_name = "User Appointment Availability Setup";
+      frm.tour.init({ tour_name }).then(() => frm.tour.start());
+    }
+  },
 });

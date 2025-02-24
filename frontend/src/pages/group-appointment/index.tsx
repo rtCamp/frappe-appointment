@@ -73,6 +73,7 @@ const GroupAppointment = () => {
     {
       revalidateOnFocus: false,
       revalidateOnReconnect: false,
+      errorRetryCount:3,
     }
   );
 
