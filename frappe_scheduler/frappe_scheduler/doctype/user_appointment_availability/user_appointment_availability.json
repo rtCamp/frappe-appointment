@@ -105,7 +105,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-02-17 11:47:55.317776",
+ "modified": "2025-02-20 12:47:50.808412",
  "modified_by": "Administrator",
  "module": "Frappe Scheduler",
  "name": "User Appointment Availability",
@@ -137,6 +137,10 @@
    "select": 1,
    "share": 1,
    "write": 1
+  },
+  {
+   "role": "Desk User",
+   "select": 1
   }
  ],
  "sort_field": "modified",

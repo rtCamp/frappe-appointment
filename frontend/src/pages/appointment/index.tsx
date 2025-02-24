@@ -55,6 +55,7 @@ const Appointment = () => {
     {
       revalidateOnFocus: false,
       revalidateOnReconnect: false,
+      errorRetryCount:3,
     }
   );
 

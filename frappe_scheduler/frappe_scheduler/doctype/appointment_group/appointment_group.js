@@ -35,6 +35,12 @@ frappe.ui.form.on("Appointment Group", {
       });
     }
   },
+  onload: function (frm) {
+    if (frm.doc.__islocal) {
+      const tour_name = "Appointment Group Setup";
+      frm.tour.init({ tour_name }).then(() => frm.tour.start());
+    }
+  },
 });
 
 function update_slots_availability(frm) {
