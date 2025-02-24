@@ -8,7 +8,7 @@ window.copy_to_clipboard = function (text) {
     frappe.msgprint(__("Clipboard API not supported. Please copy the value manually: {0}", [text]));
     return;
   }
-  navigator.clipboard.writeText(text).then(function () {
+  navigator.clipboard.writeText(text).then(() => {
     frappe.toast(__("Link Copied"));
   });
 };
@@ -215,16 +215,16 @@ $(document).on("form-refresh", function (event, frm) {
     frappe.ui.form.on(doctype, {
       refresh: function (frm) {
         if (doctype == "User Appointment Availability" && !frm.doc.__islocal) {
-          frm.add_custom_button(__("Copy Scheduler Link"), function () {
+          frm.add_custom_button(__("Copy Scheduler Link"), () => {
             frm.trigger("copy_scheduler_link");
           });
 
           const personal_meet_menu = frm.page.add_custom_button_group("Personal Meeting");
-          frm.page.add_custom_menu_item(personal_meet_menu, __("Scheduler Link with Duration"), function () {
+          frm.page.add_custom_menu_item(personal_meet_menu, __("Scheduler Link with Duration"), () => {
             frm.trigger("copy_scheduler_link_with_duration");
           });
 
-          frm.page.add_custom_menu_item(personal_meet_menu, __("View Past Meetings"), function () {
+          frm.page.add_custom_menu_item(personal_meet_menu, __("View Past Meetings"), () => {
             frm.trigger("view_personal_meetings");
           });
 
@@ -257,11 +257,11 @@ $(document).on("form-refresh", function (event, frm) {
 
               const appointment_group_menu = frm.page.add_custom_button_group("Appointments");
 
-              frm.page.add_custom_menu_item(appointment_group_menu, __("Schedule"), function () {
+              frm.page.add_custom_menu_item(appointment_group_menu, __("Schedule"), () => {
                 frm.trigger("schedule_appointment");
               });
 
-              frm.page.add_custom_menu_item(appointment_group_menu, __("View"), function () {
+              frm.page.add_custom_menu_item(appointment_group_menu, __("View"), () => {
                 frm.trigger("view_appointment");
               });
             }
@@ -297,7 +297,7 @@ $(document).on("form-refresh", function (event, frm) {
                 );
                 return;
               }
-              navigator.clipboard.writeText(r.message.url).then(function () {
+              navigator.clipboard.writeText(r.message.url).then(() => {
                 frappe.toast(__("Link Copied"));
               });
             } else {
@@ -451,17 +451,17 @@ $(document).on("form-refresh", function (event, frm) {
           }
         }
         update_link();
-        dialog.fields_dict.external_email.$input.on("change", function () {
+        dialog.fields_dict.external_email.$input.on("change", () => {
           update_link();
         });
-        dialog.fields_dict.event_title.$input.on("change", function () {
+        dialog.fields_dict.event_title.$input.on("change", () => {
           update_link();
         });
-        dialog.fields_dict.appointment_group.$input_area.find(".link-btn > .btn-clear").on("click", function () {
+        dialog.fields_dict.appointment_group.$input_area.find(".link-btn > .btn-clear").on("click", () => {
           appointment_group = null;
           update_link();
         });
-        dialog.fields_dict.appointment_group.$input.on("change awesomplete-selectcomplete", function () {
+        dialog.fields_dict.appointment_group.$input.on("change awesomplete-selectcomplete", () => {
           if (dialog.fields_dict.appointment_group.$input.val()) {
             frappe.call({
               method:
@@ -479,7 +479,7 @@ $(document).on("form-refresh", function (event, frm) {
             update_link();
           }
         });
-        dialog.fields_dict.copy_scheduler_link.$input.on("click", function () {
+        dialog.fields_dict.copy_scheduler_link.$input.on("click", () => {
           if (!appointment_link) {
             frappe.msgprint(__("Please enter an email to schedule with"));
             return;
@@ -489,11 +489,11 @@ $(document).on("form-refresh", function (event, frm) {
             return;
           }
           if (!navigator.clipboard) return;
-          navigator.clipboard.writeText(appointment_link).then(function () {
+          navigator.clipboard.writeText(appointment_link).then(() => {
             frappe.toast(__("Link Copied"));
           });
         });
-        dialog.fields_dict.send_schedular_email.$input.on("click", function () {
+        dialog.fields_dict.send_schedular_email.$input.on("click", () => {
           if (!appointment_link) {
             frappe.msgprint(__("Please enter an email to schedule with"));
             return;
