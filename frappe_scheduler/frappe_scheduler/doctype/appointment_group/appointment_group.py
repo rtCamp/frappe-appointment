@@ -152,8 +152,9 @@ def _get_time_slots_for_day(appointment_group: object, date: str, user_timezone_
         time_slots_today_object["all_available_slots_for_data"] = filtered_slots
 
         return time_slots_today_object
-    except GoogleBadRequest:
-        raise
+    except GoogleBadRequest as e:
+        frappe.log_error(e)
+        frappe.throw(frappe._("Something went wrong while fetching time slots. Please try again later."))
     except Exception:
         frappe.log_error()
         return None

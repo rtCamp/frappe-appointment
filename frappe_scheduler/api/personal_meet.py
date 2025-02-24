@@ -8,7 +8,6 @@ import pytz
 from frappe.twofactor import encrypt
 
 from frappe_scheduler.frappe_scheduler.doctype.appointment_group.appointment_group import _get_time_slots_for_day
-from frappe_scheduler.frappe_scheduler.doctype.appointment_time_slot.appointment_time_slot import GoogleBadRequest
 from frappe_scheduler.helpers.overrides import add_response_code
 from frappe_scheduler.helpers.utils import duration_to_string
 from frappe_scheduler.overrides.event_override import _create_event_for_appointment_group
@@ -80,11 +79,7 @@ def get_time_slots(duration_id: str, date: str, user_timezone_offset: str):
 
     appointment_group = frappe.get_doc(appointment_group_obj)
 
-    try:
-        data = _get_time_slots_for_day(appointment_group, date, user_timezone_offset)
-    except GoogleBadRequest as e:
-        frappe.log_error(e)
-        return {"error": "Something went wrong while fetching the slots."}, 500
+    data = _get_time_slots_for_day(appointment_group, date, user_timezone_offset)
 
     if not data:
         return None
