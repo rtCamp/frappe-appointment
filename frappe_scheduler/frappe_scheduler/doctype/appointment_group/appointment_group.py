@@ -18,6 +18,7 @@ from frappe.website.website_generator import WebsiteGenerator
 
 from frappe_scheduler.constants import APPOINTMENT_GROUP, APPOINTMENT_TIME_SLOT
 from frappe_scheduler.frappe_scheduler.doctype.appointment_time_slot.appointment_time_slot import (
+    GoogleBadRequest,
     get_all_unavailable_google_calendar_slots_for_day,
 )
 from frappe_scheduler.helpers.utils import (
@@ -151,6 +152,8 @@ def _get_time_slots_for_day(appointment_group: object, date: str, user_timezone_
         time_slots_today_object["all_available_slots_for_data"] = filtered_slots
 
         return time_slots_today_object
+    except GoogleBadRequest:
+        raise
     except Exception:
         frappe.log_error()
         return None
