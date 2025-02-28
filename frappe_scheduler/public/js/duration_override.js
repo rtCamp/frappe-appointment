@@ -45,11 +45,9 @@ frappe.ui.form.ControlDuration = class extends frappe.ui.form.ControlDuration {
       }
       this.$picker.hide();
     });
+  }
 
-    this.$input.on("change", () => {
-      let value = this.$input.val();
-      let total_duration = duration_string_to_seconds(value);
-      this.set_value(total_duration);
-    });
+  parse(value) {
+    return duration_string_to_seconds(super.parse(value));
   }
 };
