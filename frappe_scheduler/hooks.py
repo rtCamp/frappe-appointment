@@ -18,7 +18,7 @@ website_route_rules = [
 
 # include js, css files in header of desk.html
 # app_include_css = "/assets/frappe_scheduler/css/frappe_scheduler.css"
-app_include_js = ["/assets/frappe_scheduler/js/appointment_link.js"]
+app_include_js = ["/assets/frappe_scheduler/js/appointment_link.js", "/assets/frappe_scheduler/js/duration_override.js"]
 
 # include js, css files in header of web template
 # web_include_css = "/assets/frappe_scheduler/css/frappe_scheduler.css"
