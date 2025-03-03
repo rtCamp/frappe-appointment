@@ -403,7 +403,7 @@ def create_event_for_appointment_group(
     res (object): Result object
     """
 
-    appointment_group = frappe.get_last_doc(APPOINTMENT_GROUP, filters={"route": "appointment/" + appointment_group_id})
+    appointment_group = frappe.get_doc(APPOINTMENT_GROUP, appointment_group_id)
     response = _create_event_for_appointment_group(
         appointment_group,
         date,
@@ -566,7 +566,7 @@ def check_one_time_schedule(
     appointment_group_id: str,
     **args,
 ):
-    appointment_group = frappe.get_last_doc(APPOINTMENT_GROUP, filters={"route": "appointment/" + appointment_group_id})
+    appointment_group = frappe.get_doc(APPOINTMENT_GROUP, appointment_group_id)
     if appointment_group.schedule_only_once:
         event_info = args
         interview_id = json.loads(event_info.get("custom_doctype_link_with_event", "[]"))

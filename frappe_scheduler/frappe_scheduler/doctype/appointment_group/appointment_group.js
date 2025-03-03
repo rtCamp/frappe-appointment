@@ -34,6 +34,7 @@ frappe.ui.form.on("Appointment Group", {
         update_slots_availability(frm);
       });
     }
+    frm.sidebar.add_user_action(__("See on Website")).attr("href", "/schedule/gr/" + frm.doc.name);
   },
   onload: function (frm) {
     if (frm.doc.__islocal) {

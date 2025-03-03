@@ -6,6 +6,7 @@ from urllib.parse import quote_plus
 
 import frappe
 import frappe.utils
+from frappe.model.document import Document
 from frappe.utils import (
     add_days,
     add_to_date,
@@ -14,7 +15,6 @@ from frappe.utils import (
     get_datetime_str,
     get_time_str,
 )
-from frappe.website.website_generator import WebsiteGenerator
 
 from frappe_scheduler.constants import APPOINTMENT_GROUP, APPOINTMENT_TIME_SLOT
 from frappe_scheduler.frappe_scheduler.doctype.appointment_time_slot.appointment_time_slot import (
@@ -31,13 +31,7 @@ from frappe_scheduler.helpers.utils import (
 ALL_DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
 
 
-class AppointmentGroup(WebsiteGenerator):
-    website = frappe._dict(
-        page_title_field="group_name",
-        no_cache=1,
-        no_breadcrumbs=1,
-    )
-
+class AppointmentGroup(Document):
     def autoname(self):
         self.name = frappe.scrub(self.group_name).replace("_", "-")
 
@@ -62,55 +56,12 @@ class AppointmentGroup(WebsiteGenerator):
 
     def validate(self):
         self.validate_zoom()
-        self.update_route()
         self.validate_members_list()
-
-    def update_route(self):
-        self.route = "appointment/" + self.name
 
     def validate_members_list(self):
         is_valid_list = [member for member in self.members if member.is_mandatory]
         if not is_valid_list or len(is_valid_list) == 0:
             return frappe.throw(frappe._("Please add at least one mandatory member to the appointment group."))
-
-    def get_context(self, context):
-        return context
-
-
-def get_list_context(context):
-    """List page context for 'Appointment Group' and ensure that this page is not functional.
-
-    Args:
-    context (Object): Context of page
-    """
-    return frappe.redirect("/")
-
-
-@frappe.whitelist(allow_guest=True)
-def get_time_slots_for_day(appointment_group_id: str, date: str, user_timezone_offset: str) -> object:
-    """API endpoint for fetch the google time slots for user
-
-    Args:
-    appointment_group_id (str): Appointment Group ID
-    date (str): Date for which need to fetch slots
-
-    Returns:
-    object: Response
-    """
-    try:
-        if not appointment_group_id:
-            return {"result": []}
-
-        appointment_group = frappe.get_last_doc(
-            APPOINTMENT_GROUP, filters={"route": "appointment/" + appointment_group_id}
-        )
-
-        if not appointment_group:
-            return {"result": []}
-
-        return _get_time_slots_for_day(appointment_group, date, user_timezone_offset)
-    except Exception:
-        return None
 
 
 def _get_time_slots_for_day(appointment_group: object, date: str, user_timezone_offset: str) -> object:
@@ -765,7 +716,7 @@ def get_appointment_groups_from_doctype(doctype: str) -> str:
         appointment_groups = frappe.get_all(
             APPOINTMENT_GROUP,
             filters={"linked_doctype": doctype},
-            fields=["name", "route"],
+            fields=["name"],
         )
     except frappe.DoesNotExistError:
         return None
