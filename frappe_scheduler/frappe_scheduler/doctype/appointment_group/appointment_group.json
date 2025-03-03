@@ -14,10 +14,6 @@
   "event_organizer",
   "section_break_gocd",
   "members",
-  "section_break_v4rw",
-  "publish_on_website",
-  "route",
-  "column_break_4pgb",
   "section_break_3djy",
   "duration_for_event",
   "column_break_xzbw",
@@ -65,25 +61,11 @@
    "label": "Webhook"
   },
   {
-   "default": "0",
-   "fieldname": "publish_on_website",
-   "fieldtype": "Check",
-   "label": "Publish On Website"
-  },
-  {
    "fieldname": "group_name",
    "fieldtype": "Data",
    "in_list_view": 1,
    "label": "Group Name",
    "reqd": 1,
-   "unique": 1
-  },
-  {
-   "depends_on": "publish_on_website",
-   "fieldname": "route",
-   "fieldtype": "Data",
-   "label": "Route",
-   "read_only": 1,
    "unique": 1
   },
   {
@@ -140,14 +122,6 @@
    "fieldtype": "Link",
    "label": "Response Email Template",
    "options": "Email Template"
-  },
-  {
-   "fieldname": "section_break_v4rw",
-   "fieldtype": "Section Break"
-  },
-  {
-   "fieldname": "column_break_4pgb",
-   "fieldtype": "Column Break"
   },
   {
    "fieldname": "section_break_3djy",
@@ -255,10 +229,8 @@
    "options": "Email Template"
   }
  ],
- "has_web_view": 1,
- "is_published_field": "publish_on_website",
  "links": [],
- "modified": "2025-02-17 12:06:03.449363",
+ "modified": "2025-03-03 17:32:17.565817",
  "modified_by": "Administrator",
  "module": "Frappe Scheduler",
  "name": "Appointment Group",
@@ -277,7 +249,6 @@
    "write": 1
   }
  ],
- "route": "group",
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": [],
