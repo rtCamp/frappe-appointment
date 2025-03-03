@@ -48,6 +48,6 @@ frappe.ui.form.ControlDuration = class extends frappe.ui.form.ControlDuration {
   }
 
   parse(value) {
-    return duration_string_to_seconds(super.parse(value));
+    return duration_string_to_seconds(value);
   }
 };
