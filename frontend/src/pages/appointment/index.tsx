@@ -120,16 +120,15 @@ const Appointment = () => {
                     </Typography>
                     {userInfo.designation && userInfo.organizationName && (
                       <Tooltip>
-                        <Typography className="text-base text-muted-foreground">
-                          <TooltipTrigger className="w-full">
+                        <TooltipTrigger className="w-full">
+                          <Typography className="text-base text-muted-foreground">
                             {userInfo.designation} at{" "}
                             {userInfo.organizationName}
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            {userInfo.designation} at{" "}
-                            {userInfo.organizationName}
-                          </TooltipContent>
-                        </Typography>
+                          </Typography>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          {userInfo.designation} at {userInfo.organizationName}
+                        </TooltipContent>
                       </Tooltip>
                     )}
                   </div>
@@ -178,7 +177,7 @@ const Appointment = () => {
                 </div>
                 <div className="mt-4 p-3 md:hidden bg-gray-50 rounded-2xl border border-gray-200 text-sm text-gray-600">
                   <div className="flex items-center gap-3">
-                    <Info className="text-amber-500 size-10"/>
+                    <Info className="text-amber-500 size-10" />
                     <p>
                       All times are in your local timezone. Meetings can be
                       rescheduled if needed.
