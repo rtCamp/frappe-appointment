@@ -237,10 +237,10 @@ const MeetingForm = ({ onBack, durationId, onSuccess }: MeetingFormProps) => {
             </div>
           </div>
 
-          <div className="flex justify-between pt-4">
+          <div className="flex justify-between md:pt-4 max-md:h-14 max-md:fixed max-md:bottom-0 max-md:left-0 max-md:w-screen max-md:border max-md:z-10 max-md:bg-white max-md:border-top max-md:items-center max-md:px-4">
             <Button
               type="button"
-              className="text-blue-500 hover:text-blue-600 hover:bg-blue-50"
+              className="text-blue-500 hover:text-blue-600 hover:bg-blue-50 max-md:px-0"
               onClick={onBack}
               variant="ghost"
               disabled={loading}
