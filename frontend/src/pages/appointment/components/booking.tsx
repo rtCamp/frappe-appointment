@@ -327,9 +327,9 @@ const Booking = ({ type }: BookingProp) => {
                             end_time: "",
                           });
                         }}
-                        className="rounded-md md:border md:h-96 w-full flex md:px-6 p-0"
+                        className="rounded-xl md:border md:h-96 w-full flex md:px-6 p-0"
                       />
-                      <div className="mt-4  gap-5 flex max-md:flex-col md:justify-between md:items-center ">
+                      <div className="mt-4 gap-5 flex max-md:flex-col md:justify-between md:items-center ">
                         {/* Timezone */}
 
                         <TimeZoneSelect
