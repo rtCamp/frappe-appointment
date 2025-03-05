@@ -28,14 +28,14 @@ interface TimeZoneSelectProps {
   timeZones: Array<string>;
   timeZone: string;
   setTimeZone: (tz: string) => void;
-  disable:boolean;
+  disable: boolean;
 }
 
 export default function TimeZoneSelect({
   timeZones,
   timeZone,
   setTimeZone,
-  disable=false,
+  disable = false,
 }: TimeZoneSelectProps) {
   const [open, setOpen] = useState(false);
 
@@ -44,7 +44,7 @@ export default function TimeZoneSelect({
       <PopoverTrigger disabled={disable} asChild>
         <Button
           variant="outline"
-          className="w-full md:w-fit md:border-none md:focus:ring-0 text-gray-600 md:focus:ring-offset-0 "
+          className="w-full md:w-fit md:border-none border-blue-100 md:focus:ring-0 hover:bg-blue-50 hover:text-blue-500 md:focus:ring-offset-0 text-blue-500"
         >
           <div className="flex justify-center items-center gap-2">
             <Globe className="h-4 w-4" />
@@ -71,9 +71,9 @@ export default function TimeZoneSelect({
                   setTimeZone(getLocalTimezone());
                   setOpen(false);
                 }}
-                className="cursor-pointer py-3 px-4 flex items-center gap-2 truncate"
+                className="cursor-pointer py-3 px-4 flex items-center gap-2 truncate data-[selected=true]:!bg-blue-50 text-blue-500 data-[selected=true]:!text-blue-500"
               >
-                <RefreshCcw className="h-4 w-4 text-muted-foreground" />
+                <RefreshCcw className="h-4 w-4 text-blue-500" />
                 <span>Reset to Default Timezone</span>
               </CommandItem>
               {timeZones.map((tz) => (
@@ -83,14 +83,14 @@ export default function TimeZoneSelect({
                     setTimeZone(tz);
                     setOpen(false);
                   }}
-                  className="cursor-pointer py-3 px-4"
+                  className="cursor-pointer py-3 px-4 data-[selected=true]:!bg-blue-50 text-blue-500 data-[selected=true]:!text-blue-500"
                 >
                   <div className="flex w-full items-center gap-4">
                     <div className="w-40 truncate">
                       <div className="font-medium truncate">
                         {tz?.split("/").slice(1).join("/").replace(/_/g, " ")}
                       </div>
-                      <div className="text-sm text-muted-foreground truncate">
+                      <div className="text-sm text-muted-foreground truncate hover">
                         {getTimeZoneOffset(tz)}
                       </div>
                     </div>
