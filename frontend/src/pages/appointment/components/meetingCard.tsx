@@ -31,7 +31,7 @@ interface MeetingCardProps {
 const MeetingCard = ({ title, duration, onClick }: MeetingCardProps) => {
   const { userInfo } = useAppContext();
   return (
-    <Card className="group relative overflow-hidden transition-all hover:shadow-lg">
+    <Card className="group transform hover:-translate-y-1 hover:border-blue-300 duration-300 relative overflow-hidden rounded-2xl transition-all hover:shadow-lg">
       <CardHeader className="space-y-1">
         <CardTitle className="text-xl py-2">
           <Tooltip>
@@ -42,7 +42,7 @@ const MeetingCard = ({ title, duration, onClick }: MeetingCardProps) => {
           </Tooltip>
         </CardTitle>
         <CardDescription className="flex items-center gap-1">
-          <Clock className="w-4 h-4" />
+          <Clock className="w-4 h-4 text-blue-500" />
           <Typography>{duration} min</Typography>
           <span className="mx-1">•</span>
           <Video className="w-4 h-4 text-blue-400" />
@@ -54,7 +54,7 @@ const MeetingCard = ({ title, duration, onClick }: MeetingCardProps) => {
       <CardContent className="cursor-pointer">
         <Button
           onClick={onClick}
-          className="w-full bg-blue-500 hover:bg-blue-500"
+          className="w-full bg-blue-500 hover:bg-blue-500 rounded-2xl"
         >
           Schedule Meeting
         </Button>

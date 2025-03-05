@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/tooltip";
 import Typography from "@/components/ui/typography";
 import MetaTags from "@/components/meta-tags";
+import { Info } from "lucide-react";
 
 const Appointment = () => {
   const { meetId } = useParams();
@@ -55,7 +56,7 @@ const Appointment = () => {
     {
       revalidateOnFocus: false,
       revalidateOnReconnect: false,
-      errorRetryCount:3,
+      errorRetryCount: 3,
     }
   );
 
@@ -88,27 +89,17 @@ const Appointment = () => {
       <MetaTags
         title={`${userInfo.name} | Scheduler`}
         description={`Book appointment with ${userInfo.name}`}
-        // keywords="Personal meeting scheduling"
-        // author={userInfo.name}
-        // robots="index, follow"
-        // ogTitle={`${userInfo.name} | Scheduler`}
-        // ogDescription={`Book appointment with ${userInfo.name}`}
-        // ogImage={userInfo.userImage}
-        // twitterCard="summary_large_image"
-        // twitterTitle={`${userInfo.name} | Scheduler`}
-        // twitterDescription={`Book appointment with ${userInfo.name}`}
-        // twitterImage={userInfo.userImage}
       />
       {!type || isLoading ? (
         <div className="w-full h-full max-md:h-fit flex justify-center">
-          <div className="container max-w-[74rem] mx-auto p-4 py-8 md:py-16 grid gap-10 md:gap-12">
-            <div className="grid lg:grid-cols-[360px,1fr] gap-8 items-start relative md:border rounded-lg">
+          <div className="container max-w-[74rem] mx-auto pt-3 p-4 py-8 lg:py-16 grid md:gap-12">
+            <div className="grid lg:grid-cols-[360px,1fr] md:gap-8 max-md:gap-10  items-start relative rounded-lg">
               {/* Profile Section */}
               {isLoading ? (
                 <ProfileSkeleton />
               ) : (
-                <div className="w-full md:max-w-sm flex flex-col gap-4 md:p-6 md:px-4">
-                  <Avatar className="md:h-32 md:w-32 h-24 w-24 object-cover mb-4 md:mb-0 ">
+                <div className="w-full flex flex-col gap-4 p-4 md:p-6 md:px-4 justify-center items-center bg-gradient-to-b from-blue-50 to-transparent rounded-2xl">
+                  <Avatar className="md:h-32 md:w-32 h-24 w-24 object-cover mb-4 md:mb-0 hover:outline outline-blue-300 transition-all duration-100">
                     <AvatarImage
                       src={userInfo.userImage}
                       alt="Profile picture"
@@ -121,7 +112,7 @@ const Appointment = () => {
                   <div className="w-full flex flex-col gap-1">
                     <Typography variant="h2" className="text-3xl font-semibold">
                       <Tooltip>
-                        <TooltipTrigger className="text-left truncate w-full">
+                        <TooltipTrigger className="truncate w-full">
                           {userInfo.name}
                         </TooltipTrigger>
                         <TooltipContent>{userInfo.name}</TooltipContent>
@@ -129,8 +120,8 @@ const Appointment = () => {
                     </Typography>
                     {userInfo.designation && userInfo.organizationName && (
                       <Tooltip>
-                        <Typography className="text-base text-left text-muted-foreground">
-                          <TooltipTrigger className="text-left">
+                        <Typography className="text-base text-muted-foreground">
+                          <TooltipTrigger className="w-full">
                             {userInfo.designation} at{" "}
                             {userInfo.organizationName}
                           </TooltipTrigger>
@@ -147,7 +138,7 @@ const Appointment = () => {
               )}
 
               {/* Meeting Options */}
-              <div className="space-y-6 md:p-6">
+              <div className="space-y-6 md:p-6 md:pt-0">
                 {isLoading ? (
                   <>
                     <Skeleton className="h-6 md:w-56" />
@@ -164,7 +155,7 @@ const Appointment = () => {
                   </div>
                 )}
                 {/* meeting cards */}
-                <div className="grid sm:grid-cols-2 gap-4 h-full lg:pb-5 overflow-y-auto">
+                <div className="grid sm:grid-cols-2 gap-4 h-full lg:pb-5 overflow-y-auto py-3">
                   {isLoading ? (
                     <>
                       <MeetingCardSkeleton />
@@ -184,6 +175,15 @@ const Appointment = () => {
                       />
                     ))
                   )}
+                </div>
+                <div className="mt-4 p-3 md:hidden bg-gray-50 rounded-2xl border border-gray-200 text-sm text-gray-600">
+                  <div className="flex items-center gap-3">
+                    <Info className="text-amber-500 size-10"/>
+                    <p>
+                      All times are in your local timezone. Meetings can be
+                      rescheduled if needed.
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
