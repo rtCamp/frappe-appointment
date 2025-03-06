@@ -93,13 +93,13 @@ const Appointment = () => {
       />
       {!type || isLoading ? (
         <div className="w-full h-full max-md:h-fit flex justify-center">
-          <div className="container max-w-[74rem] mx-auto pt-3 p-4 py-8 lg:py-16 grid md:gap-12">
+          <div className="container max-w-[74rem] mx-auto md:p-4 md:py-8 lg:py-16 grid md:gap-12">
             <div className="grid lg:grid-cols-[360px,1fr] md:gap-8 max-md:gap-10  items-start relative rounded-lg">
               {/* Profile Section */}
               {isLoading ? (
                 <ProfileSkeleton />
               ) : (
-                <div className="w-full flex flex-col gap-4 p-4 md:p-6 md:px-4 justify-center items-center bg-gradient-to-b from-blue-100 to-transparent rounded-2xl">
+                <div className="w-full flex flex-col gap-4 p-4 md:p-6 md:px-4 justify-center items-center bg-gradient-to-b from-blue-100 to-transparent md:rounded-2xl">
                   <Avatar className="md:h-32 md:w-32 h-24 w-24 object-cover mb-4 md:mb-0 hover:outline outline-blue-300 transition-all duration-100">
                     <AvatarImage
                       src={userInfo.userImage}
@@ -138,7 +138,7 @@ const Appointment = () => {
               )}
 
               {/* Meeting Options */}
-              <div className="space-y-6 md:p-6 md:pt-0">
+              <div className="space-y-6 p-4 md:p-6 md:pt-0">
                 {isLoading ? (
                   <>
                     <Skeleton className="h-6 md:w-56" />
