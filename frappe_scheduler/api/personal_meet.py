@@ -30,6 +30,7 @@ def get_meeting_windows(slug):
 
     full_name = user.get("full_name")
     profile_pic = user.get("user_image")
+    banner_image = user.get("banner_image")
     position = None
     company = None
 
@@ -54,6 +55,7 @@ def get_meeting_windows(slug):
     return {
         "full_name": full_name,
         "profile_pic": profile_pic,
+        "banner_image":banner_image,
         "position": position,
         "company": company,
         "meeting_provider": meeting_provider,
