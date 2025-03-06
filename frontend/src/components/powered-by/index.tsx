@@ -14,7 +14,7 @@ const PoweredBy = () => {
               href="https://github.com/rtCamp/frappe-scheduler/"
               target="_blank"
               rel="noopener noreferrer"
-              className="font-semibold hover:underline text-blue-500"
+              className="font-semibold hover:underline text-blue-400"
             >
               Scheduler
             </a>

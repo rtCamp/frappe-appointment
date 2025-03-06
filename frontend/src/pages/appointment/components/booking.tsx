@@ -224,7 +224,7 @@ const Booking = ({ type, banner }: BookingProp) => {
     <>
       <div className="w-full h-fit flex justify-center">
         <div className="md:w-4xl max-lg:w-full md:p-4 md:py-6 gap-10 md:gap-12">
-          <div className="w-full rounded-xl rounded-b-none md:border border-blue-100 border-t-0">
+          <div className="w-full rounded-xl  md:border border-blue-100 border-t-0">
             {/* Banner */}
             <div
               className={cn(
