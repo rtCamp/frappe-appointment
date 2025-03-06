@@ -228,8 +228,16 @@ const Booking = ({ type, banner }: BookingProp) => {
             {/* Banner */}
             <div
               className={cn(
-                "w-full md:rounded-xl md:rounded-b-none relative bg-blue-100 h-40 max-md:mb-20 md:mb-12",banner && `bg-cover bg-center bg-no-repeat bg-[url('${window.location.origin}${banner}')]`
+                "w-full md:rounded-xl md:rounded-b-none relative bg-blue-100 h-40 max-md:mb-20 md:mb-12",
+                banner && "bg-cover bg-center bg-no-repeat"
               )}
+              style={
+                banner
+                  ? {
+                      backgroundImage: `url(${window.location.origin}${banner})`,
+                    }
+                  : {}
+              }
             >
               {/* avatar */}
               <Avatar className="h-28 w-28 md:h-32 md:w-32 object-cover absolute bottom-0 translate-y-1/2 md:left-24 max-md:left-5 outline outline-white">
