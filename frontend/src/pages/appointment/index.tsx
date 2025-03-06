@@ -76,6 +76,7 @@ const Appointment = () => {
         userImage: data?.message?.profile_pic,
         socialProfiles: [],
         meetingProvider: data?.message?.meeting_provider,
+        banner_image:data?.message?.banner_image,
       });
       setMeetingDurationCards(data?.message?.durations);
     }
@@ -98,7 +99,7 @@ const Appointment = () => {
               {isLoading ? (
                 <ProfileSkeleton />
               ) : (
-                <div className="w-full flex flex-col gap-4 p-4 md:p-6 md:px-4 justify-center items-center bg-gradient-to-b from-blue-50 to-transparent rounded-2xl">
+                <div className="w-full flex flex-col gap-4 p-4 md:p-6 md:px-4 justify-center items-center bg-gradient-to-b from-blue-100 to-transparent rounded-2xl">
                   <Avatar className="md:h-32 md:w-32 h-24 w-24 object-cover mb-4 md:mb-0 hover:outline outline-blue-300 transition-all duration-100">
                     <AvatarImage
                       src={userInfo.userImage}
@@ -189,7 +190,7 @@ const Appointment = () => {
           </div>
         </div>
       ) : (
-        <Booking type={type} />
+        <Booking type={type} banner={userInfo.banner_image} />
       )}
       <PoweredBy />
     </>

@@ -49,9 +49,10 @@ import { useBookingReducer } from "../reducer";
 
 interface BookingProp {
   type: string;
+  banner: string;
 }
 
-const Booking = ({ type }: BookingProp) => {
+const Booking = ({ type, banner }: BookingProp) => {
   const {
     userInfo,
     timeZone,
@@ -223,9 +224,13 @@ const Booking = ({ type }: BookingProp) => {
     <>
       <div className="w-full h-fit flex justify-center">
         <div className="md:w-4xl max-lg:w-full md:p-4 md:py-6 gap-10 md:gap-12">
-          <div className="w-full rounded-xl md:border border-blue-100 border-t-0">
+          <div className="w-full rounded-xl rounded-b-none md:border border-blue-100 border-t-0">
             {/* Banner */}
-            <div className="w-full rounded-b-none rounded-xl relative bg-blue-100 h-40 max-md:mb-20 md:mb-12">
+            <div
+              className={cn(
+                "w-full md:rounded-xl md:rounded-b-none relative bg-blue-100 h-40 max-md:mb-20 md:mb-12",banner && `bg-cover bg-center bg-no-repeat bg-[url('${window.location.origin}${banner}')]`
+              )}
+            >
               {/* avatar */}
               <Avatar className="h-28 w-28 md:h-32 md:w-32 object-cover absolute bottom-0 translate-y-1/2 md:left-24 max-md:left-5 outline outline-white">
                 <AvatarImage
@@ -291,12 +296,14 @@ const Booking = ({ type }: BookingProp) => {
                 </div>
               </div>
               <div className="w-full md:max-h-[30rem] md:overflow-hidden">
-                  {/* Calendar and Availability slots */}
+                {/* Calendar and Availability slots */}
                 <AnimatePresence mode="wait">
                   {!state.showMeetingForm && (
                     <motion.div
                       key={1}
-                      initial={state.isMobileView ? {} : { x: "-100%", opacity: 1 }}
+                      initial={
+                        state.isMobileView ? {} : { x: "-100%", opacity: 1 }
+                      }
                       animate={{ x: 0, opacity: 1 }}
                       exit={
                         state.isMobileView ? {} : { x: "-100%", opacity: 0 }
@@ -382,7 +389,7 @@ const Booking = ({ type }: BookingProp) => {
                         </div>
                       )}
 
-                      {/* Availability Slots */}
+                      {/* Sticky Bottom Action Bar (Mobile) */}
                       {state.isMobileView && state.expanded && (
                         <div className="h-14 fixed bottom-0 left-0 w-screen border z-10 bg-white border-top flex items-center justify-between px-4">
                           <Button
@@ -462,7 +469,7 @@ const Booking = ({ type }: BookingProp) => {
                                     }}
                                     variant="outline"
                                     className={cn(
-                                      "w-full font-normal border border-blue-500 text-blue-500 hover:text-blue-500 hover:bg-blue-50 transition-colors ",
+                                      "w-full font-normal border border-blue-500 text-blue-500 hover:text-blue-500 ease-in-out duration-200 hover:bg-blue-50 transition-colors ",
                                       selectedSlot.start_time ===
                                         slot.start_time &&
                                         selectedSlot.end_time ===

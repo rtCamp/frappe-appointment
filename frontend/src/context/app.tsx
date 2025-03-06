@@ -25,6 +25,7 @@ interface UserInfo {
   userImage: string;
   socialProfiles: Profile[];
   meetingProvider: MeetingProviderTypes;
+  banner_image:string;
 }
 
 type durationCard = {
@@ -70,6 +71,7 @@ const initialAppContextType: AppContextType = {
     userImage: "",
     socialProfiles: [],
     meetingProvider: "Zoom",
+    banner_image:"",
   },
   setMeetingId: () => {},
   setDuration: () => {},
