@@ -8,21 +8,21 @@ import { useFrappeGetCall } from "frappe-react-sdk";
 /**
  * Internal dependencies
  */
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/avatar";
 import { MeetingCardSkeleton, ProfileSkeleton } from "./components/skeletons";
 import MeetingCard from "./components/meetingCard";
 import Booking from "./components/booking";
 import SocialProfiles from "./components/socialProfiles";
 import { useAppContext } from "@/context/app";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Skeleton } from "@/components/skeleton";
 import { getLocalTimezone } from "@/lib/utils";
 import PoweredBy from "@/components/powered-by";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from "@/components/ui/tooltip";
-import Typography from "@/components/ui/typography";
+} from "@/components/tooltip";
+import Typography from "@/components/typography";
 import MetaTags from "@/components/meta-tags";
 import { Info } from "lucide-react";
 

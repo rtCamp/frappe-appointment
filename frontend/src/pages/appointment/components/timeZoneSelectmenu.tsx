@@ -14,13 +14,13 @@ import {
   CommandEmpty,
   CommandGroup,
   CommandItem,
-} from "@/components/ui/command";
+} from "@/components/command";
 import {
   Popover,
   PopoverTrigger,
   PopoverContent,
-} from "@/components/ui/popover";
-import { Button } from "@/components/ui/button";
+} from "@/components/popover";
+import { Button } from "@/components/button";
 import { getCurrentTime, getTimeZoneOffset } from "../utils";
 import { getLocalTimezone } from "@/lib/utils";
 

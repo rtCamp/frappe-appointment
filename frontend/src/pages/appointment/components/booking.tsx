@@ -18,10 +18,10 @@ import { toast } from "sonner";
 /**
  * Internal dependencies.
  */
-import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import Typography from "@/components/ui/typography";
+import { Button } from "@/components/button";
+import { Switch } from "@/components/switch";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/avatar";
+import Typography from "@/components/typography";
 import {
   cn,
   convertToMinutes,
@@ -34,13 +34,13 @@ import MeetingForm from "./meetingForm";
 import { useAppContext } from "@/context/app";
 import TimeSlotSkeleton from "./timeSlotSkeleton";
 import TimeZoneSelect from "./timeZoneSelectmenu";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Skeleton } from "@/components/skeleton";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from "@/components/ui/tooltip";
-import Spinner from "@/components/ui/spinner";
+} from "@/components/tooltip";
+import Spinner from "@/components/spinner";
 import useBack from "@/hooks/useBack";
 import SuccessAlert from "@/components/success-alert";
 import { Icon } from "@/components/icons";

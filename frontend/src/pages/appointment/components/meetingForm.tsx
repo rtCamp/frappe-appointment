@@ -15,7 +15,7 @@ import { useSearchParams } from "react-router-dom";
 /**
  * Internal dependencies.
  */
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/button";
 import {
   Form,
   FormControl,
@@ -23,15 +23,15 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import Typography from "@/components/ui/typography";
+} from "@/components/form";
+import { Input } from "@/components/input";
+import Typography from "@/components/typography";
 import { useAppContext } from "@/context/app";
 import {
   getTimeZoneOffsetFromTimeZoneString,
   parseFrappeErrorMsg,
 } from "@/lib/utils";
-import Spinner from "@/components/ui/spinner";
+import Spinner from "@/components/spinner";
 
 const contactFormSchema = z.object({
   fullName: z.string().min(2, "Name must be at least 2 characters"),

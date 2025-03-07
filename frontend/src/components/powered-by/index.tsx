@@ -1,4 +1,4 @@
-import Typography from "../ui/typography";
+import Typography from "../typography";
 
 const PoweredBy = () => {
   return (

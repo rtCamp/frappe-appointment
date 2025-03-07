@@ -21,10 +21,10 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
+} from "@/components/dialog";
+import { Button } from "@/components/button";
 import { slotType } from "@/context/app";
-import Typography from "@/components/ui/typography";
+import Typography from "@/components/typography";
 import { cn } from "@/lib/utils";
 
 interface SuccessAlertProps {

@@ -1,7 +1,7 @@
 /**
  * Internal dependencies
  */
-import { Skeleton } from "@/components/ui/skeleton";
+import { Skeleton } from "@/components/skeleton";
 
 const TimeSlotSkeleton = () => {
   return (

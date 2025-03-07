@@ -6,21 +6,21 @@ import { Clock, Video } from "lucide-react";
 /**
  * Internal dependencies
  */
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/button";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import Typography from "@/components/ui/typography";
+} from "@/components/card";
+import Typography from "@/components/typography";
 import { useAppContext } from "@/context/app";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from "@/components/ui/tooltip";
+} from "@/components/tooltip";
 
 interface MeetingCardProps {
   title: string;

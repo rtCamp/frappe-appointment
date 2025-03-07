@@ -1,7 +1,7 @@
 /**
  * Internal dependencies.
  */
-import Typography from "@/components/ui/typography";
+import Typography from "@/components/typography";
 
 const NotFound = () => {
   return (
