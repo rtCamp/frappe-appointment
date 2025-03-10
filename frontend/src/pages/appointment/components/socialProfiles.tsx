@@ -1,7 +1,7 @@
 /**
  * Internal dependencies
  */
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/button";
 
 export type Profile = { [key: string]: string };
 
