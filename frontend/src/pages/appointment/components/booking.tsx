@@ -35,11 +35,7 @@ import { useAppContext } from "@/context/app";
 import TimeSlotSkeleton from "./timeSlotSkeleton";
 import TimeZoneSelect from "./timeZoneSelectmenu";
 import { Skeleton } from "@/components/skeleton";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/tooltip";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/tooltip";
 import Spinner from "@/components/spinner";
 import useBack from "@/hooks/useBack";
 import SuccessAlert from "@/components/success-alert";
@@ -234,7 +230,9 @@ const Booking = ({ type, banner }: BookingProp) => {
               style={
                 banner
                   ? {
-                      backgroundImage: `url(${window.location.origin}${banner})`,
+                      backgroundImage: `url(${
+                        window.location.origin
+                      }${encodeURI(banner)})`,
                     }
                   : {}
               }
