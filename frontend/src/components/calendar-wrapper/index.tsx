@@ -1,7 +1,7 @@
 /**
  * Internal dependencies.
  */
-import { Calendar } from "@/components/ui/calendar";
+import { Calendar } from "@/components/calendar";
 import { cn, disabledDays } from "@/lib/utils";
 
 type CalendarWrapperProps = {

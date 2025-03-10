@@ -24,6 +24,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.0.0",
+    "framer-motion": "^12.4.10",
     "frappe-react-sdk": "^1.10.0",
     "i": "^0.3.7",
     "lucide-react": "^0.474.0",

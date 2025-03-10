@@ -16,9 +16,9 @@ import { HelmetProvider } from "react-helmet-async";
 import Router from "./route";
 import { BASE_ROUTE } from "./lib/constant";
 import { getSiteName } from "./lib/utils";
-import { TooltipProvider } from "@/components/ui/tooltip";
+import { TooltipProvider } from "@/components/tooltip";
 import { AppProvider } from "./context/app";
-import { Toaster } from "./components/ui/sonner";
+import { Toaster } from "./components/sonner";
 
 const App = () => {
   const router = createBrowserRouter(createRoutesFromElements(Router()), {

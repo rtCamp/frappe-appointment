@@ -3,6 +3,7 @@
  */
 import { useState } from "react";
 import { useForm } from "react-hook-form";
+import { motion } from "framer-motion";
 import z from "zod";
 import { useFrappePostCall } from "frappe-react-sdk";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -14,7 +15,7 @@ import { useSearchParams } from "react-router-dom";
 /**
  * Internal dependencies.
  */
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/button";
 import {
   Form,
   FormControl,
@@ -22,15 +23,15 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import Typography from "@/components/ui/typography";
+} from "@/components/form";
+import { Input } from "@/components/input";
+import Typography from "@/components/typography";
 import { useAppContext } from "@/context/app";
 import {
   getTimeZoneOffsetFromTimeZoneString,
   parseFrappeErrorMsg,
 } from "@/lib/utils";
-import Spinner from "@/components/ui/spinner";
+import Spinner from "@/components/spinner";
 
 const contactFormSchema = z.object({
   fullName: z.string().min(2, "Name must be at least 2 characters"),
@@ -43,11 +44,17 @@ type ContactFormValues = z.infer<typeof contactFormSchema>;
 interface MeetingFormProps {
   onBack: VoidFunction;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  onSuccess: (data:any)=>void;
+  onSuccess: (data: any) => void;
   durationId: string;
+  isMobileView: boolean;
 }
 
-const MeetingForm = ({ onBack, durationId, onSuccess }: MeetingFormProps) => {
+const MeetingForm = ({
+  onBack,
+  durationId,
+  onSuccess,
+  isMobileView,
+}: MeetingFormProps) => {
   const [isGuestsOpen, setIsGuestsOpen] = useState(false);
   const [guestInput, setGuestInput] = useState("");
   const { call: bookMeeting, loading } = useFrappePostCall(
@@ -134,7 +141,14 @@ const MeetingForm = ({ onBack, durationId, onSuccess }: MeetingFormProps) => {
   };
 
   return (
-    <div className={`w-full md:h-[30rem] lg:w-[41rem] shrink-0 md:p-6 md:px-4`}>
+    <motion.div
+      key={2}
+      className={`w-full md:h-[30rem] lg:w-[41rem] shrink-0 md:p-6 md:px-4`}
+      initial={isMobileView ? {} : { x: "100%" }}
+      animate={{ x: 0 }}
+      exit={isMobileView ? {} : { x: "100%" }}
+      transition={{ duration: 0.2, ease: "easeInOut" }}
+    >
       <Form {...form}>
         <form
           onSubmit={form.handleSubmit(onSubmit)}
@@ -237,10 +251,10 @@ const MeetingForm = ({ onBack, durationId, onSuccess }: MeetingFormProps) => {
             </div>
           </div>
 
-          <div className="flex justify-between pt-4">
+          <div className="flex justify-between md:pt-4 max-md:h-14 max-md:fixed max-md:bottom-0 max-md:left-0 max-md:w-screen max-md:border max-md:z-10 max-md:bg-white max-md:border-top max-md:items-center max-md:px-4">
             <Button
               type="button"
-              className="text-blue-500 hover:text-blue-600 hover:bg-blue-50"
+              className="text-blue-500 hover:text-blue-600 md:hover:bg-blue-50 max-md:px-0 max-md:hover:underline max-md:hover:bg-transparent"
               onClick={onBack}
               variant="ghost"
               disabled={loading}
@@ -257,7 +271,7 @@ const MeetingForm = ({ onBack, durationId, onSuccess }: MeetingFormProps) => {
           </div>
         </form>
       </Form>
-    </div>
+    </motion.div>
   );
 };
 
