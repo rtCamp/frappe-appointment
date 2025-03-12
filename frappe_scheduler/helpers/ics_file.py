@@ -8,7 +8,7 @@ from ics.grammar.parse import ContentLine
 from frappe_scheduler.helpers.utils import convert_datetime_to_utc
 
 
-def add_ics_file_in_attachment(event):
+def add_ics_file_in_attachment(event, ics_event_description=None):
     # Create a calendar
     calendar_object = Calendar()
 
@@ -21,7 +21,7 @@ def add_ics_file_in_attachment(event):
     event_object.end = convert_datetime_to_utc(get_datetime(event.ends_on))
 
     event_object.uid = str(uuid.uuid4())
-    event_object.description = event.description
+    event_object.description = ics_event_description or event.description
 
     if event.appointment_group and event.appointment_group.event_organizer:
         user_name, user_email = frappe.db.get_value(

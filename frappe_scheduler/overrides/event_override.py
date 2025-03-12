@@ -119,6 +119,8 @@ class EventOverride(Event):
 
     def before_save(self):
         super().before_save()
+        if not hasattr(self, "ics_event_description"):
+            self.ics_event_description = None
         if self.is_new() and (not hasattr(self, "has_event_inserted") or not self.has_event_inserted):
             _, updates = insert_event_in_google_calendar_override(self, update_doc=False)
             for key, value in updates.items():
@@ -159,6 +161,7 @@ class EventOverride(Event):
                     doc=self,
                     appointment_group=self.appointment_group,
                     user_calendar=self.user_calendar,
+                    ics_event_description=self.ics_event_description,
                     metadata=self.event_info if hasattr(self, "event_info") else {},
                 )
 
@@ -179,7 +182,7 @@ class EventOverride(Event):
         super().on_trash()
 
     def on_update(self):
-        self.sync_communication()  # Overrided this because we have made reference doctype and name mandatory in Event Participants
+        self.sync_communication()  # Overrided this because we have made reference doctype and name non-mandatory in Event Participants
 
     def sync_communication(self):
         if self.event_participants:
@@ -331,7 +334,7 @@ class EventOverride(Event):
             return {"status": False, "message": "Unable to create an event"}
 
 
-def send_meet_email(doc, appointment_group, user_calendar, metadata):
+def send_meet_email(doc, appointment_group, user_calendar, metadata, ics_event_description=None):
     """Sent the meeting link email to the given user using the provided Email Template"""
     doc.reload()
 
@@ -369,7 +372,7 @@ def send_meet_email(doc, appointment_group, user_calendar, metadata):
                     else user_calendar.response_email_template
                 ),
                 recipients=doc.get_recipients_event(),
-                attachments=[{"fid": add_ics_file_in_attachment(doc)}],
+                attachments=[{"fid": add_ics_file_in_attachment(doc, ics_event_description)}],
             )
 
             frappe.db.commit()
