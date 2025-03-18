@@ -93,7 +93,7 @@ const Booking = ({ type, banner }: BookingProp) => {
 
   const navigate = useNavigate();
   const { data, isLoading, error, mutate } = useFrappeGetCall(
-    "frappe_scheduler.api.personal_meet.get_time_slots",
+    "frappe_appointment.api.personal_meet.get_time_slots",
     {
       duration_id: type,
       date: new Intl.DateTimeFormat("en-CA", {
@@ -112,7 +112,7 @@ const Booking = ({ type, banner }: BookingProp) => {
     }
   );
   const { call: rescheduleMeeting, loading: rescheduleLoading } =
-    useFrappePostCall("frappe_scheduler.api.personal_meet.book_time_slot");
+    useFrappePostCall("frappe_appointment.api.personal_meet.book_time_slot");
 
   const onReschedule = () => {
     const extraArgs: Record<string, string> = {};

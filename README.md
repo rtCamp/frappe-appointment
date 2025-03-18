@@ -1,11 +1,11 @@
 <div align="center">
-<img src="frappe_scheduler/public/frappe-scheduler-logo.png" height="128" alt="Frappe Scheduler">
-<h2>Frappe Scheduler</h2>
+<img src="frappe_appointment/public/frappe-appointment-logo.png" height="128" alt="Frappe Appointment">
+<h2>Frappe Appointment</h2>
    Frappe app designed to streamline meeting scheduling with smart integrations.
 </div>
 <br>
 <div align="center">
-<img src="frappe_scheduler/public/featured-image.png" width="1050" alt="Frappe Scheduler">
+<img src="frappe_appointment/public/featured-image.png" width="1050" alt="Frappe Appointment">
 </div>
 
 ## Key Features
@@ -21,8 +21,8 @@
 Run the following command to install the app.
 
 ```bash
-bench get-app git@github.com:rtCamp/frappe-scheduler.git
-bench --site [site-name] install-app frappe-scheduler
+bench get-app git@github.com:rtCamp/frappe-appointment.git
+bench --site [site-name] install-app frappe-appointment
 bench --site [site-name] migrate
 bench restart
 ```
@@ -31,11 +31,11 @@ For local development, check out our dev-tool for seamlessly building Frappe app
 NOTE: If using `frappe-manager`, you might require to `fm restart` to provision the worker queues.
 
 ## System Setup
-Visit the detailed [System Setup Guide](https://github.com/rtCamp/frappe-scheduler/wiki/System-Setup) on wiki.
+Visit the detailed [System Setup Guide](https://github.com/rtCamp/frappe-appointment/wiki/System-Setup) on wiki.
 
 ## Documentation
 
-Please refer to our [Wiki](https://github.com/rtCamp/frappe-scheduler/wiki/) for details.
+Please refer to our [Wiki](https://github.com/rtCamp/frappe-appointment/wiki/) for details.
 
 ## Contribution Guide
 

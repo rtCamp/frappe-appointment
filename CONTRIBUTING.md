@@ -5,8 +5,8 @@
 2. Install the app on the site.
 
 ```bash
-bench get-app https://github.com/rtCamp/frappe-scheduler
-bench --site [site-name] install-app frappe_scheduler
+bench get-app https://github.com/rtCamp/frappe-appointment
+bench --site [site-name] install-app frappe_appointment
 ```
 
 2. Set up [pre-commit](https://pre-commit.com/) in the app.
