@@ -156,7 +156,7 @@ class EventOverride(Event):
                     send_meet_email,
                     timeout=600,
                     enqueue_after_commit=True,
-                    job_name=f"Send interview time slot book response email: {self.name}",
+                    job_name=f"Send appointment time slot book response email: {self.name}",
                     queue="long",
                     doc=self,
                     appointment_group=self.appointment_group,
@@ -377,7 +377,7 @@ def send_meet_email(doc, appointment_group, user_calendar, metadata, ics_event_d
 
             frappe.db.commit()
     except Exception:
-        frappe.log_error(title="Interview time slot book response email error " + doc.name)
+        frappe.log_error(title="Appointment time slot book response email error " + doc.name)
 
 
 @frappe.whitelist(allow_guest=True)
@@ -572,12 +572,12 @@ def check_one_time_schedule(
     appointment_group = frappe.get_doc(APPOINTMENT_GROUP, appointment_group_id)
     if appointment_group.schedule_only_once:
         event_info = args
-        interview_id = json.loads(event_info.get("custom_doctype_link_with_event", "[]"))
-        interview_id = interview_id[1]["reference_docname"]
+        event_id = json.loads(event_info.get("custom_doctype_link_with_event", "[]"))
+        event_id = event_id[1]["reference_docname"]
         scheduled_events = frappe.get_all(
             "Event",
             filters=[
-                ["Event DocType Link", "reference_docname", "=", interview_id],
+                ["Event DocType Link", "reference_docname", "=", event_id],
             ],
         )
         if scheduled_events:
