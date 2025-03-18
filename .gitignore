@@ -7,5 +7,5 @@ node_modules
 __pycache__
 dist/
 .frappe-semgrep
-frappe_scheduler/www/schedule/index.html
-frappe_scheduler/public/frontend/
+frappe_appointment/www/schedule/index.html
+frappe_appointment/public/frontend/
