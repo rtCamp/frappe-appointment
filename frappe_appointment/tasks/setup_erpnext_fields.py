@@ -80,4 +80,4 @@ def import_erpnext_fields():
 
 def setup_erpnext_fields():
     fields_imported = import_erpnext_fields()
-    print(f"Imported {fields_imported} custom fields")
+    print(f"Imported {fields_imported} custom fields for Frappe Appointment")
