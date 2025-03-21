@@ -23,6 +23,7 @@ app_include_js = [
     "/assets/frappe_appointment/js/duration_override.js",
 ]
 
+before_migrate = "frappe_appointment.tasks.setup_email_template.setup_email_templates"
 after_migrate = "frappe_appointment.tasks.setup_erpnext_fields.setup_erpnext_fields"
 
 # include js, css files in header of web template
