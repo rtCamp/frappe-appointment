@@ -189,12 +189,8 @@ FORM_TOUR_DOC = {
 }
 
 
-def execute():
-    import_doc()
-
-
 def import_doc():
-    frappe.get_doc(FORM_TOUR_DOC).insert(ignore_if_duplicate=True)
+    frappe.get_doc(FORM_TOUR_DOC).insert(ignore_permissions=True, ignore_if_duplicate=True)
     frappe.db.commit()
     print("Form Tour Google Calendar Setup Imported")
     return True
