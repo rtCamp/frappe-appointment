@@ -53,17 +53,17 @@ class UserAppointmentAvailability(Document):
             if frappe.db.exists("User Appointment Availability", {"slug": self.slug, "name": ["!=", self.name]}):
                 frappe.throw(frappe._("Slug already exists. Please set a unique slug."))
         if self.enable_scheduling and self.meeting_provider == "Zoom":
-            scheduler_settings = frappe.get_single("Scheduler Settings")
-            scheduler_settings_link = frappe.utils.get_link_to_form("Scheduler Settings", None, "Scheduler Settings")
-            if not scheduler_settings.enable_zoom:
-                return frappe.throw(frappe._(f"Zoom is not enabled. Please enable it from {scheduler_settings_link}."))
+            appointment_settings = frappe.get_single("Appointment Settings")
+            appointment_settings_link = frappe.utils.get_link_to_form("Appointment Settings", None, "Appointment Settings")
+            if not appointment_settings.enable_zoom:
+                return frappe.throw(frappe._(f"Zoom is not enabled. Please enable it from {appointment_settings_link}."))
             if (
-                not scheduler_settings.zoom_client_id
-                or not scheduler_settings.get_password("zoom_client_secret")
-                or not scheduler_settings.zoom_account_id
+                not appointment_settings.zoom_client_id
+                or not appointment_settings.get_password("zoom_client_secret")
+                or not appointment_settings.zoom_account_id
             ):
                 return frappe.throw(
-                    frappe._(f"Please set Zoom Account ID, Client ID and Secret in {scheduler_settings_link}.")
+                    frappe._(f"Please set Zoom Account ID, Client ID and Secret in {appointment_settings_link}.")
                 )
             if not calendar.custom_zoom_user_email:
                 google_calendar_link = frappe.utils.get_link_to_form(

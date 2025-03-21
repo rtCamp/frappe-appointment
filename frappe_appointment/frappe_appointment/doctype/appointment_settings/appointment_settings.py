@@ -5,8 +5,8 @@ import frappe
 from frappe.model.document import Document
 
 
-class SchedulerSettings(Document):
-    pass
+class AppointmentSettings(Document):
+	pass
 
 
 @frappe.whitelist()
