@@ -252,7 +252,7 @@ const Booking = ({ type, banner }: BookingProp) => {
             {/* Main */}
             <div className="w-full flex max-lg:flex-col max-md:p-4 gap-8 items-start overflow-hidden ">
               {/* Profile */}
-              <div className="w-full md:max-w-sm flex flex-col gap-4 md:p-6 md:px-4">
+              <div className="max-lg:w-full md:min-w-sm md:max-w-sm flex flex-col gap-4 md:p-6 md:px-4">
                 <div className="w-full flex flex-col gap-1">
                   <Typography variant="h2" className="text-3xl font-semibold">
                     <Tooltip>
@@ -301,7 +301,7 @@ const Booking = ({ type, banner }: BookingProp) => {
                   )}
                 </div>
               </div>
-              <div className="w-full md:max-h-[30rem] md:overflow-hidden">
+              <div className="max-lg:w-full shrink-0 md:max-h-[30rem] md:overflow-hidden">
                 {/* Calendar and Availability slots */}
                 <AnimatePresence mode="wait">
                   {!state.showMeetingForm && (
@@ -426,7 +426,7 @@ const Booking = ({ type, banner }: BookingProp) => {
                       {/* Available slots */}
                       <div
                         className={cn(
-                          "w-48 max-lg:w-full overflow-hidden space-y-4 max-md:pb-10  transition-all duration-300 ",
+                          "w-48 shrink-0 max-lg:w-full overflow-hidden space-y-4 max-md:pb-10  transition-all duration-300 ",
                           !state.expanded && "max-md:hidden",
                           state.showReschedule &&
                             "lg:flex lg:flex-col lg:justify-between"
