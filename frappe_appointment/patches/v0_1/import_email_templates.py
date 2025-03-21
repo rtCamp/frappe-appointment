@@ -37,14 +37,10 @@ EMAIL_TEMPLATES = [
 
 
 def import_email_templates():
-    imported = 0
-    for template in EMAIL_TEMPLATES:
-        if not frappe.db.exists("Email Template", template["name"]):
-            frappe.get_doc(template).insert()
-            imported += 1
-    return imported
+    for email_template in EMAIL_TEMPLATES:
+        frappe.get_doc(email_template).insert(ignore_permissions=True, ignore_if_duplicate=True)
+    frappe.db.commit()
 
 
-def setup_email_templates():
+def execute():
     import_email_templates()
-    return True
