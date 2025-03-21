@@ -1,7 +1,8 @@
 {
  "actions": [],
  "allow_rename": 1,
- "creation": "2025-01-22 10:24:15.252171",
+ "creation": "2025-03-21 18:23:23.804358",
+ "default_view": "List",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
@@ -21,6 +22,36 @@
  ],
  "fields": [
   {
+   "fieldname": "default_email_templates_section",
+   "fieldtype": "Section Break",
+   "label": "Default Email Templates"
+  },
+  {
+   "default": "[Default] Appointment Scheduled",
+   "fieldname": "default_personal_email_template",
+   "fieldtype": "Link",
+   "label": "Personal Meeting",
+   "options": "Email Template"
+  },
+  {
+   "default": "[Default] Appointment Scheduled",
+   "fieldname": "default_group_email_template",
+   "fieldtype": "Link",
+   "label": "Group Meeting",
+   "options": "Email Template"
+  },
+  {
+   "fieldname": "column_break_burh",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "[Default] Appointment Group Availability",
+   "fieldname": "default_availability_alerts_email_template",
+   "fieldtype": "Link",
+   "label": "Availability Alerts",
+   "options": "Email Template"
+  },
+  {
    "fieldname": "zoom_settings_section",
    "fieldtype": "Section Break",
    "label": "Zoom Settings"
@@ -30,14 +61,6 @@
    "fieldname": "enable_zoom",
    "fieldtype": "Check",
    "label": "Enable Zoom"
-  },
-  {
-   "fieldname": "column_break_wtbw",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "section_break_xzxx",
-   "fieldtype": "Section Break"
   },
   {
    "depends_on": "enable_zoom",
@@ -61,49 +84,27 @@
    "mandatory_depends_on": "enable_zoom"
   },
   {
+   "fieldname": "column_break_wtbw",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "section_break_xzxx",
+   "fieldtype": "Section Break"
+  },
+  {
    "fieldname": "zoom_access_token",
    "fieldtype": "Password",
    "hidden": 1,
    "label": "Access Token"
-  },
-  {
-   "fieldname": "default_email_templates_section",
-   "fieldtype": "Section Break",
-   "label": "Default Email Templates"
-  },
-  {
-   "fieldname": "column_break_burh",
-   "fieldtype": "Column Break"
-  },
-  {
-   "default": "[Default] Appointment Scheduled",
-   "fieldname": "default_personal_email_template",
-   "fieldtype": "Link",
-   "label": "Personal Meeting",
-   "options": "Email Template"
-  },
-  {
-   "default": "[Default] Appointment Scheduled",
-   "fieldname": "default_group_email_template",
-   "fieldtype": "Link",
-   "label": "Group Meeting",
-   "options": "Email Template"
-  },
-  {
-   "default": "[Default] Appointment Group Availability",
-   "fieldname": "default_availability_alerts_email_template",
-   "fieldtype": "Link",
-   "label": "Availability Alerts",
-   "options": "Email Template"
   }
  ],
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2025-02-17 12:03:17.920113",
+ "modified": "2025-03-21 18:23:23.804358",
  "modified_by": "Administrator",
  "module": "Frappe Appointment",
- "name": "Scheduler Settings",
+ "name": "Appointment Settings",
  "owner": "Administrator",
  "permissions": [
   {

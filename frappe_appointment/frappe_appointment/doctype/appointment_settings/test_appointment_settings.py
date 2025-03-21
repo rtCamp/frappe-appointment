@@ -5,5 +5,5 @@
 from frappe.tests.utils import FrappeTestCase
 
 
-class TestSchedulerSettings(FrappeTestCase):
-    pass
+class TestAppointmentSettings(FrappeTestCase):
+	pass

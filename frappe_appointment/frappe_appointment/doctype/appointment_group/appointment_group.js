@@ -15,7 +15,7 @@ frappe.ui.form.on("Appointment Group", {
     if (frm.doc.__islocal) {
       frappe.call({
         method:
-          "frappe_appointment.frappe_appointment.doctype.scheduler_settings.scheduler_settings.get_default_email_template",
+          "frappe_appointment.frappe_appointment.doctype.appointment_settings.appointment_settings.get_default_email_template",
         callback: function (r) {
           if (r.message?.group) {
             frm.set_value("response_email_template", r.message.group);

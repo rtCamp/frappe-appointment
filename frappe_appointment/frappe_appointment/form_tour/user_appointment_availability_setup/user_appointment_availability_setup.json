@@ -178,7 +178,7 @@
    "ui_tour": 0
   },
   {
-   "description": "Select the Meeting Provider that you would like to use to schedule meetings.\n<br>\nYou can choose from the following:\n<ul>\n<li><b>None</b>: Use this to not schedule a meeting.</li>\n<li><b>Custom</b>: Use this to enter a custom meeting link, for example your personal zoom meeting url. If you choose this, enter your custom link in the field Meet Link.</li>\n<li><b>Zoom</b>: Use this to schedule a new meeting using Zoom. Only works if zoom is enabled in <a href=\"/app/scheduler-settings\" target=\"_blank\">Scheduler Settings</a></li>\n<li><b>Google Meet</b>: Use this to schedule a new meeting using Google Meet.</li>\n</ul>",
+   "description": "Select the Meeting Provider that you would like to use to schedule meetings.\n<br>\nYou can choose from the following:\n<ul>\n<li><b>None</b>: Use this to not schedule a meeting.</li>\n<li><b>Custom</b>: Use this to enter a custom meeting link, for example your personal zoom meeting url. If you choose this, enter your custom link in the field Meet Link.</li>\n<li><b>Zoom</b>: Use this to schedule a new meeting using Zoom. Only works if zoom is enabled in <a href=\"/app/scheduler-settings\" target=\"_blank\">Appointment Settings</a></li>\n<li><b>Google Meet</b>: Use this to schedule a new meeting using Google Meet.</li>\n</ul>",
    "fieldname": "meeting_provider",
    "fieldtype": "Select",
    "has_next_condition": 0,
