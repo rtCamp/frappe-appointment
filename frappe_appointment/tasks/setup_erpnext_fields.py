@@ -80,5 +80,5 @@ def import_erpnext_fields():
 
 def setup_erpnext_fields():
     fields_imported = import_erpnext_fields()
-    frappe.msgprint(f"Imported {fields_imported} custom fields")
+    print(f"Imported {fields_imported} custom fields")
     frappe.db.commit()  # nosemgrep
