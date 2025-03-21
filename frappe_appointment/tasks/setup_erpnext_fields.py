@@ -72,8 +72,8 @@ def import_erpnext_fields():
         fields_to_import.extend(HRMS_FIELDS)
     fields_imported = 0
     for field in fields_to_import:
-        if not frappe.db.exists("Custom Field", field["fieldname"]):
-            frappe.get_doc(field).insert(ignore_permissions=True)
+        if not frappe.db.exists("Custom Field", field["name"]):
+            frappe.get_doc(field).insert(ignore_permissions=True, ignore_if_duplicate=True)
             fields_imported += 1
     return fields_imported
 
@@ -81,4 +81,3 @@ def import_erpnext_fields():
 def setup_erpnext_fields():
     fields_imported = import_erpnext_fields()
     print(f"Imported {fields_imported} custom fields")
-    frappe.db.commit()  # nosemgrep
