@@ -32,9 +32,8 @@ def get_availability_status_for_appointment_group(appointment_group, publish_rea
     if event_availability_window <= 0:
         event_availability_window = 10  # By default, we will check availability for next 10 days only.
     for _ in range(event_availability_window):
-        if appointment_group.enable_scheduling_on_weekends or current_date.weekday() < 5:
-            available_slots = get_time_slots_for_given_date(appointment_group, current_date)
-            data[current_date.date().isoformat()] = available_slots["total_slots_for_day"]
+        available_slots = get_time_slots_for_given_date(appointment_group, current_date)
+        data[current_date.date().isoformat()] = available_slots["total_slots_for_day"]
         current_date = frappe.utils.add_days(current_date, 1)
     appointment_group.reload()
     appointment_group.available_slots_data = json.dumps(data)
