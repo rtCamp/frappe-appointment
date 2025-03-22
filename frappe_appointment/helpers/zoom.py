@@ -66,7 +66,7 @@ def create_meeting(
         "topic": subject,
         "type": 2,
         "start_time": frappe.utils.get_datetime(starts_on).isoformat(),
-        "duration": duration,
+        "duration": int(duration),
         "timezone": timezone,
         "agenda": description,
     }
@@ -114,7 +114,7 @@ def update_meeting(
         "topic": subject,
         "type": 2,
         "start_time": frappe.utils.get_datetime(starts_on).isoformat(),
-        "duration": duration,
+        "duration": int(duration),
         "timezone": timezone,
         "agenda": description,
     }
