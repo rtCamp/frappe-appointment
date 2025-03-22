@@ -38,7 +38,7 @@ HRMS_FIELDS = [
         "link_filters": None,
         "mandatory_depends_on": None,
         "modified": "2024-12-24 11:41:55.674096",
-        "module": "Frappe Appointment",
+        "module": None,
         "name": "Leave Application-custom_google_calendar_event_id",
         "no_copy": 1,
         "non_negative": 0,

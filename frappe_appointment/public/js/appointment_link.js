@@ -67,25 +67,25 @@ function generate_table(data) {
 
 function create_meetings_section(frm, r, title = "Upcoming & Ongoing Meetings") {
   if (frm.doctype === "User Appointment Availability") {
-    var html = "<div class='scheduler-meeting-container'>";
+    var html = "<div class='appointment-meeting-container'>";
     is_data_available = false;
     const data = r.message;
     if (data?.ongoing && data.ongoing.length > 0) {
-      html += `<div class="scheduler-meeting-box scheduler-meeting-github" style="margin-top: 20px;">
+      html += `<div class="appointment-meeting-box appointment-meeting-github" style="margin-top: 20px;">
         <h4>Ongoing Meetings</h4>
         ${generate_table(data.ongoing)}
       </div>`;
       is_data_available = true;
     }
     if (data?.upcoming && data.upcoming.length > 0) {
-      html += `<div class="scheduler-meeting-box scheduler-meeting-github" style="margin-top: 20px;">
+      html += `<div class="appointment-meeting-box appointment-meeting-github" style="margin-top: 20px;">
         <h4>Upcoming Meetings</h4>
         ${generate_table(data.upcoming)}
       </div>`;
       is_data_available = true;
     }
     if (!is_data_available) {
-      html += `<div class="scheduler-meeting-box scheduler-meeting-github" style="margin-top: 20px;">
+      html += `<div class="appointment-meeting-box appointment-meeting-github" style="margin-top: 20px;">
         <h4>No Meetings Found</h4>
       </div>`;
     }
@@ -94,7 +94,7 @@ function create_meetings_section(frm, r, title = "Upcoming & Ongoing Meetings") 
     var meeting_section = null;
     const sections = document.querySelectorAll(".form-dashboard-section");
     sections.forEach((section) => {
-      if (section.querySelector(".scheduler-meeting-container")) {
+      if (section.querySelector(".appointment-meeting-container")) {
         meeting_section = section;
       }
     });
@@ -112,7 +112,7 @@ function create_meetings_section(frm, r, title = "Upcoming & Ongoing Meetings") 
 function make_section_close() {
   const sections = document.querySelectorAll(".form-dashboard-section");
   sections.forEach((section) => {
-    if (section.querySelector(".scheduler-meeting-container")) {
+    if (section.querySelector(".appointment-meeting-container")) {
       if (!section.querySelector(".section-head").classList.contains("collapsed")) {
         section.querySelector(".section-head").click();
       }
@@ -215,13 +215,13 @@ $(document).on("form-refresh", function (event, frm) {
     frappe.ui.form.on(doctype, {
       refresh: function (frm) {
         if (doctype == "User Appointment Availability" && !frm.doc.__islocal) {
-          frm.add_custom_button(__("Copy Scheduler Link"), () => {
-            frm.trigger("copy_scheduler_link");
+          frm.add_custom_button(__("Copy Appointment Link"), () => {
+            frm.trigger("copy_appointment_link");
           });
 
           const personal_meet_menu = frm.page.add_custom_button_group("Personal Meeting");
-          frm.page.add_custom_menu_item(personal_meet_menu, __("Scheduler Link with Duration"), () => {
-            frm.trigger("copy_scheduler_link_with_duration");
+          frm.page.add_custom_menu_item(personal_meet_menu, __("Appointment Link with Duration"), () => {
+            frm.trigger("copy_appointment_link_with_duration");
           });
 
           frm.page.add_custom_menu_item(personal_meet_menu, __("View Past Meetings"), () => {
@@ -283,7 +283,7 @@ $(document).on("form-refresh", function (event, frm) {
           },
         });
       },
-      copy_scheduler_link: function (frm) {
+      copy_appointment_link: function (frm) {
         frappe.call({
           method: "frappe_appointment.api.personal_meet.get_schedular_link",
           args: {
@@ -302,13 +302,13 @@ $(document).on("form-refresh", function (event, frm) {
               });
             } else {
               frappe.msgprint(
-                __("No scheduler link found. Please make sure Personal Meetings are enabled for this user.")
+                __("No appointment link found. Please make sure Personal Meetings are enabled for this user.")
               );
             }
           },
         });
       },
-      copy_scheduler_link_with_duration: function (frm) {
+      copy_appointment_link_with_duration: function (frm) {
         frappe.call({
           method: "frappe_appointment.api.personal_meet.get_schedular_link",
           args: {
@@ -318,7 +318,7 @@ $(document).on("form-refresh", function (event, frm) {
           callback: function (r) {
             if (r.message?.available_durations && r.message.available_durations.length > 0) {
               const dialog = new frappe.ui.Dialog({
-                title: __("Scheduler Link"),
+                title: __("Appointment Link"),
                 fields: [
                   {
                     fieldname: "section_break_1",
@@ -347,7 +347,7 @@ $(document).on("form-refresh", function (event, frm) {
               dialog.show();
             } else {
               frappe.msgprint(
-                __("No scheduler link found. Please make sure Personal Meetings are enabled for this user.")
+                __("No appointment link found. Please make sure Personal Meetings are enabled for this user.")
               );
             }
           },
@@ -401,9 +401,9 @@ $(document).on("form-refresh", function (event, frm) {
               reqd: 1,
             },
             {
-              fieldname: "scheduler_link",
+              fieldname: "appointment_link",
               fieldtype: "Data",
-              label: __("Scheduler Link"),
+              label: __("Appointment Link"),
               read_only: 1,
               hidden: 1,
             },
@@ -421,9 +421,9 @@ $(document).on("form-refresh", function (event, frm) {
               fieldtype: "Column Break",
             },
             {
-              fieldname: "copy_scheduler_link",
+              fieldname: "copy_appointment_link",
               fieldtype: "Button",
-              label: __("Copy Scheduler Link"),
+              label: __("Copy Appointment Link"),
             },
           ],
         });
@@ -441,13 +441,13 @@ $(document).on("form-refresh", function (event, frm) {
             }","email":"${dialog.fields_dict.external_email.$input.val()}"}]&custom_doctype_link_with_event=[{"reference_doctype":"${doctype}","reference_docname":"${
               frm.docname
             }","value":"${dialog.fields_dict.external_email.$input.val()}"}]`;
-            dialog.fields_dict.scheduler_link.set_value(appointment_link);
+            dialog.fields_dict.appointment_link.set_value(appointment_link);
             dialog.fields_dict.send_schedular_email.input.disabled = false;
-            dialog.fields_dict.copy_scheduler_link.input.disabled = false;
+            dialog.fields_dict.copy_appointment_link.input.disabled = false;
           } else {
-            dialog.fields_dict.scheduler_link.set_value("");
+            dialog.fields_dict.appointment_link.set_value("");
             dialog.fields_dict.send_schedular_email.input.disabled = true;
-            dialog.fields_dict.copy_scheduler_link.input.disabled = true;
+            dialog.fields_dict.copy_appointment_link.input.disabled = true;
           }
         }
         update_link();
@@ -479,7 +479,7 @@ $(document).on("form-refresh", function (event, frm) {
             update_link();
           }
         });
-        dialog.fields_dict.copy_scheduler_link.$input.on("click", () => {
+        dialog.fields_dict.copy_appointment_link.$input.on("click", () => {
           if (!appointment_link) {
             frappe.msgprint(__("Please enter an email to schedule with"));
             return;
@@ -502,9 +502,9 @@ $(document).on("form-refresh", function (event, frm) {
             frappe.msgprint(__("Please select an appointment group"));
             return;
           }
-          const link = dialog.fields_dict.scheduler_link.value;
+          const link = dialog.fields_dict.appointment_link.value;
           const message = `<p>
-                        Please select a time and date as per your availability through the scheduler link given:
+                        Please select a time and date as per your availability through the appointment link given:
 
                         <a href='${link}'>
                             Link
