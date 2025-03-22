@@ -11,9 +11,9 @@ class AppointmentSettings(Document):
 
 @frappe.whitelist()
 def get_default_email_template():
-    scheduler_settings = frappe.get_single("Scheduler Settings")
+    appointment_settings = frappe.get_single("Appointment Settings")
     return {
-        "personal": scheduler_settings.default_personal_email_template,
-        "group": scheduler_settings.default_group_email_template,
-        "availability": scheduler_settings.default_availability_alerts_email_template,
+        "personal": appointment_settings.default_personal_email_template,
+        "group": appointment_settings.default_group_email_template,
+        "availability": appointment_settings.default_availability_alerts_email_template,
     }
