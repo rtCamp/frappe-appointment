@@ -206,7 +206,7 @@ const GroupAppointment = () => {
         title={`${
           capitalizeWords(validTitle(state.meetingData.appointment_group_id)) ||
           "Group"
-        } | Scheduler`}
+        } | Appointment`}
         description={`Book appointment with ${validTitle(
           state.meetingData.appointment_group_id
         )}`}
