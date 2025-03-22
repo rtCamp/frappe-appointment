@@ -155,7 +155,7 @@ FORM_TOUR_DOC = {
         },
         {
             "child_doctype": None,
-            "description": 'Zoom meetings will be scheduled using this email ID for your events (only if Zoom is enabled in <a href="/app/scheduler-settings" target="_blank">Appointment Settings</a>). \n\nIt defaults to your User Email. If you want to use a custom email for this, please set it here.',
+            "description": 'Zoom meetings will be scheduled using this email ID for your events (only if Zoom is enabled in <a href="/app/appointment-settings" target="_blank">Appointment Settings</a>). \n\nIt defaults to your User Email. If you want to use a custom email for this, please set it here.',
             "element_selector": None,
             "fieldname": "custom_zoom_user_email",
             "fieldtype": "Data",

@@ -88,7 +88,7 @@ const Appointment = () => {
   return (
     <>
       <MetaTags
-        title={`${userInfo.name} | Scheduler`}
+        title={`${userInfo.name} | Appointment`}
         description={`Book appointment with ${userInfo.name}`}
       />
       {!type || isLoading ? (
