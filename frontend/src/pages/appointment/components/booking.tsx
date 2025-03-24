@@ -42,6 +42,7 @@ import SuccessAlert from "@/components/success-alert";
 import { Icon } from "@/components/icons";
 import { CalendarWrapper } from "@/components/calendar-wrapper";
 import { useBookingReducer } from "../reducer";
+import { convertMinutesToTimeFormat } from "../utils";
 
 interface BookingProp {
   type: string;
@@ -278,7 +279,7 @@ const Booking = ({ type, banner }: BookingProp) => {
                   {duration ? (
                     <Typography className="text-sm mt-1 flex items-center">
                       <Clock className="inline-block w-4 h-4 mr-1" />
-                      {duration} Minute Meeting
+                      {convertMinutesToTimeFormat(duration)} Meeting
                     </Typography>
                   ) : (
                     <Skeleton className="h-5 w-24" />

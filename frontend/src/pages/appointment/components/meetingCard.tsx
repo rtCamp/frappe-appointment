@@ -16,11 +16,8 @@ import {
 } from "@/components/card";
 import Typography from "@/components/typography";
 import { useAppContext } from "@/context/app";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/tooltip";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/tooltip";
+import { convertMinutesToTimeFormat } from "../utils";
 
 interface MeetingCardProps {
   title: string;
@@ -35,15 +32,13 @@ const MeetingCard = ({ title, duration, onClick }: MeetingCardProps) => {
       <CardHeader className="space-y-1">
         <CardTitle className="text-xl py-2">
           <Tooltip>
-            <TooltipTrigger>
-              {title}
-            </TooltipTrigger>
+            <TooltipTrigger>{title}</TooltipTrigger>
             <TooltipContent>{title}</TooltipContent>
           </Tooltip>
         </CardTitle>
         <CardDescription className="flex items-center gap-1">
           <Clock className="w-4 h-4 text-blue-500" />
-          <Typography>{duration} min</Typography>
+          <Typography>{convertMinutesToTimeFormat(duration,true)}</Typography>
           <span className="mx-1">•</span>
           <Video className="w-4 h-4 text-blue-400" />
           <Typography className="text-blue-400">
