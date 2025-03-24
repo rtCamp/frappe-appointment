@@ -40,3 +40,4 @@ def import_email_templates():
     for email_template in EMAIL_TEMPLATES:
         frappe.get_doc(email_template).insert(ignore_permissions=True, ignore_if_duplicate=True, ignore_links=True)
     print("Email Templates Imported")
+ 
