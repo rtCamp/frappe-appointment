@@ -167,7 +167,7 @@ export const parseDateString = (dateString: string): Date => {
 // Converts Minute string to Hours and Minutes Format (HH:MM)
 export const convertMinutesToTimeFormat = (
   minutes: number | string,
-  useAbbrForMin: boolean = false
+  useAbbr: boolean = false
 ): string => {
   try {
     const totalMinutes =
@@ -179,7 +179,7 @@ export const convertMinutesToTimeFormat = (
 
     // If minutes less than 60, return as is with "Minute" suffix
     if (totalMinutes < 60) {
-      return `${totalMinutes} ${useAbbrForMin ? "min" : "Minute"}`;
+      return `${totalMinutes} ${useAbbr ? "min" : "Minute"}`;
     }
 
     const hours = Math.floor(totalMinutes / 60);
@@ -188,7 +188,7 @@ export const convertMinutesToTimeFormat = (
     const hoursStr = hours.toString().padStart(2, "0");
     const minutesStr = mins.toString().padStart(2, "0");
 
-    return `${hoursStr}:${minutesStr} ${useAbbrForMin ? "hr" : "Hour"}`;
+    return `${hoursStr}:${minutesStr} ${useAbbr ? "hr" : "Hour"}`;
   } catch (error) {
     console.log(error);
     return "";
