@@ -16,7 +16,7 @@ const PoweredBy = () => {
               rel="noopener noreferrer"
               className="font-semibold hover:underline text-blue-400"
             >
-              Frappe Appointment
+              Redtra Technologies FZE LLC
             </a>
           </Typography>
         </Typography>
