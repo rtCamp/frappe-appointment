@@ -24,6 +24,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/avatar";
 import Typography from "@/components/typography";
 import {
   cn,
+  convertMinutesToTimeFormat,
   convertToMinutes,
   getAllSupportedTimeZones,
   getTimeZoneOffsetFromTimeZoneString,
@@ -42,7 +43,6 @@ import SuccessAlert from "@/components/success-alert";
 import { Icon } from "@/components/icons";
 import { CalendarWrapper } from "@/components/calendar-wrapper";
 import { useBookingReducer } from "../reducer";
-import { convertMinutesToTimeFormat } from "../utils";
 
 interface BookingProp {
   type: string;

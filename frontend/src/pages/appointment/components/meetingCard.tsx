@@ -17,7 +17,7 @@ import {
 import Typography from "@/components/typography";
 import { useAppContext } from "@/context/app";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/tooltip";
-import { convertMinutesToTimeFormat } from "../utils";
+import { convertMinutesToTimeFormat } from "@/lib/utils";
 
 interface MeetingCardProps {
   title: string;

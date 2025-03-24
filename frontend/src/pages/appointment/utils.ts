@@ -47,33 +47,3 @@ export const getCurrentTime = (timeZone: string) => {
   }
 };
 
-// Converts Minute string to Hours and Minutes Format (HH:MM)
-export const convertMinutesToTimeFormat = (
-  minutes: number | string,
-  useAbbrForMin: boolean = false
-): string => {
-  try {
-    const totalMinutes =
-      typeof minutes === "string" ? parseInt(minutes, 10) : minutes;
-      
-    if (isNaN(totalMinutes)) {
-      throw new Error("Invalid input: Cannot convert to number");
-    }
-
-    // If minutes less than 60, return as is with "Minute" suffix
-    if (totalMinutes < 60) {
-      return `${totalMinutes} ${useAbbrForMin ? "min" : "Minute"}`;
-    }
-
-    const hours = Math.floor(totalMinutes / 60);
-    const mins = totalMinutes % 60;
-
-    const hoursStr = hours.toString().padStart(2, "0");
-    const minutesStr = mins.toString().padStart(2, "0");
-
-    return `${hoursStr}:${minutesStr} ${useAbbrForMin ? "hr" : "Hour"}`;
-  } catch (error) {
-    console.log(error);
-    return "";
-  }
-};
