@@ -19,6 +19,7 @@ import Typography from "@/components/typography";
 import {
   capitalizeWords,
   cn,
+  convertMinutesToTimeFormat,
   convertToMinutes,
   getAllSupportedTimeZones,
   getTimeZoneOffsetFromTimeZoneString,
@@ -289,18 +290,18 @@ const GroupAppointment = () => {
                         <Tooltip>
                           <TooltipTrigger className="text-left truncate">
                             <Typography className="truncate font-medium text-gray-600">
-                              {convertToMinutes(
+                              {convertMinutesToTimeFormat(convertToMinutes(
                                 state.meetingData.duration
-                              ).toString()}{" "}
-                              Minute Meeting
+                              ).toString())}{" "}
+                              Meeting
                             </Typography>
                           </TooltipTrigger>
                           <TooltipContent className="capitalize">
                             <span className="text-blue-600">duration</span> :{" "}
-                            {convertToMinutes(
+                            {convertMinutesToTimeFormat(convertToMinutes(
                               state.meetingData.duration
-                            ).toString()}{" "}
-                            Minute Meeting
+                            ).toString())}{" "}
+                            Meeting
                           </TooltipContent>
                         </Tooltip>
                       </div>

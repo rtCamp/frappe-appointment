@@ -24,6 +24,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/avatar";
 import Typography from "@/components/typography";
 import {
   cn,
+  convertMinutesToTimeFormat,
   convertToMinutes,
   getAllSupportedTimeZones,
   getTimeZoneOffsetFromTimeZoneString,
@@ -278,7 +279,7 @@ const Booking = ({ type, banner }: BookingProp) => {
                   {duration ? (
                     <Typography className="text-sm mt-1 flex items-center">
                       <Clock className="inline-block w-4 h-4 mr-1" />
-                      {duration} Minute Meeting
+                      {convertMinutesToTimeFormat(duration)} Meeting
                     </Typography>
                   ) : (
                     <Skeleton className="h-5 w-24" />

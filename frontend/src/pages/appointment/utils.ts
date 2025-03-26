@@ -1,7 +1,5 @@
-
-
 // Helper function to format the timezone offset
-export function getTimeZoneOffset(timeZone: string): string {
+export const getTimeZoneOffset = (timeZone: string): string => {
   try {
     const now = new Date();
     const formatter = new Intl.DateTimeFormat("en-US", {
@@ -32,10 +30,10 @@ export function getTimeZoneOffset(timeZone: string): string {
     console.error(e);
     return "";
   }
-}
+};
 
 // Helper function to get current time in timezone
-export function getCurrentTime(timeZone: string) {
+export const getCurrentTime = (timeZone: string) => {
   try {
     return new Date().toLocaleTimeString("en-US", {
       timeZone,
@@ -47,6 +45,5 @@ export function getCurrentTime(timeZone: string) {
     console.log(e);
     return "";
   }
-}
-
+};
 
