@@ -159,7 +159,7 @@ const MeetingForm = ({
               <Typography variant="p" className="text-2xl">
                 Your contact info
               </Typography>
-              <Typography className="text-sm  mt-1 text-blue-500">
+              <Typography className="text-sm  mt-1 text-blue-500 dark:text-blue-400">
                 <CalendarPlus className="inline-block w-4 h-4 mr-1 md:hidden" />
                 {formatDate(selectedDate, "d MMM, yyyy")}
               </Typography>
@@ -170,18 +170,31 @@ const MeetingForm = ({
               name="fullName"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>
-                    Full Name <span className="text-red-500">*</span>
+                  <FormLabel
+                    className={`${
+                      form.formState.errors.fullName ? "text-red-500" : ""
+                    }`}
+                  >
+                    Full Name{" "}
+                    <span className="text-red-500 dark:text-red-600">*</span>
                   </FormLabel>
                   <FormControl>
                     <Input
                       disabled={loading}
-                      className="active:ring-blue-400 focus-visible:ring-blue-400"
+                      className={`active:ring-blue-400 focus-visible:ring-blue-400 ${
+                        form.formState.errors.fullName
+                          ? "active:ring-red-500 focus-visible:ring-red-500"
+                          : ""
+                      }`}
                       placeholder="John Doe"
                       {...field}
                     />
                   </FormControl>
-                  <FormMessage />
+                  <FormMessage
+                    className={`${
+                      form.formState.errors.fullName ? "text-red-500" : ""
+                    }`}
+                  />
                 </FormItem>
               )}
             />
@@ -191,18 +204,31 @@ const MeetingForm = ({
               name="email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>
-                    Email <span className="text-red-500">*</span>
+                  <FormLabel
+                    className={`${
+                      form.formState.errors.email ? "text-red-500" : ""
+                    }`}
+                  >
+                    Email{" "}
+                    <span className="text-red-500 dark:text-red-600">*</span>
                   </FormLabel>
                   <FormControl>
                     <Input
                       disabled={loading}
-                      className="active:ring-blue-400 focus-visible:ring-blue-400"
+                      className={`active:ring-blue-400 focus-visible:ring-blue-400 ${
+                        form.formState.errors.email
+                          ? "active:ring-red-500 focus-visible:ring-red-500"
+                          : ""
+                      }`}
                       placeholder="john.Doe@gmail.com"
                       {...field}
                     />
                   </FormControl>
-                  <FormMessage />
+                  <FormMessage
+                    className={`${
+                      form.formState.errors.email ? "text-red-500" : ""
+                    }`}
+                  />
                 </FormItem>
               )}
             />
@@ -211,7 +237,7 @@ const MeetingForm = ({
               <Button
                 type="button"
                 variant="ghost"
-                className="h-auto hover:bg-blue-50 text-blue-500 hover:text-blue-600 "
+                className="h-auto hover:bg-blue-50 dark:hover:bg-blue-800/10 text-blue-500 dark:text-blue-400 hover:text-blue-600 "
                 onClick={() => setIsGuestsOpen(!isGuestsOpen)}
                 disabled={loading}
               >
@@ -251,10 +277,10 @@ const MeetingForm = ({
             </div>
           </div>
 
-          <div className="flex justify-between md:pt-4 max-md:h-14 max-md:fixed max-md:bottom-0 max-md:left-0 max-md:w-screen max-md:border max-md:z-10 max-md:bg-white max-md:border-top max-md:items-center max-md:px-4">
+          <div className="flex justify-between md:pt-4 max-md:h-14 max-md:fixed max-md:bottom-0 max-md:left-0 max-md:w-screen max-md:border max-md:z-10 max-md:bg-background max-md:border-top max-md:items-center max-md:px-4">
             <Button
               type="button"
-              className="text-blue-500 hover:text-blue-600 md:hover:bg-blue-50 max-md:px-0 max-md:hover:underline max-md:hover:bg-transparent"
+              className="text-blue-500 hover:text-blue-600 md:hover:bg-blue-50 md:dark:hover:bg-blue-800/10 max-md:px-0 max-md:hover:underline max-md:hover:bg-transparent"
               onClick={onBack}
               variant="ghost"
               disabled={loading}
@@ -263,7 +289,7 @@ const MeetingForm = ({
             </Button>
             <Button
               disabled={loading}
-              className="bg-blue-500 hover:bg-blue-500"
+              className="bg-blue-500 dark:bg-blue-400 hover:bg-blue-500 dark:hover:bg-blue-400"
               type="submit"
             >
               {loading && <Spinner />} Schedule Meeting

@@ -221,7 +221,7 @@ const Booking = ({ type, banner }: BookingProp) => {
     <>
       <div className="w-full h-fit flex justify-center">
         <div className="md:w-4xl max-lg:w-full md:p-4 md:py-6 gap-10 md:gap-12">
-          <div className="w-full rounded-xl  md:border border-blue-100 border-t-0">
+          <div className="w-full rounded-xl  md:border border-blue-100 dark:border-zinc-700 border-t-0">
             {/* Banner */}
             <div
               className={cn(
@@ -239,11 +239,11 @@ const Booking = ({ type, banner }: BookingProp) => {
               }
             >
               {/* avatar */}
-              <Avatar className="h-28 w-28 md:h-32 md:w-32 object-cover absolute bottom-0 translate-y-1/2 md:left-24 max-md:left-5 outline outline-white">
+              <Avatar className="h-28 w-28 md:h-32 md:w-32 object-cover absolute bottom-0 translate-y-1/2 md:left-24 max-md:left-5 outline outline-white dark:outline-background">
                 <AvatarImage
                   src={userInfo.userImage}
                   alt="Profile picture"
-                  className="bg-blue-50"
+                  className="bg-blue-50 dark:bg-zinc-800"
                 />
                 <AvatarFallback className="text-4xl">
                   {userInfo.name?.toString()[0]?.toUpperCase()}
@@ -289,13 +289,13 @@ const Booking = ({ type, banner }: BookingProp) => {
                     {formatDate(new Date(), "d MMM, yyyy")}
                   </Typography>
                   {userInfo.meetingProvider.toLowerCase() == "zoom" && (
-                    <Typography className="text-sm text-blue-500 mt-1 flex items-center">
+                    <Typography className="text-sm text-blue-500 dark:text-blue-400 mt-1 flex items-center">
                       <Icon name="zoom" />
                       Zoom
                     </Typography>
                   )}{" "}
                   {userInfo.meetingProvider.toLowerCase() == "google meet" && (
-                    <Typography className="text-sm text-blue-700 mt-1 flex items-center">
+                    <Typography className="text-sm text-blue-700 dark:text-blue-400 mt-1 flex items-center">
                       <Icon name="googleMeet" />
                       Google Meet
                     </Typography>
@@ -374,12 +374,12 @@ const Booking = ({ type, banner }: BookingProp) => {
 
                             {/* Time Format Toggle */}
                             <div className="flex items-center gap-2">
-                              <Typography className="text-sm text-gray-700">
+                              <Typography className="text-sm text-gray-700 dark:text-slate-300">
                                 AM/PM
                               </Typography>
                               <Switch
                                 disabled={rescheduleLoading}
-                                className="data-[state=checked]:bg-blue-500 active:ring-blue-400 focus-visible:ring-blue-400"
+                                className="data-[state=checked]:bg-blue-500 dark:data-[state=checked]:bg-blue-400 active:ring-blue-400 focus-visible:ring-blue-400"
                                 checked={state.timeFormat === "24h"}
                                 onCheckedChange={(checked) => {
                                   dispatch({
@@ -388,7 +388,7 @@ const Booking = ({ type, banner }: BookingProp) => {
                                   });
                                 }}
                               />
-                              <Typography className="text-sm text-gray-700">
+                              <Typography className="text-sm text-gray-700 dark:text-slate-300">
                                 24H
                               </Typography>
                             </div>
@@ -398,10 +398,10 @@ const Booking = ({ type, banner }: BookingProp) => {
 
                       {/* Sticky Bottom Action Bar (Mobile) */}
                       {state.isMobileView && state.expanded && (
-                        <div className="h-14 fixed bottom-0 left-0 w-screen border z-10 bg-white border-top flex items-center justify-between px-4">
+                        <div className="h-14 fixed bottom-0 left-0 w-screen border z-10 bg-background border-top flex items-center justify-between px-4">
                           <Button
                             variant="link"
-                            className="text-blue-500 px-0"
+                            className="text-blue-500 dark:text-blue-400 px-0"
                             onClick={() =>
                               dispatch({ type: "SET_EXPANDED", payload: false })
                             }
@@ -412,7 +412,7 @@ const Booking = ({ type, banner }: BookingProp) => {
                           </Button>
                           {state.showReschedule && (
                             <Button
-                              className="bg-blue-500 hover:bg-blue-500 w-fit px-6"
+                              className="bg-blue-500 dark:bg-blue-400 hover:bg-blue-500 dark:hover:bg-blue-400 w-fit px-6"
                               onClick={onReschedule}
                               disabled={
                                 rescheduleLoading || !state.showReschedule
@@ -476,14 +476,14 @@ const Booking = ({ type, banner }: BookingProp) => {
                                     }}
                                     variant="outline"
                                     className={cn(
-                                      "w-full font-normal border border-blue-500 text-blue-500 hover:text-blue-500 ease-in-out duration-200 hover:bg-blue-50 transition-colors ",
+                                      "w-full font-normal border border-blue-500 dark:border-blue-400 text-blue-500 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-400 ease-in-out duration-200 hover:bg-blue-50 dark:hover:bg-blue-800/20 transition-colors ",
                                       selectedSlot.start_time ===
                                         slot.start_time &&
                                         selectedSlot.end_time ===
                                           slot.end_time &&
                                         reschedule &&
                                         event_token &&
-                                        "bg-blue-500 text-white hover:bg-blue-500 hover:text-white"
+                                        "bg-blue-500 dark:bg-blue-400 text-white hover:bg-blue-500 dark:hover:bg-blue-400 hover:text-white"
                                     )}
                                   >
                                     {formatTimeSlot(new Date(slot.start_time))}
@@ -501,7 +501,7 @@ const Booking = ({ type, banner }: BookingProp) => {
                         )}
                         {state.showReschedule && (
                           <Button
-                            className="bg-blue-500 hover:bg-blue-500 lg:!mt-0 max-lg:w-full max-md:hidden"
+                            className="bg-blue-500 dark:bg-blue-400 hover:bg-blue-500 dark:hover:bg-blue-400 lg:!mt-0 max-lg:w-full max-md:hidden"
                             onClick={onReschedule}
                             disabled={rescheduleLoading}
                           >
