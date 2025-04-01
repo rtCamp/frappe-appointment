@@ -63,6 +63,14 @@
   body {
     @apply bg-background text-foreground;
   }
+  @media (pointer: fine) { /* Only works for precise pointer devices such as laptops and desktops */
+    .dark ::-webkit-scrollbar {
+      @apply w-3 bg-background;
+    }
+    .dark ::-webkit-scrollbar-thumb {
+      @apply bg-secondary
+    }
+  }
 }
 
 html,
@@ -98,7 +106,7 @@ body {
   }
 
   .no-scrollbar:hover::-webkit-scrollbar-track {
-    background: rgba(0, 0, 0, 0.1 );
+    background: rgba(0, 0, 0, 0.1);
   }
 }
 
