@@ -143,7 +143,7 @@ const MeetingForm = ({
   return (
     <motion.div
       key={2}
-      className={`w-full md:h-[30rem] lg:w-[41rem] shrink-0 md:p-6 md:px-4`}
+      className={`w-full md:h-[31rem] lg:w-[41rem] shrink-0 md:p-6 md:px-4`}
       initial={isMobileView ? {} : { x: "100%" }}
       animate={{ x: 0 }}
       exit={isMobileView ? {} : { x: "100%" }}
@@ -259,7 +259,7 @@ const MeetingForm = ({
                     {form.watch("guests").map((guest) => (
                       <div
                         key={guest}
-                        className="flex items-center gap-1 px-2 py-1 bg-blue-500 text-white rounded-full text-sm"
+                        className="flex items-center gap-1 px-2 py-1 bg-blue-500 dark:bg-blue-400 bg-blue text-white dark:text-background rounded-full text-sm"
                       >
                         <span>{guest}</span>
                         <button
@@ -267,7 +267,7 @@ const MeetingForm = ({
                           onClick={() => removeGuest(guest)}
                           className="hover:text-blue-200"
                         >
-                          <X className="h-3 w-3" />
+                          <X className="h-3 w-3 dark:text-background" />
                         </button>
                       </div>
                     ))}

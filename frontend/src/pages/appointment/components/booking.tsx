@@ -302,7 +302,7 @@ const Booking = ({ type, banner }: BookingProp) => {
                   )}
                 </div>
               </div>
-              <div className="max-lg:w-full shrink-0 md:max-h-[30rem] md:overflow-hidden">
+              <div className="max-lg:w-full shrink-0 md:max-h-[31rem] md:overflow-hidden">
                 {/* Calendar and Availability slots */}
                 <AnimatePresence mode="wait">
                   {!state.showMeetingForm && (
@@ -483,7 +483,7 @@ const Booking = ({ type, banner }: BookingProp) => {
                                           slot.end_time &&
                                         reschedule &&
                                         event_token &&
-                                        "bg-blue-500 dark:bg-blue-400 text-white hover:bg-blue-500 dark:hover:bg-blue-400 hover:text-white"
+                                        "bg-blue-500 dark:bg-blue-400 text-white dark:text-background hover:bg-blue-500 dark:hover:bg-blue-400 hover:text-white dark:hover:text-background"
                                     )}
                                   >
                                     {formatTimeSlot(new Date(slot.start_time))}

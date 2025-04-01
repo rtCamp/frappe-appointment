@@ -44,7 +44,7 @@ export default function TimeZoneSelect({
       <PopoverTrigger disabled={disable} asChild>
         <Button
           variant="outline"
-          className="w-full md:w-fit md:border-none border-blue-100 md:focus:ring-0 hover:bg-blue-50 dark:hover:bg-blue-800/20 hover:text-blue-500 md:focus:ring-offset-0 text-blue-500 dark:text-blue-400"
+          className="w-full md:w-fit md:border-none border-blue-100 dark:border-zinc-800 md:focus:ring-0 hover:bg-blue-50 dark:hover:bg-blue-800/20 hover:text-blue-500 md:focus:ring-offset-0 text-blue-500 dark:text-blue-400"
         >
           <div className="flex justify-center items-center gap-2">
             <Globe className="h-4 w-4" />
