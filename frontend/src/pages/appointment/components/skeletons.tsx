@@ -6,7 +6,7 @@ import { Skeleton } from "@/components/skeleton";
 
 export function ProfileSkeleton() {
   return (
-    <Card className="border-0 shadow-none">
+    <Card className="border-0 shadow-none !bg-transparent bg-gradient-to-b from-blue-100 to-transparent dark:bg-gradient-to-b dark:from-zinc-800">
       <CardContent className="max-md:p-4 p-6 flex flex-col space-y-7 items-center">
         <Skeleton className="md:h-32 md:w-32 h-24 w-24 object-cover mb-4 md:mb-0  rounded-full" />
         <div className="flex flex-col space-y-2 w-full items-center">

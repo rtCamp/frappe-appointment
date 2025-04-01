@@ -255,13 +255,13 @@ const GroupAppointment = () => {
                               key={key}
                               className="flex cursor-default items-center gap-2 w-full "
                             >
-                              <div className="w-full truncate text-gray-600 flex items-center justify-start gap-2">
+                              <div className="w-full truncate text-gray-600 dark:text-gray-400 flex items-center justify-start gap-2">
                                 <Icon className="h-4 w-4 shrink-0" />
                                 <Tooltip>
                                   <TooltipTrigger className="text-left truncate">
                                     <Typography
                                       className={cn(
-                                        "truncate font-medium text-gray-600",
+                                        "truncate font-medium text-gray-600 dark:text-gray-400",
                                         key.includes("name") &&
                                           "text-foreground",
                                         key.includes("email")
@@ -285,11 +285,11 @@ const GroupAppointment = () => {
                         }
                       )}
                     <div className="flex cursor-default items-center gap-2 w-full ">
-                      <div className="w-full truncate text-gray-600 flex items-center justify-start gap-2">
+                      <div className="w-full truncate text-gray-600 dark:text-gray-400 flex items-center justify-start gap-2">
                         <Clock className="h-4 w-4 shrink-0" />
                         <Tooltip>
                           <TooltipTrigger className="text-left truncate">
-                            <Typography className="truncate font-medium text-gray-600">
+                            <Typography className="truncate font-medium text-gray-600 dark:text-gray-400">
                               {convertMinutesToTimeFormat(convertToMinutes(
                                 state.meetingData.duration
                               ).toString())}{" "}
@@ -379,10 +379,10 @@ const GroupAppointment = () => {
               </div>
             )}
             {state.isMobileView && state.expanded && (
-              <div className="h-14 fixed bottom-0 left-0 w-screen border z-10 bg-white border-top flex items-center justify-between px-4">
+              <div className="h-14 fixed bottom-0 left-0 w-screen border z-10 bg-background border-top flex items-center justify-between px-4">
                 <Button
                   variant="link"
-                  className="text-blue-500 px-0"
+                  className="text-blue-500 dark:text-blue-400 px-0"
                   onClick={() =>
                     dispatch({ type: "SET_EXPANDED", payload: false })
                   }
@@ -399,7 +399,7 @@ const GroupAppointment = () => {
                       : true) || loading
                   }
                   className={cn(
-                    "bg-blue-500 flex hover:bg-blue-500 w-fit px-10",
+                    "bg-blue-500 dark:bg-blue-400 flex hover:bg-blue-500 dark:hover:bg-blue-400 w-fit px-10",
                     "md:hidden"
                   )}
                   onClick={scheduleMeeting}
@@ -450,12 +450,12 @@ const GroupAppointment = () => {
                             disabled={loading}
                             variant="outline"
                             className={cn(
-                              "w-full font-normal border border-blue-500 text-blue-500 hover:text-blue-500 hover:bg-blue-50 transition-colors ",
+                              "w-full font-normal border border-blue-500 dark:border-blue-400 text-blue-500 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-800/10 transition-colors ",
                               state.selectedSlot?.start_time ===
                                 slot.start_time &&
                                 state.selectedSlot?.end_time ===
                                   slot.end_time &&
-                                "bg-blue-500 text-white hover:bg-blue-500 hover:text-white"
+                                "bg-blue-500 dark:bg-blue-400 text-background dark:text-background hover:bg-blue-500 dark:hover:bg-blue-400 hover:text-background dark:hover:text-background"
                             )}
                           >
                             {formatTimeSlot(new Date(slot.start_time))}
@@ -473,7 +473,7 @@ const GroupAppointment = () => {
                   <Button
                     disabled={loading}
                     className={cn(
-                      "bg-blue-500 hover:bg-blue-500 lg:!mt-0 max-lg:w-full hidden",
+                      "bg-blue-500 dark:bg-blue-400 hover:bg-blue-500 dark:hover:bg-blue-400 lg:!mt-0 max-lg:w-full hidden",
                       state.selectedSlot?.start_time &&
                         state.selectedSlot.end_time &&
                         "flex",

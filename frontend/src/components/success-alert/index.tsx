@@ -76,14 +76,14 @@ const SuccessAlert = ({
       >
         <DialogHeader>
           <div className="flex justify-center">
-            <div className="w-14 h-14 bg-blue-100 rounded-full flex items-center justify-center">
-              <CircleCheck className="text-blue-500 h-7 w-7" />
+            <div className="w-14 h-14 bg-blue-100 dark:bg-blue-600/20 rounded-full flex items-center justify-center">
+              <CircleCheck className="text-blue-500 dark:text-blue-600 h-7 w-7" />
             </div>
           </div>
           <DialogTitle>
             <Typography
               variant="p"
-              className="text-center text-gray-600 text-lg mb-7"
+              className="text-center text-gray-600 dark:text-foreground text-lg mb-7"
             >
               Your Appointment has been scheduled
             </Typography>
@@ -91,26 +91,26 @@ const SuccessAlert = ({
         </DialogHeader>
 
         <div>
-          <div className="flex items-center justify-between p-4 py-2 bg-gray-50 rounded-lg mb-4">
+          <div className="flex items-center justify-between p-4 py-2 bg-gray-50 dark:bg-zinc-800 rounded-lg mb-4">
             <div className="flex items-center">
               <Calendar className="text-blue-500 transition-colors cursor-pointer h-5 w-5 mr-3" />
               <div>
                 <p className="font-medium text-sm">
                   {format(new Date(selectedSlot.start_time), "MMMM d, yyyy")}
                 </p>
-                <p className="text-xs text-gray-600">
+                <p className="text-xs text-gray-600 dark:text-gray-400">
                   {format(new Date(selectedSlot.start_time), "EEEE, hh:mm a")}
                 </p>
               </div>
             </div>
           </div>
 
-          <div className="flex items-center justify-between p-4 py-2 bg-gray-50 rounded-lg">
+          <div className="flex items-center justify-between p-4 py-2 bg-gray-50 dark:bg-zinc-800 rounded-lg">
             <div className="flex items-center">
               <MapPin className="text-blue-500 transition-colors cursor-pointer h-5 w-5 mr-3" />
               <div>
                 <p className="font-medium text-sm">Virtual Meeting</p>
-                <p className="text-xs text-gray-600">{meetingProvider}</p>
+                <p className="text-xs text-gray-600 dark:text-gray-400">{meetingProvider}</p>
               </div>
             </div>
             {meetLink && (
@@ -122,8 +122,8 @@ const SuccessAlert = ({
         </div>
 
         {calendarString && (
-          <div className="w-full overflow-hidden flex mt-4 px-3 py-1  bg-blue-50 items-center gap-2 max-md:h-14 rounded-full">
-            <span className="w-full text-sm text-gray-500  truncate">
+          <div className="w-full overflow-hidden flex mt-4 px-3 py-1  bg-blue-50 dark:bg-zinc-800 items-center gap-2 max-md:h-14 rounded-full">
+            <span className="w-full text-sm text-gray-500 dark:text-blue-400  truncate">
               {calendarString}
             </span>
             <Button
@@ -153,7 +153,7 @@ const SuccessAlert = ({
                 variant="ghost"
                 onClick={(e) => e.stopPropagation()}
                 size="sm"
-                className="border border-blue-400 hover:text-blue-500 text-blue-500 w-full hover:bg-blue-50 p-4 rounded-full text-sm"
+                className="border border-blue-400 hover:text-blue-500 dark:hover:text-blue-400 text-blue-500 dark:text-blue-400 w-full hover:bg-blue-50 dark:bg-blue-800/10 p-4 rounded-full text-sm"
               >
                 Reschedule
               </Button>
@@ -167,7 +167,7 @@ const SuccessAlert = ({
                 onClose?.();
               }}
               size="sm"
-              className="bg-blue-500 w-full hover:bg-blue-600 p-4 rounded-full text-sm"
+              className="bg-blue-500 dark:bg-blue-400 w-full hover:bg-blue-600 dark:hover:bg-blue-500 p-4 rounded-full text-sm"
             >
               Close
             </Button>
