@@ -203,7 +203,7 @@ const Booking = ({ type, banner }: BookingProp) => {
 
   useEffect(() => {
     const handleResize = () => {
-      dispatch({ type: "SET_MOBILE_VIEW", payload: window.innerWidth <= 768 });
+      dispatch({ type: "SET_MOBILE_VIEW", payload: window.innerWidth <= 1024 });
     };
 
     handleResize();
@@ -225,7 +225,7 @@ const Booking = ({ type, banner }: BookingProp) => {
             {/* Banner */}
             <div
               className={cn(
-                "w-full md:rounded-xl md:rounded-b-none relative bg-blue-100 h-40 max-md:mb-20 md:mb-12",
+                "w-full md:rounded-xl md:rounded-b-none relative bg-blue-100 dark:bg-zinc-800 h-40 max-md:mb-20 md:mb-12",
                 banner && "bg-cover bg-center bg-no-repeat"
               )}
               style={
@@ -428,7 +428,7 @@ const Booking = ({ type, banner }: BookingProp) => {
                       <div
                         className={cn(
                           "w-48 shrink-0 max-lg:w-full overflow-hidden space-y-4 max-md:pb-10  transition-all duration-300 ",
-                          !state.expanded && "max-md:hidden",
+                          !state.expanded && "max-lg:hidden",
                           state.showReschedule &&
                             "lg:flex lg:flex-col lg:justify-between"
                         )}
