@@ -17,11 +17,7 @@ import { useAppContext } from "@/context/app";
 import { Skeleton } from "@/components/skeleton";
 import { getLocalTimezone } from "@/lib/utils";
 import PoweredBy from "@/components/powered-by";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/tooltip";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/tooltip";
 import Typography from "@/components/typography";
 import MetaTags from "@/components/meta-tags";
 import { Info } from "lucide-react";
@@ -76,7 +72,7 @@ const Appointment = () => {
         userImage: data?.message?.profile_pic,
         socialProfiles: [],
         meetingProvider: data?.message?.meeting_provider,
-        banner_image:data?.message?.banner_image,
+        banner_image: data?.message?.banner_image,
       });
       setMeetingDurationCards(data?.message?.durations);
     }
@@ -88,7 +84,7 @@ const Appointment = () => {
   return (
     <>
       <MetaTags
-        title={`${userInfo.name} | Appointment`}
+        title={userInfo.name ? `${userInfo.name} | Appointment` : "Appointment"}
         description={`Book appointment with ${userInfo.name}`}
       />
       {!type || isLoading ? (
