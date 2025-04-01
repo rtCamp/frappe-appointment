@@ -25,6 +25,7 @@ import {
 import Typography from "@/components/typography";
 import MetaTags from "@/components/meta-tags";
 import { Info } from "lucide-react";
+import ModeToggle from "@/components/theme-provider/components/modeToggle";
 
 const Appointment = () => {
   const { meetId } = useParams();
@@ -99,8 +100,8 @@ const Appointment = () => {
               {isLoading ? (
                 <ProfileSkeleton />
               ) : (
-                <div className="w-full flex flex-col gap-4 p-4 md:p-6 md:px-4 justify-center items-center bg-gradient-to-b from-blue-100 to-transparent md:rounded-2xl">
-                  <Avatar className="md:h-32 md:w-32 h-24 w-24 object-cover mb-4 md:mb-0 hover:outline outline-blue-300 transition-all duration-100">
+                <div className="w-full flex flex-col gap-4 p-4 md:p-6 md:px-4 justify-center items-center bg-gradient-to-b from-blue-100 to-transparent dark:bg-gradient-to-b dark:from-zinc-800 md:rounded-2xl">
+                  <Avatar className="md:h-32 md:w-32 h-24 w-24 object-cover mb-4 md:mb-0 hover:outline outline-blue-300 dark:outline-blue-400/80 transition-all duration-100">
                     <AvatarImage
                       src={userInfo.userImage}
                       alt="Profile picture"
@@ -152,6 +153,7 @@ const Appointment = () => {
                     <p className="text-muted-foreground">
                       You will receive a calendar invite with meeting link.
                     </p>
+                    <ModeToggle/>
                   </div>
                 )}
                 {/* meeting cards */}
@@ -176,7 +178,7 @@ const Appointment = () => {
                     ))
                   )}
                 </div>
-                <div className="mt-4 p-3 md:hidden bg-gray-50 rounded-2xl border border-gray-200 text-sm text-gray-600">
+                <div className="mt-4 p-3 md:hidden bg-gray-50 dark:bg-card rounded-2xl border border-gray-200 dark:border-gray-600 text-sm text-gray-600 dark:text-gray-400">
                   <div className="flex items-center gap-3">
                     <Info className="text-amber-500 size-10" />
                     <p>
