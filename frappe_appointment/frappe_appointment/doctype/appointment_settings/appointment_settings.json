@@ -11,6 +11,9 @@
   "default_group_email_template",
   "column_break_burh",
   "default_availability_alerts_email_template",
+  "email_template_for_organisers_section",
+  "personal_organisers_email_template",
+  "column_break_ovdk",
   "zoom_settings_section",
   "enable_zoom",
   "zoom_account_id",
@@ -96,12 +99,29 @@
    "fieldtype": "Password",
    "hidden": 1,
    "label": "Access Token"
+  },
+  {
+   "fieldname": "email_template_for_organisers_section",
+   "fieldtype": "Section Break",
+   "label": "Email Template for Organisers"
+  },
+  {
+   "default": "[Default] Appointment Scheduled - Organisers",
+   "fieldname": "personal_organisers_email_template",
+   "fieldtype": "Link",
+   "label": "Personal Organisers Email Template",
+   "options": "Email Template"
+  },
+  {
+   "fieldname": "column_break_ovdk",
+   "fieldtype": "Column Break"
   }
  ],
+ "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2025-03-21 18:23:23.804358",
+ "modified": "2025-04-07 14:00:43.769567",
  "modified_by": "Administrator",
  "module": "Frappe Appointment",
  "name": "Appointment Settings",
@@ -118,6 +138,7 @@
    "write": 1
   }
  ],
+ "row_format": "Dynamic",
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": []

@@ -33,6 +33,22 @@ EMAIL_TEMPLATES = [
         "subject": "[Frappe Appointment] Appointment Scheduled - {{ event.subject }}",
         "use_html": 0,
     },
+    {
+        "custom_schedule_sending_email": "Send after",
+        "custom_sender_email": "hr@example.com",
+        "custom_time": -1,
+        "custom_time_to_send_email": 0,
+        "docstatus": 0,
+        "doctype": "Email Template",
+        "enabled": 1,
+        "modified": "2025-04-07 11:51:57.165792",
+        "name": "[Default] Appointment Scheduled - Organisers",
+        "reference_doctype": "Appointment Group",
+        "response": '<div class="ql-editor read-mode"><p>Hello,</p><p><br></p><p>A new meeting has been scheduled about {{ event.subject }}.</p><p>{% set formatted_starts_on = frappe.utils.get_datetime(event.starts_on) %}</p><p><br></p><p>The appointment is scheduled for {{ formatted_starts_on.strftime(\'%A\') }}, {{ formatted_starts_on.strftime(\'%d %B %Y\') }} at {{ formatted_starts_on.strftime("%I:%M %P") }} IST.</p><p><br></p><p>Please join the meeting using this link: {{ meet_link }}</p><p><br></p><p><span style="color: rgb(0, 0, 0); background-color: transparent;">Regards,</span></p><p><span style="color: rgb(18, 19, 23);">--</span></p></div>',
+        "response_html": None,
+        "subject": "[Frappe Appointment] Appointment Scheduled - {{ event.subject }}",
+        "use_html": 0,
+    },
 ]
 
 

@@ -26,7 +26,10 @@ app_include_js = [
 after_migrate = "frappe_appointment.tasks.setup_erpnext_fields.setup_erpnext_fields"
 
 before_install = "frappe_appointment.tasks.import_email_templates.import_email_templates"
-after_sync = ["frappe_appointment.tasks.setup_erpnext_fields.setup_erpnext_fields", "frappe_appointment.tasks.import_form_tour_google_calendar.import_doc"]
+after_sync = [
+    "frappe_appointment.tasks.setup_erpnext_fields.setup_erpnext_fields",
+    "frappe_appointment.tasks.import_form_tour_google_calendar.import_doc",
+]
 
 # include js, css files in header of web template
 # web_include_css = "/assets/frappe_appointment/css/frappe_appointment.css"
@@ -100,31 +103,6 @@ fixtures = [
                 "in",
                 {
                     "Frappe Appointment",
-                },
-            ]
-        ],
-    },
-    {
-        "dt": "Email Template",
-        "filters": [
-            [
-                "name",
-                "in",
-                {
-                    "[Default] Appointment Scheduled",
-                    "[Default] Appointment Group Availability",
-                },
-            ]
-        ],
-    },
-    {
-        "dt": "Form Tour",
-        "filters": [
-            [
-                "name",
-                "in",
-                {
-                    "Google Calendar Setup",
                 },
             ]
         ],

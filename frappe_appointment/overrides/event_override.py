@@ -225,6 +225,28 @@ class EventOverride(Event):
 
         return recipients
 
+    def get_organisers_event(self):
+        """Get the list of organisers as per event_participants
+
+        Returns:
+        list: organisers emails
+        """
+        if not self.event_participants:
+            return []
+
+        organisers = []
+
+        for participant in self.event_participants:
+            # Send the meet link only to Appointment Group Members and ensure organisers are not duplicated
+            if (
+                participant.reference_doctype == USER_APPOINTMENT_AVAILABILITY
+                or participant.reference_doctype == "Google Calendar"
+            ):
+                if participant.email not in organisers:
+                    organisers.append(participant.email)
+
+        return organisers
+
     def update_attendees_for_appointment_group(self):
         """Insert Appointment Group Member as Event participants"""
         if not self.appointment_group:
@@ -339,15 +361,10 @@ def send_meet_email(doc, appointment_group, user_calendar, metadata, ics_event_d
     doc.reload()
 
     try:
-        if (
-            doc.custom_meet_link
-            and (
-                (appointment_group and appointment_group.response_email_template)
-                or (user_calendar and user_calendar.response_email_template)
-            )
-            and doc.event_participants
-            and doc.custom_doctype_link_with_event
-        ):
+        if doc.custom_meet_link and doc.event_participants and doc.custom_doctype_link_with_event:
+            organisers = doc.get_organisers_event()
+            send_doc_value = doc.custom_doctype_link_with_event[0]
+            send_doc = frappe.get_doc(send_doc_value.reference_doctype, send_doc_value.reference_docname)
             ag_dict = appointment_group.as_dict() if appointment_group else user_calendar.as_dict()
             ag_dict["meet_link"] = doc.custom_meet_link  # For backward compatibility
 
@@ -358,22 +375,37 @@ def send_meet_email(doc, appointment_group, user_calendar, metadata, ics_event_d
                 metadata=metadata,
             )
 
-            # Only send the email to first user of custom_doctype_link_with_event
-            send_doc_value = doc.custom_doctype_link_with_event[0]
+            if organisers:
+                appointment_settings = frappe.get_single("Appointment Settings")
+                organisers_email_template = (
+                    appointment_settings.personal_organisers_email_template if user_calendar else None
+                )
 
-            send_doc = frappe.get_doc(send_doc_value.reference_doctype, send_doc_value.reference_docname)
+                if organisers_email_template:
+                    # Send the email to all the organisers
+                    send_email_template_mail(
+                        send_doc,
+                        args,
+                        organisers_email_template,
+                        recipients=organisers,
+                        attachments=[{"fid": add_ics_file_in_attachment(doc)}],
+                    )
 
-            send_email_template_mail(
-                send_doc,
-                args,
-                (
-                    appointment_group.response_email_template
-                    if appointment_group
-                    else user_calendar.response_email_template
-                ),
-                recipients=doc.get_recipients_event(),
-                attachments=[{"fid": add_ics_file_in_attachment(doc, ics_event_description)}],
-            )
+            if (appointment_group and appointment_group.response_email_template) or (
+                user_calendar and user_calendar.response_email_template
+            ):
+                # Only send the email to first user of custom_doctype_link_with_event
+                send_email_template_mail(
+                    send_doc,
+                    args,
+                    (
+                        appointment_group.response_email_template
+                        if appointment_group
+                        else user_calendar.response_email_template
+                    ),
+                    recipients=doc.get_recipients_event(),
+                    attachments=[{"fid": add_ics_file_in_attachment(doc, ics_event_description)}],
+                )
 
             frappe.db.commit()
     except Exception:
