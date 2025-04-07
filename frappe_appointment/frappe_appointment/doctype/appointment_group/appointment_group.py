@@ -38,9 +38,13 @@ class AppointmentGroup(Document):
     def validate_zoom(self):
         if self.meet_provider == "Zoom":
             appointment_settings = frappe.get_single("Appointment Settings")
-            appointment_settings_link = frappe.utils.get_link_to_form("Appointment Settings", None, "Appointment Settings")
+            appointment_settings_link = frappe.utils.get_link_to_form(
+                "Appointment Settings", None, "Appointment Settings"
+            )
             if not appointment_settings.enable_zoom:
-                return frappe.throw(frappe._(f"Zoom is not enabled. Please enable it from {appointment_settings_link}."))
+                return frappe.throw(
+                    frappe._(f"Zoom is not enabled. Please enable it from {appointment_settings_link}.")
+                )
             if (
                 not appointment_settings.zoom_client_id
                 or not appointment_settings.get_password("zoom_client_secret")
@@ -566,7 +570,7 @@ def get_avaiable_time_slot_for_day(
             minimum_buffer_time,
             current_end_time,
             currernt_slot_start_time,
-            currernt_slot["is_frappe_event"],
+            True,
         ):
             available_slots.append({"start_time": current_start_time, "end_time": current_end_time})
             current_start_time = get_next_round_value(minimum_buffer_time, current_end_time, False)
@@ -574,7 +578,7 @@ def get_avaiable_time_slot_for_day(
             current_start_time = get_next_round_value(
                 minimum_buffer_time,
                 currernt_slot_end_time,
-                currernt_slot["is_frappe_event"],
+                True,
             )
             index += 1
 
