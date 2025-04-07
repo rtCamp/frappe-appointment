@@ -30,9 +30,9 @@
     --radius: 0.5rem;
   }
   .dark {
-    --background: 0 0% 3.9%;
-    --foreground: 0 0% 98%;
-    --card: 0 0% 3.9%;
+    --background: 240 5% 8%;
+    --foreground: 0 0% 95%;
+    --card: 240 6% 10%;
     --card-foreground: 0 0% 98%;
     --popover: 0 0% 3.9%;
     --popover-foreground: 0 0% 98%;
@@ -62,6 +62,14 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+  @media (pointer: fine) { /* Only works for precise pointer devices such as laptops and desktops */
+    .dark ::-webkit-scrollbar {
+      @apply w-3 bg-background;
+    }
+    .dark ::-webkit-scrollbar-thumb {
+      @apply bg-secondary
+    }
   }
 }
 
@@ -98,7 +106,7 @@ body {
   }
 
   .no-scrollbar:hover::-webkit-scrollbar-track {
-    background: rgba(0, 0, 0, 0.1 );
+    background: rgba(0, 0, 0, 0.1);
   }
 }
 

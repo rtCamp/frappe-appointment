@@ -17,11 +17,7 @@ import { useAppContext } from "@/context/app";
 import { Skeleton } from "@/components/skeleton";
 import { getLocalTimezone } from "@/lib/utils";
 import PoweredBy from "@/components/powered-by";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/tooltip";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/tooltip";
 import Typography from "@/components/typography";
 import MetaTags from "@/components/meta-tags";
 import { Info } from "lucide-react";
@@ -76,7 +72,7 @@ const Appointment = () => {
         userImage: data?.message?.profile_pic,
         socialProfiles: [],
         meetingProvider: data?.message?.meeting_provider,
-        banner_image:data?.message?.banner_image,
+        banner_image: data?.message?.banner_image,
       });
       setMeetingDurationCards(data?.message?.durations);
     }
@@ -88,7 +84,7 @@ const Appointment = () => {
   return (
     <>
       <MetaTags
-        title={`${userInfo.name} | Appointment`}
+        title={userInfo.name ? `${userInfo.name} | Appointment` : "Appointment"}
         description={`Book appointment with ${userInfo.name}`}
       />
       {!type || isLoading ? (
@@ -99,12 +95,12 @@ const Appointment = () => {
               {isLoading ? (
                 <ProfileSkeleton />
               ) : (
-                <div className="w-full flex flex-col gap-4 p-4 md:p-6 md:px-4 justify-center items-center bg-gradient-to-b from-blue-100 to-transparent md:rounded-2xl">
-                  <Avatar className="md:h-32 md:w-32 h-24 w-24 object-cover mb-4 md:mb-0 hover:outline outline-blue-300 transition-all duration-100">
+                <div className="w-full flex flex-col gap-4 p-4 md:p-6 max-lg:md:pt-10 md:px-4 justify-center items-center bg-gradient-to-b from-blue-100 to-transparent dark:bg-gradient-to-b dark:from-zinc-800 md:rounded-2xl">
+                  <Avatar className="md:h-32 md:w-32 h-24 w-24 object-cover mb-4 md:mb-0 hover:outline outline-blue-300 dark:outline-blue-400/80 transition-all duration-100">
                     <AvatarImage
                       src={userInfo.userImage}
                       alt="Profile picture"
-                      className="bg-blue-50"
+                      className="bg-blue-50 dark:bg-zinc-800"
                     />
                     <AvatarFallback className="text-4xl">
                       {userInfo?.name?.toString()[0]?.toUpperCase()}
@@ -176,7 +172,7 @@ const Appointment = () => {
                     ))
                   )}
                 </div>
-                <div className="mt-4 p-3 md:hidden bg-gray-50 rounded-2xl border border-gray-200 text-sm text-gray-600">
+                <div className="mt-4 p-3 md:hidden bg-gray-50 dark:bg-card rounded-2xl border border-gray-200 dark:border-gray-600 text-sm text-gray-600 dark:text-gray-400">
                   <div className="flex items-center gap-3">
                     <Info className="text-amber-500 size-10" />
                     <p>
