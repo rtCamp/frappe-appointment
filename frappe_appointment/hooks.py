@@ -23,13 +23,14 @@ app_include_js = [
     "/assets/frappe_appointment/js/duration_override.js",
 ]
 
-after_migrate = "frappe_appointment.tasks.setup_erpnext_fields.setup_erpnext_fields"
-
 before_install = "frappe_appointment.tasks.import_email_templates.import_email_templates"
 after_sync = [
     "frappe_appointment.tasks.setup_erpnext_fields.setup_erpnext_fields",
     "frappe_appointment.tasks.import_form_tour_google_calendar.import_doc",
+    "frappe_appointment.tasks.import_email_templates.import_email_templates",
 ]
+
+after_migrate = after_sync
 
 # include js, css files in header of web template
 # web_include_css = "/assets/frappe_appointment/css/frappe_appointment.css"
