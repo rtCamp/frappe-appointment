@@ -44,7 +44,7 @@ export default function TimeZoneSelect({
       <PopoverTrigger disabled={disable} asChild>
         <Button
           variant="outline"
-          className="w-full md:w-fit md:border-none border-blue-100 md:focus:ring-0 hover:bg-blue-50 hover:text-blue-500 md:focus:ring-offset-0 text-blue-500"
+          className="w-full md:w-fit md:border-none border-blue-100 dark:border-zinc-800 md:focus:ring-0 hover:bg-blue-50 dark:hover:bg-blue-800/20 hover:text-blue-500 md:focus:ring-offset-0 text-blue-500 dark:text-blue-400"
         >
           <div className="flex justify-center items-center gap-2">
             <Globe className="h-4 w-4" />
@@ -71,7 +71,7 @@ export default function TimeZoneSelect({
                   setTimeZone(getLocalTimezone());
                   setOpen(false);
                 }}
-                className="cursor-pointer py-3 px-4 flex items-center gap-2 truncate data-[selected=true]:!bg-blue-50 text-blue-500 data-[selected=true]:!text-blue-500"
+                className="cursor-pointer py-3 px-4 flex items-center gap-2 truncate data-[selected=true]:!bg-blue-50 dark:data-[selected=true]:!bg-blue-800/20 text-blue-500 dark:text-blue-400 data-[selected=true]:!text-blue-500 dark:data-[selected=true]:!text-blue-400"
               >
                 <RefreshCcw className="h-4 w-4 text-blue-500" />
                 <span>Reset to Default Timezone</span>
@@ -83,7 +83,7 @@ export default function TimeZoneSelect({
                     setTimeZone(tz);
                     setOpen(false);
                   }}
-                  className="cursor-pointer py-3 px-4 data-[selected=true]:!bg-blue-50 text-blue-500 data-[selected=true]:!text-blue-500"
+                  className="cursor-pointer py-3 px-4 data-[selected=true]:!bg-blue-50 dark:data-[selected=true]:!bg-blue-800/20 text-blue-500 dark:text-blue-400 data-[selected=true]:!text-blue-500 dark:data-[selected=true]:!text-blue-400"
                 >
                   <div className="flex w-full items-center gap-4">
                     <div className="w-40 truncate">

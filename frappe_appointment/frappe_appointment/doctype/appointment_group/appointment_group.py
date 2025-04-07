@@ -38,9 +38,13 @@ class AppointmentGroup(Document):
     def validate_zoom(self):
         if self.meet_provider == "Zoom":
             appointment_settings = frappe.get_single("Appointment Settings")
-            appointment_settings_link = frappe.utils.get_link_to_form("Appointment Settings", None, "Appointment Settings")
+            appointment_settings_link = frappe.utils.get_link_to_form(
+                "Appointment Settings", None, "Appointment Settings"
+            )
             if not appointment_settings.enable_zoom:
-                return frappe.throw(frappe._(f"Zoom is not enabled. Please enable it from {appointment_settings_link}."))
+                return frappe.throw(
+                    frappe._(f"Zoom is not enabled. Please enable it from {appointment_settings_link}.")
+                )
             if (
                 not appointment_settings.zoom_client_id
                 or not appointment_settings.get_password("zoom_client_secret")
@@ -491,29 +495,24 @@ def vaild_date(date: datetime, appointment_group: object) -> object:
 
 def update_cal_slots_with_events(all_slots: list, all_events: list) -> list:
     """
-        Function to take all Frappe events and all Google Calendar available time slots and create a new list where each slot has a boolean 'is_frappe_event' to show if the given event is a Frappe event or not.
+        Function to take all Frappe events and all Google Calendar available time slots and create a new list where each slot has updated `starts_on` and `ends_on` fields.
 
         Args:
     all_slots (list): List of all Google slots available
     all_events (list): List of all Frappe Events
 
         Returns:
-        List: List of all slots with the 'is_frappe_event' check
+        List: List of all slots with the updated `starts_on` and `ends_on` fields
     """
     update_slots = []
     for currernt_slot in all_slots:
         updated_slot = {}
-        updated_slot["is_frappe_event"] = False
         updated_slot["starts_on"] = convert_timezone_to_utc(
             currernt_slot["start"]["dateTime"], currernt_slot["start"]["timeZone"]
         )
         updated_slot["ends_on"] = convert_timezone_to_utc(
             currernt_slot["end"]["dateTime"], currernt_slot["end"]["timeZone"]
         )
-        for event in all_events:
-            if event["google_calendar_event_id"] == currernt_slot["id"]:
-                updated_slot["is_frappe_event"] = True
-                break
 
         update_slots.append(updated_slot)
 
@@ -566,7 +565,7 @@ def get_avaiable_time_slot_for_day(
             minimum_buffer_time,
             current_end_time,
             currernt_slot_start_time,
-            currernt_slot["is_frappe_event"],
+            True,
         ):
             available_slots.append({"start_time": current_start_time, "end_time": current_end_time})
             current_start_time = get_next_round_value(minimum_buffer_time, current_end_time, False)
@@ -574,7 +573,7 @@ def get_avaiable_time_slot_for_day(
             current_start_time = get_next_round_value(
                 minimum_buffer_time,
                 currernt_slot_end_time,
-                currernt_slot["is_frappe_event"],
+                True,
             )
             index += 1
 
