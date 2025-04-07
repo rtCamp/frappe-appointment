@@ -221,7 +221,7 @@ const Booking = ({ type, banner }: BookingProp) => {
     <>
       <div className="w-full h-fit flex justify-center">
         <div className="md:w-4xl max-lg:w-full md:p-4 md:py-6 gap-10 md:gap-12">
-          <div className="w-full rounded-xl  md:border border-blue-100 dark:border-zinc-700 border-t-0">
+          <div className="w-full rounded-xl  md:border border-blue-100 dark:border-zinc-800 border-t-0">
             {/* Banner */}
             <div
               className={cn(
@@ -302,7 +302,7 @@ const Booking = ({ type, banner }: BookingProp) => {
                   )}
                 </div>
               </div>
-              <div className="max-lg:w-full shrink-0 md:max-h-[31rem] md:overflow-hidden">
+              <div className="max-lg:w-full shrink-0 lg:max-h-[31rem] md:overflow-hidden">
                 {/* Calendar and Availability slots */}
                 <AnimatePresence mode="wait">
                   {!state.showMeetingForm && (
