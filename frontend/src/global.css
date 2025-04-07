@@ -102,11 +102,11 @@ body {
 
   /* Show scrollbar on hover */
   .no-scrollbar:hover::-webkit-scrollbar-thumb {
-    background: rgba(0, 0, 0, 0.2);
+    background: rgba(55, 55, 55, 0.2);
   }
 
   .no-scrollbar:hover::-webkit-scrollbar-track {
-    background: rgba(0, 0, 0, 0.1);
+    background: rgba(55, 55, 55, 0.1);
   }
 }
 
