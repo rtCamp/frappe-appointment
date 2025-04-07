@@ -259,7 +259,7 @@ const MeetingForm = ({
                     {form.watch("guests").map((guest) => (
                       <div
                         key={guest}
-                        className="flex items-center gap-1 px-2 py-1 bg-blue-500 dark:bg-blue-400 bg-blue text-white dark:text-background rounded-full text-sm"
+                        className="flex items-center gap-1 px-2 py-1 bg-blue-500 dark:bg-blue-400 text-white dark:text-background rounded-full text-sm"
                       >
                         <span>{guest}</span>
                         <button
