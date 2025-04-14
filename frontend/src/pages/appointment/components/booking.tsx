@@ -255,6 +255,14 @@ const Booking = ({ type, banner }: BookingProp) => {
               {/* Profile */}
               <div className="max-lg:w-full md:min-w-sm md:max-w-sm flex flex-col gap-4 md:p-6 md:px-4">
                 <div className="w-full flex flex-col gap-1">
+                  <Typography className="text-sm text-blue-700 dark:text-blue-400 m-2">
+                    <button
+                      onClick={() => navigate(`/in/${meetingId}`)}
+                      className="hover:underline"
+                    >
+                      Back
+                    </button>
+                  </Typography>
                   <Typography variant="h2" className="text-3xl font-semibold">
                     <Tooltip>
                       <TooltipTrigger className="w-full truncate text-left">
