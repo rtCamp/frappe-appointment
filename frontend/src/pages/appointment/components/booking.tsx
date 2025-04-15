@@ -10,6 +10,7 @@ import {
   ArrowLeft,
   Tag,
   CircleAlert,
+  ChevronLeft,
 } from "lucide-react";
 import { useFrappeGetCall, useFrappePostCall } from "frappe-react-sdk";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
@@ -255,14 +256,6 @@ const Booking = ({ type, banner }: BookingProp) => {
               {/* Profile */}
               <div className="max-lg:w-full md:min-w-sm md:max-w-sm flex flex-col gap-4 md:p-6 md:px-4">
                 <div className="w-full flex flex-col gap-1">
-                  <Typography className="text-sm text-blue-700 dark:text-blue-400 m-2">
-                    <button
-                      onClick={() => navigate(`/in/${meetingId}`)}
-                      className="hover:underline"
-                    >
-                      Back
-                    </button>
-                  </Typography>
                   <Typography variant="h2" className="text-3xl font-semibold">
                     <Tooltip>
                       <TooltipTrigger className="w-full truncate text-left">
@@ -370,7 +363,19 @@ const Booking = ({ type, banner }: BookingProp) => {
                             }}
                             className="rounded-xl md:border md:h-96 w-full flex md:px-6 p-0"
                           />
-                          <div className="mt-4 gap-5 flex max-md:flex-col md:justify-between md:items-center ">
+                          <div className="mt-4 gap-5 flex justify-between">
+                            {/* Back Button */}
+
+                            <Button
+                              type="button"
+                              className="text-blue-500 bg-transparent hover:bg-blue-50 dark:hover:bg-blue-800/10 dark:bg-transparent dark:text-blue-400 hover:text-blue-600 dark:hover:text-blue-400"
+                              onClick={() => navigate(`/in/${meetingId}`)}
+                              disabled={isLoading}
+                            >
+                              <ChevronLeft />
+                              Back
+                            </Button>
+
                             {/* Timezone */}
 
                             <TimeZoneSelect
