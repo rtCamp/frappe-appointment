@@ -542,7 +542,7 @@ def get_avaiable_time_slot_for_day(
     # Start time of event
     current_start_time = get_next_round_value(minimum_buffer_time, starttime, False)
 
-    minute, second = divmod(appointment_group.duration_for_event.seconds, 60)
+    minute, second = divmod(appointment_group.duration_for_event, 60)
     hour, minute = divmod(minute, 60)
 
     current_end_time = add_to_date(current_start_time, hours=hour, minutes=minute, seconds=second)
@@ -583,7 +583,7 @@ def get_avaiable_time_slot_for_day(
 
 
 def is_valid_buffer_time(
-    minimum_buffer_time: datetime,
+    minimum_buffer_time: int,
     end: datetime,
     next_start: datetime,
     is_add_buffer_in_event: bool = True,
@@ -602,11 +602,11 @@ def is_valid_buffer_time(
     if not minimum_buffer_time or not is_add_buffer_in_event:
         return True
 
-    return minimum_buffer_time.seconds <= (next_start - end).seconds
+    return minimum_buffer_time <= (next_start - end).seconds
 
 
 def get_next_round_value(
-    minimum_buffer_time: datetime,
+    minimum_buffer_time: int,
     current_end_time: datetime,
     is_add_buffer_in_event: bool = True,
 ):
@@ -623,7 +623,7 @@ def get_next_round_value(
     if not minimum_buffer_time or not is_add_buffer_in_event:
         return current_end_time
 
-    minute, second = divmod(minimum_buffer_time.seconds, 60)
+    minute, second = divmod(minimum_buffer_time, 60)
     hour, minute = divmod(minute, 60)
 
     min_start_time = add_to_date(current_end_time, hours=hour, minutes=minute, seconds=second)
