@@ -215,7 +215,7 @@ $(document).on("form-refresh", function (event, frm) {
     frappe.ui.form.on(doctype, {
       refresh: function (frm) {
         if (doctype == "User Appointment Availability" && !frm.doc.__islocal) {
-          frm.add_custom_button(__("Copy Appointment Link"), () => {
+          frm.add_custom_button(__("Copy Personal Meeting Link"), () => {
             frm.trigger("copy_appointment_link");
           });
 
