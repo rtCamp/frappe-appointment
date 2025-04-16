@@ -301,6 +301,15 @@ const Booking = ({ type, banner }: BookingProp) => {
                       Google Meet
                     </Typography>
                   )}
+                  {/* Home Button */}
+                  <Button
+                    type="button"
+                    className="text-blue-600 dark:text-blue-400 bg-transparent hover:bg-transparent hover:underline m-0 p-0 gap-0 self-start"
+                    onClick={() => navigate(`/in/${meetingId}`)}
+                  >
+                    <ChevronLeft />
+                    Home
+                  </Button>
                 </div>
               </div>
               <div className="max-lg:w-full shrink-0 lg:max-h-[31rem] md:overflow-hidden">
@@ -364,18 +373,6 @@ const Booking = ({ type, banner }: BookingProp) => {
                             className="rounded-xl md:border md:h-96 w-full flex md:px-6 p-0"
                           />
                           <div className="mt-4 gap-5 flex justify-between">
-                            {/* Back Button */}
-
-                            <Button
-                              type="button"
-                              className="text-blue-500 bg-transparent hover:bg-blue-50 dark:hover:bg-blue-800/10 dark:bg-transparent dark:text-blue-400 hover:text-blue-600 dark:hover:text-blue-400"
-                              onClick={() => navigate(`/in/${meetingId}`)}
-                              disabled={isLoading}
-                            >
-                              <ChevronLeft />
-                              Back
-                            </Button>
-
                             {/* Timezone */}
 
                             <TimeZoneSelect
