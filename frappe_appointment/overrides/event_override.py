@@ -493,6 +493,8 @@ def _create_event_for_appointment_group(
     google_calendar_api_obj, account = get_google_calendar_object(appointment_group.event_creator)
 
     if reschedule:
+        if not appointment_group.allow_rescheduling:
+            return frappe.throw(_("Rescheduling is not allowed for this meeting."))
         try:
             event_id = decrypt(event_info.get("event_token"))
         except Exception:

@@ -220,6 +220,7 @@ def create_dummy_appointment_group(duration, user_availability):
         "limit_booking_frequency": duration.limit_booking_frequency,
         "is_personal_meeting": 1,
         "duration_id": duration.name,
+        "allow_rescheduling": duration.allow_rescheduling,
     }
 
     return appointment_group_obj

@@ -8,6 +8,7 @@
  "field_order": [
   "title",
   "duration",
+  "allow_rescheduling",
   "minimum_buffer_time",
   "availability_window",
   "limit_booking_frequency",
@@ -65,17 +66,25 @@
    "fieldtype": "Int",
    "in_list_view": 1,
    "label": "Minimum Notice Before Event"
+  },
+  {
+   "default": "1",
+   "fieldname": "allow_rescheduling",
+   "fieldtype": "Check",
+   "label": "Allow Rescheduling"
   }
  ],
+ "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2025-02-03 16:20:47.812684",
+ "modified": "2025-04-17 03:42:14.431029",
  "modified_by": "Administrator",
  "module": "Frappe Appointment",
  "name": "Appointment Slot Duration",
  "owner": "Administrator",
  "permissions": [],
+ "row_format": "Dynamic",
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": []
