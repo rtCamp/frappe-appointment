@@ -724,13 +724,19 @@ def get_events_from_doc(doctype, docname, past_events=False):
         else:
             event["ends_on"] = frappe.utils.format_datetime(ends_on, "MMM dd, yyyy, HH:mm")
 
+        appointment_group = frappe.get_doc(APPOINTMENT_GROUP, event["custom_appointment_group"])
+        allow_rescheduling = appointment_group.allow_rescheduling if appointment_group else 0
+
         event["url"] = "/app/event/" + event["name"]
-        event["reschedule_url"] = frappe.utils.get_url(
-            "/schedule/gr/{0}?reschedule=1&event_token={1}".format(
-                quote_plus(event["custom_appointment_group"]),
-                encrypt(event["name"]),
+        event["reschedule_url"] = None
+        if allow_rescheduling:
+            event["reschedule_url"] = frappe.utils.get_url(
+                "/schedule/gr/{0}?reschedule=1&event_token={1}".format(
+                    quote_plus(event["custom_appointment_group"]),
+                    encrypt(event["name"]),
+                )
             )
-        )
+
         all_events[event["state"]].append(event)
     return all_events
 
@@ -801,6 +807,8 @@ def get_personal_meetings(user, past_events=False):
         starts_on = event.get("starts_on")
         ends_on = event.get("ends_on")
 
+        duration_id = event.get("custom_appointment_slot_duration")
+
         event["state"] = "upcoming"
         if event["status"] == "Open":
             if ends_on < cur_datetime:
@@ -829,11 +837,17 @@ def get_personal_meetings(user, past_events=False):
         else:
             event["ends_on"] = frappe.utils.format_datetime(ends_on, "MMM dd, yyyy, HH:mm")
 
+        duration = frappe.get_doc("Appointment Slot Duration", duration_id)
+        allow_rescheduling = duration.allow_rescheduling if duration else 0
+
         event["url"] = "/app/event/" + event["name"]
-        event["reschedule_url"] = (
-            frappe.utils.get_url("/schedule/in/{0}".format(user_availability.get("slug")))
-            + f"?type={quote_plus(event['custom_appointment_slot_duration'])}&reschedule=1&event_token={encrypt(event['name'])}"
-        )
+        event["reschedule_url"] = None
+
+        if allow_rescheduling:
+            event["reschedule_url"] = (
+                frappe.utils.get_url("/schedule/in/{0}".format(user_availability.get("slug")))
+                + f"?type={quote_plus(event['custom_appointment_slot_duration'])}&reschedule=1&event_token={encrypt(event['name'])}"
+            )
         all_events[event["state"]].append(event)
 
     return all_events

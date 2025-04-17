@@ -47,7 +47,7 @@ function generate_table(data) {
   data.forEach((event) => {
     reschedule_link = event.reschedule_url
       ? `<button class="btn btn-default btn-xs" onclick="window.copy_to_clipboard('${event.reschedule_url}')">Copy Reschedule Link</button>`
-      : "";
+      : `<button class="btn btn-default btn-xs disabled" onclick="frappe.show_alert({message: __('Rescheduling is not allowed for this event.'), indicator: 'orange'});">Copy Reschedule Link</button>`;
     html += `<tr>
             <td>${event.subject}</td>
             <td>${event.starts_on}</td>
