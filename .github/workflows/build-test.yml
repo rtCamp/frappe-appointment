@@ -9,7 +9,7 @@ concurrency:
 
 jobs:
   Bench-Build-Test:
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     container: docker.io/frappe/bench:latest
 
     steps:
