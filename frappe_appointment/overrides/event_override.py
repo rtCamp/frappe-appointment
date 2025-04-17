@@ -494,7 +494,7 @@ def _create_event_for_appointment_group(
 
     if reschedule:
         if not appointment_group.allow_rescheduling:
-            return frappe.throw(_("Rescheduling is not allowed for this meeting."))
+            return frappe.throw(_("Rescheduling is not allowed for this event."))
         try:
             event_id = decrypt(event_info.get("event_token"))
         except Exception:
