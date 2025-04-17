@@ -304,10 +304,10 @@ const Booking = ({ type, banner }: BookingProp) => {
                   {/* Home Button */}
                   <Button
                     type="button"
-                    className="text-blue-600 dark:text-blue-400 bg-transparent hover:bg-transparent hover:underline m-0 p-0 gap-0 self-start"
+                    className="text-blue-600 dark:text-blue-400 bg-transparent hover:bg-transparent hover:underline m-0 p-0 gap-0 self-start h-6"
                     onClick={() => navigate(`/in/${meetingId}`)}
                   >
-                    <ChevronLeft />
+                    <ChevronLeft className="mr-1 size-4" />
                     Home
                   </Button>
                 </div>
@@ -372,7 +372,7 @@ const Booking = ({ type, banner }: BookingProp) => {
                             }}
                             className="rounded-xl md:border md:h-96 w-full flex md:px-6 p-0"
                           />
-                          <div className="mt-4 gap-5 flex justify-between">
+                          <div className="mt-4 gap-5 flex max-md:flex-col md:justify-between md:items-center">
                             {/* Timezone */}
 
                             <TimeZoneSelect
