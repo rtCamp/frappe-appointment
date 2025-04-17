@@ -525,19 +525,30 @@ def _create_event_for_appointment_group(
             # clear all previous logs
             clear_messages()
 
-            if success_message:
-                if return_event_id:
-                    return {
-                        "message": success_message,
-                        "event_id": event.name,
-                    }
-                return frappe.msgprint(success_message)
+            resp = {"message": success_message or _("Event has been updated successfully."), "event_id": event.name}
+
+            resp["meeting_provider"] = event.custom_meeting_provider
+            resp["meet_link"] = event.custom_meet_link
+
+            if appointment_group.allow_rescheduling:
+                event_token = encrypt(resp["event_id"])
+                if personal:
+                    resp["reschedule_url"] = frappe.utils.get_url(
+                        "/schedule/in/{0}?type={1}&reschedule=1&event_token={2}".format(
+                            args.get("user_slug"), args.get("appointment_slot_duration"), event_token
+                        )
+                    )
+                else:
+                    resp["reschedule_url"] = frappe.utils.get_url(
+                        "/schedule/gr/{0}?reschedule=1&event_token={1}".format(
+                            quote_plus(appointment_group.name), event_token
+                        )
+                    )
+
+            resp["google_calendar_event_url"] = event.custom_google_calendar_event_url
 
             if return_event_id:
-                return {
-                    "message": "Event has been updated successfully.",
-                    "event_id": event.name,
-                }
+                return resp
             return frappe.msgprint(_("Event has been updated successfully."))
         except Exception:
             return frappe.throw(_("Unable to Update an event"))
@@ -591,10 +602,26 @@ def _create_event_for_appointment_group(
         return frappe.msgprint(success_message)
 
     if return_event_id:
-        return {
-            "message": _("Event has been created"),
-            "event_id": event.name,
-        }
+        resp = {"message": _("Event has been created"), "event_id": event.name}
+        resp["meeting_provider"] = event.custom_meeting_provider
+        resp["meet_link"] = event.custom_meet_link
+        if appointment_group.allow_rescheduling:
+            event_token = encrypt(resp["event_id"])
+            if personal:
+                resp["reschedule_url"] = frappe.utils.get_url(
+                    "/schedule/in/{0}?type={1}&reschedule=1&event_token={2}".format(
+                        args.get("user_slug"), args.get("appointment_slot_duration"), event_token
+                    )
+                )
+            else:
+                resp["reschedule_url"] = frappe.utils.get_url(
+                    "/schedule/gr/{0}?reschedule=1&event_token={1}".format(
+                        quote_plus(appointment_group.name), event_token
+                    )
+                )
+        resp["google_calendar_event_url"] = event.custom_google_calendar_event_url
+
+        return resp
     return frappe.msgprint(_("Event has been created"))
 
 

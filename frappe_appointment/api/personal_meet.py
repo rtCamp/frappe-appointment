@@ -4,7 +4,6 @@ import re
 import frappe
 import frappe.utils
 import pytz
-from frappe.twofactor import encrypt
 
 from frappe_appointment.frappe_appointment.doctype.appointment_group.appointment_group import _get_time_slots_for_day
 from frappe_appointment.helpers.overrides import add_response_code
@@ -89,6 +88,7 @@ def get_time_slots(duration_id: str, date: str, user_timezone_offset: str):
         del data["appointment_group_id"]
     data["user"] = user_availability.get("name")
     data["label"] = duration.title
+    data["rescheduling_allowed"] = bool(duration.allow_rescheduling)
 
     return data
 
@@ -172,6 +172,7 @@ def book_time_slot(
     args["personal"] = True
     args["user_calendar"] = user_availability.name
     args["appointment_slot_duration"] = duration.name
+    args["user_slug"] = user_availability.slug
 
     success_message = ""
 
@@ -189,16 +190,7 @@ def book_time_slot(
         return_event_id=True,
         **args,
     )
-    event_token = encrypt(response["event_id"])
-    event = frappe.get_doc("Event", response["event_id"])
-    response["meeting_provider"] = event.custom_meeting_provider
-    response["meet_link"] = event.custom_meet_link
-    response["reschedule_url"] = frappe.utils.get_url(
-        "/schedule/in/{0}?type={1}&reschedule=1&event_token={2}".format(
-            user_availability.get("slug"), duration_id, event_token
-        )
-    )
-    response["google_calendar_event_url"] = event.custom_google_calendar_event_url
+
     return response
 
 
