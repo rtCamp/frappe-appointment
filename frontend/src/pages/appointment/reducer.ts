@@ -12,7 +12,7 @@ interface MeetingData {
   all_available_slots_for_data: any[];
   available_days: any[];
   date: string;
-  duration: string;
+  duration: number;
   endtime: string;
   is_invalid_date: boolean;
   next_valid_date: string;
@@ -68,7 +68,7 @@ const initialState: State = {
     all_available_slots_for_data: [],
     available_days: [],
     date: "",
-    duration: "",
+    duration: 0,
     endtime: "",
     is_invalid_date: true,
     next_valid_date: "",

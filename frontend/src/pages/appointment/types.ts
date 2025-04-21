@@ -4,7 +4,7 @@ export interface MeetingData {
   all_available_slots_for_data: any[]; // Define a more specific type if possible
   available_days: string[]; // Array of weekdays
   date: string;
-  duration: string;
+  duration: number;
   endtime: string;
   is_invalid_date: boolean;
   next_valid_date: string;

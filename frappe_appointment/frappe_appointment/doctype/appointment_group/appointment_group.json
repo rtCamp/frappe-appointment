@@ -50,7 +50,9 @@
   },
   {
    "fieldname": "duration_for_event",
-   "fieldtype": "Time",
+   "fieldtype": "Duration",
+   "hide_days": 1,
+   "hide_seconds": 1,
    "in_list_view": 1,
    "label": "Duration For Event",
    "reqd": 1
@@ -92,7 +94,9 @@
   {
    "description": "Minimum buffer time between two events ",
    "fieldname": "minimum_buffer_time",
-   "fieldtype": "Time",
+   "fieldtype": "Duration",
+   "hide_days": 1,
+   "hide_seconds": 1,
    "label": "Minimum Buffer Time"
   },
   {
@@ -230,7 +234,7 @@
   }
  ],
  "links": [],
- "modified": "2025-03-03 17:32:17.565817",
+ "modified": "2025-04-17 03:05:58.808956",
  "modified_by": "Administrator",
  "module": "Frappe Appointment",
  "name": "Appointment Group",
@@ -249,6 +253,7 @@
    "write": 1
   }
  ],
+ "row_format": "Dynamic",
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": [],

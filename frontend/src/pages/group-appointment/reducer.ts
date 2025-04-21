@@ -72,7 +72,7 @@ const initialState: State = {
     all_available_slots_for_data: [],
     available_days: [],
     date: "",
-    duration: "",
+    duration: 0,
     endtime: "",
     is_invalid_date: true,
     next_valid_date: "",

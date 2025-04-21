@@ -1,0 +1,35 @@
+name: Bench Build Test
+
+on:
+  pull_request:
+
+concurrency:
+  group: ${{ github.repository }}-${{ github.event.number }}
+  cancel-in-progress: true
+
+jobs:
+  Bench-Build-Test:
+    runs-on: ubuntu-latest
+    container:
+      image: docker.io/frappe/bench:latest
+      options: --user root
+
+    steps:
+      - name: Setup Github ENV
+        run: |
+          echo "HOME=/home/frappe" >> $GITHUB_ENV
+          echo "PATH=/home/frappe/.local/bin:$PATH" >> $GITHUB_ENV
+
+      - name: Create a new minimal bench
+        run: |
+          cd /home/frappe
+          su frappe bash -c "bench init frappe-bench --skip-redis-config-generation --no-procfile --skip-assets"
+
+      - name: Get APP and Build
+        run: |
+          cd /home/frappe/frappe-bench
+          su frappe bash -c "bench get-app https://rtbot:${{ secrets.RTBOT_TOKEN }}@github.com/${{ github.repository }} --branch ${{ github.head_ref || github.ref_name }}"
+
+      - name: Cleanup
+        if: ${{ always() }}
+        uses: rtCamp/action-cleanup@master
