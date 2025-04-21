@@ -1,4 +1,3 @@
-import datetime
 import json
 import re
 
@@ -210,10 +209,8 @@ def create_dummy_appointment_group(duration, user_availability):
         "event_creator": user_availability.get("google_calendar"),
         "event_organizer": user_availability.get("user"),
         "members": [{"user": user_availability.get("name"), "is_mandatory": 1}],
-        "duration_for_event": datetime.timedelta(seconds=duration.duration),
-        "minimum_buffer_time": datetime.timedelta(seconds=duration.minimum_buffer_time)
-        if duration.minimum_buffer_time
-        else None,
+        "duration_for_event": duration.duration,
+        "minimum_buffer_time": duration.minimum_buffer_time if duration.minimum_buffer_time else None,
         "minimum_notice_before_event": duration.minimum_notice_before_event,
         "event_availability_window": duration.availability_window,
         "meet_provider": user_availability.get("meeting_provider"),

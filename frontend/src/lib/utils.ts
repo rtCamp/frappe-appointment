@@ -108,9 +108,8 @@ export const getAllSupportedTimeZones = () => {
   return Intl.supportedValuesOf("timeZone") || [];
 };
 
-export const convertToMinutes = (duration: string) => {
-  const [hours, minutes, seconds] = duration.split(":").map(Number);
-  return String(hours * 60 + minutes + seconds / 60);
+export const convertToMinutes = (duration: number) => {
+  return duration / 60;
 };
 
 export const getLocalTimezone = (): string => {

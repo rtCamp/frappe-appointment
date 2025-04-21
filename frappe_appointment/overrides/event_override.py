@@ -47,7 +47,7 @@ class EventOverride(Event):
                     self.appointment_group.event_creator,
                     self.subject,
                     self.starts_on,
-                    self.appointment_group.duration_for_event.seconds // 60,  # convert to minutes
+                    self.appointment_group.duration_for_event // 60,  # convert to minutes
                     self.description,
                 )
                 self.description = f"{self.description or ''}\nMeet Link: {meet_url}"
@@ -97,9 +97,9 @@ class EventOverride(Event):
                     "event_creator": self.user_calendar.get("google_calendar"),
                     "event_organizer": self.user_calendar.get("user"),
                     "members": [{"user": self.user_calendar.get("name"), "is_mandatory": 1}],
-                    "duration_for_event": datetime.timedelta(seconds=self.appointment_slot_duration.duration),
+                    "duration_for_event": self.appointment_slot_duration.duration,
                     "minimum_buffer_time": (
-                        datetime.timedelta(seconds=self.appointment_slot_duration.minimum_buffer_time)
+                        self.appointment_slot_duration.minimum_buffer_time
                         if self.appointment_slot_duration.minimum_buffer_time
                         else None
                     ),

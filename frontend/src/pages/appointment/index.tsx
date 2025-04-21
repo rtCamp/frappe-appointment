@@ -165,7 +165,7 @@ const Appointment = () => {
                         title={card.label}
                         duration={card.duration / 60}
                         onClick={() => {
-                          setDuration((card.duration / 60)?.toString());
+                          setDuration(card.duration / 60);
                           updateTypeQuery(card.id);
                         }}
                       />

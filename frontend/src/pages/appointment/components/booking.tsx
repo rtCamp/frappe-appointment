@@ -167,7 +167,7 @@ const Booking = ({ type, banner }: BookingProp) => {
   useEffect(() => {
     if (data) {
       dispatch({ type: "SET_MEETING_DATA", payload: data.message });
-      setDuration(convertToMinutes(data?.message?.duration).toString());
+      setDuration(convertToMinutes(data?.message?.duration));
       const validData = data.message.is_invalid_date
         ? new Date(data.message.next_valid_date)
         : selectedDate;
