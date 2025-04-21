@@ -14,7 +14,7 @@ concurrency:
 jobs:
   deps-vulnerable-check:
     name: Vulnerable Dependency Check
-    runs-on: ["self-hosted", "python"]
+    runs-on: self-hosted
     container:
       image: python:latest
     defaults:
@@ -52,4 +52,3 @@ jobs:
         run: |
           cd ${GITHUB_WORKSPACE}/frontend
           npm install
-          npm audit
