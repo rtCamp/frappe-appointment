@@ -213,6 +213,7 @@ def create_dummy_appointment_group(duration, user_availability):
         "is_personal_meeting": 1,
         "duration_id": duration.name,
         "allow_rescheduling": duration.allow_rescheduling,
+        "minimum_notice_for_reschedule": duration.minimum_notice_for_reschedule,
     }
 
     return appointment_group_obj

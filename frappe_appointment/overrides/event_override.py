@@ -18,6 +18,7 @@ from frappe_appointment.constants import (
     USER_APPOINTMENT_AVAILABILITY,
 )
 from frappe_appointment.frappe_appointment.doctype.appointment_group.appointment_group import (
+    hours_to_time_slot,
     is_valid_time_slots,
     vaild_date,
 )
@@ -495,6 +496,18 @@ def _create_event_for_appointment_group(
     if reschedule:
         if not appointment_group.allow_rescheduling:
             return frappe.throw(_("Rescheduling is not allowed for this event."))
+        minimum_notice_for_reschedule = appointment_group.minimum_notice_for_reschedule  # in hours
+        if (
+            minimum_notice_for_reschedule
+            and hours_to_time_slot(start_time, user_timezone_offset) < minimum_notice_for_reschedule
+        ):
+            return frappe.throw(
+                _("This event cannot be rescheduled as it is less than {0} hours away.").format(
+                    minimum_notice_for_reschedule
+                )
+            )
+        if minimum_notice_for_reschedule:
+            pass
         try:
             event_id = decrypt(event_info.get("event_token"))
         except Exception:
