@@ -118,6 +118,15 @@ class EventOverride(Event):
     def after_insert(self):
         pass  # This exists to prevent errors in derived classes.
 
+    def as_dict(self, *args, **kwargs):
+        """
+        Inject the reschedule_url in the event dict
+        """
+        event_dict = super().as_dict(*args, **kwargs)
+        if isinstance(event_dict, dict):
+            event_dict["reschedule_url"] = self.reschedule_url
+        return event_dict
+
     def before_save(self):
         super().before_save()
         if not hasattr(self, "ics_event_description"):
@@ -185,6 +194,8 @@ class EventOverride(Event):
     @property
     def reschedule_url(self):
         """Get the reschedule url for the event"""
+        if not self.name:
+            return None
         if self.custom_appointment_group:
             appointment_group = frappe.get_doc(APPOINTMENT_GROUP, self.custom_appointment_group)
             if not appointment_group.allow_rescheduling:

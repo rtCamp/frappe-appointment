@@ -25,10 +25,10 @@ EMAIL_TEMPLATES = [
         "docstatus": 0,
         "doctype": "Email Template",
         "enabled": 1,
-        "modified": "2025-02-17 00:23:49.662459",
+        "modified": "2025-04-23 12:27:38.910766",
         "name": "[Default] Appointment Scheduled",
         "reference_doctype": "Appointment Group",
-        "response": '<div class="ql-editor read-mode"><p>Hello,</p><p><br></p><p>Thank you for taking the time to schedule a meeting with us about {{ event.subject }}.</p><p>{% set formatted_starts_on = frappe.utils.get_datetime(event.starts_on) %}</p><p><br></p><p>Your appointment is scheduled for {{ formatted_starts_on.strftime(\'%A\') }}, {{ formatted_starts_on.strftime(\'%d %B %Y\') }} at {{ formatted_starts_on.strftime("%I:%M %P") }} IST.</p><p><br></p><p>Please join the meeting using this link: {{ meet_link }}</p><p><br></p><p><span style="background-color: transparent; color: rgb(0, 0, 0);">We are looking forward to speaking with you!</span></p><p><br></p><p><span style="background-color: transparent; color: rgb(0, 0, 0);">Regards,</span></p><p><span style="color: rgb(18, 19, 23);">--</span></p></div>',
+        "response": '<div class="ql-editor read-mode"><p>Hello,</p><p><br></p><p>Thank you for taking the time to schedule a meeting with us about {{ event.subject }}.</p><p>{% set formatted_starts_on = frappe.utils.get_datetime(event.starts_on) %}</p><p><br></p><p>Your appointment is scheduled for {{ formatted_starts_on.strftime(\'%A\') }}, {{ formatted_starts_on.strftime(\'%d %B %Y\') }} at {{ formatted_starts_on.strftime("%I:%M %P") }} IST.</p><p><br></p><p>Please join the meeting using this link: <a href="{{ meet_link }}" rel="noopener noreferrer">{{ meet_link }}</a></p><p><br></p><p>{% if event.reschedule_url %}</p><p>If you wish to reschedule this event, please use this link: <a href="{{ event.reschedule_url }}" rel="noopener noreferrer">{{ event.reschedule_url }}</a></p><p>{% endif %}</p><p><br></p><p><span style="background-color: transparent; color: rgb(0, 0, 0);">We are looking forward to speaking with you!</span></p><p><br></p><p><span style="background-color: transparent; color: rgb(0, 0, 0);">Regards,</span></p><p><span style="color: rgb(18, 19, 23);">--</span></p></div>',
         "response_html": None,
         "subject": "[Frappe Appointment] Appointment Scheduled - {{ event.subject }}",
         "use_html": 0,
@@ -54,5 +54,21 @@ EMAIL_TEMPLATES = [
 
 def import_email_templates():
     for email_template in EMAIL_TEMPLATES:
-        frappe.get_doc(email_template).insert(ignore_permissions=True, ignore_if_duplicate=True)
+        try:
+            frappe.get_doc(email_template).insert(ignore_permissions=True)
+        except frappe.DuplicateEntryError:
+            # update the existing template
+            existing_template = frappe.get_doc("Email Template", email_template["name"])
+            for key, value in email_template.items():
+                if key not in [
+                    "doctype",
+                    "name",
+                    "modified",
+                    "docstatus",
+                ]:  # Avoid updating fields that should not be changed
+                    existing_template.set(key, value)
+            existing_template.save(ignore_permissions=True)
+        except Exception as e:
+            print(f"Error importing email template {email_template['name']}: {e}")
+            continue
     print("Email Templates Imported")
