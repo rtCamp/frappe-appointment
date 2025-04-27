@@ -10,6 +10,7 @@ import {
   Tag,
   CircleAlert,
   ChevronLeft,
+  Home,
 } from "lucide-react";
 import { useFrappeGetCall, useFrappePostCall } from "frappe-react-sdk";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
@@ -300,15 +301,13 @@ const Booking = ({ type, banner }: BookingProp) => {
                       Google Meet
                     </Typography>
                   )}
-                  {/* Home Button */}
-                  <Button
-                    type="button"
-                    className="hidden md:flex text-blue-600 dark:text-blue-400 bg-transparent hover:bg-transparent hover:underline m-0 p-0 gap-1 self-start h-6"
+                  <Typography
+                    className="hidden md:flex text-blue-600 dark:text-blue-400 mt-1 items-center hover:underline cursor-pointer"
                     onClick={() => navigate(`/in/${meetingId}`)}
                   >
-                    <ChevronLeft className="w-4 h-4" />
+                    <Home className="inline-block w-4 h-4 mr-1" />
                     Home
-                  </Button>
+                  </Typography>
                 </div>
               </div>
               <div className="max-lg:w-full shrink-0 lg:max-h-[31rem] md:overflow-hidden">
