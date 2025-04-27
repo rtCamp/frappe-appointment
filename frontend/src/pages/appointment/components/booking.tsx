@@ -7,7 +7,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Clock,
   Calendar as CalendarIcon,
-  ArrowLeft,
   Tag,
   CircleAlert,
   ChevronLeft,
@@ -304,10 +303,10 @@ const Booking = ({ type, banner }: BookingProp) => {
                   {/* Home Button */}
                   <Button
                     type="button"
-                    className="text-blue-600 dark:text-blue-400 bg-transparent hover:bg-transparent hover:underline m-0 p-0 gap-0 self-start h-6"
+                    className="hidden md:flex text-blue-600 dark:text-blue-400 bg-transparent hover:bg-transparent hover:underline m-0 p-0 gap-1 self-start h-6"
                     onClick={() => navigate(`/in/${meetingId}`)}
                   >
-                    <ChevronLeft className="mr-1 size-4" />
+                    <ChevronLeft className="w-4 h-4" />
                     Home
                   </Button>
                 </div>
@@ -417,7 +416,7 @@ const Booking = ({ type, banner }: BookingProp) => {
                             }
                             disabled={rescheduleLoading}
                           >
-                            <ArrowLeft className="h-4 w-4" />
+                            <ChevronLeft className="w-4 h-4" />
                             Back
                           </Button>
                           {state.showReschedule && (
@@ -558,6 +557,21 @@ const Booking = ({ type, banner }: BookingProp) => {
           </div>
         </div>
       </div>
+
+      {/* Back Button for Mobile */}
+      {(!state.isMobileView || !state.expanded) && !state.showMeetingForm && (
+        <div className="md:hidden flex justify-between md:pt-4 max-md:h-14 max-md:fixed max-md:bottom-0 max-md:left-0 max-md:w-screen max-md:border max-md:z-10 max-md:bg-background max-md:border-t max-md:items-center max-md:px-4">
+          <Button
+            type="button"
+            className="text-blue-500 dark:text-blue-400 hover:text-blue-600 dark:hover:text-blue-400 md:hover:bg-blue-50 md:dark:hover:bg-blue-800/10 max-md:px-0 max-md:hover:underline max-md:hover:bg-transparent"
+            onClick={() => navigate(`/in/${meetingId}`)}
+            variant="ghost"
+          >
+            <ChevronLeft className="w-4 h-4" /> Home
+          </Button>
+        </div>
+      )}
+
       {selectedSlot?.start_time && (
         <SuccessAlert
           open={state.appointmentScheduled}
