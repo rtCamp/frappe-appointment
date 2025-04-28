@@ -28,7 +28,15 @@ jobs:
       - name: Get APP and Build
         run: |
           cd /home/frappe/frappe-bench
-          su frappe bash -c "bench get-app https://rtbot:${{ secrets.RTBOT_TOKEN }}@github.com/${{ github.repository }} --branch ${{ github.head_ref || github.ref_name }}"
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            REPO="${{ github.event.pull_request.head.repo.full_name }}"
+            BRANCH="${{ github.event.pull_request.head.ref }}"
+          else
+            REPO="${{ github.repository }}"
+            BRANCH="${{ github.head_ref || github.ref_name }}"
+          fi
+          echo "Cloning from $REPO at branch $BRANCH"
+          su frappe bash -c "bench get-app https://github.com/${REPO} --branch ${BRANCH}"
 
       - name: Cleanup
         if: ${{ always() }}
