@@ -28,7 +28,7 @@ jobs:
       - name: Get APP and Build
         run: |
           cd /home/frappe/frappe-bench
-          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
             REPO="${{ github.event.pull_request.head.repo.full_name }}"
             BRANCH="${{ github.event.pull_request.head.ref }}"
           else
