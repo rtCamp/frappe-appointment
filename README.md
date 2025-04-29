@@ -8,7 +8,7 @@
 <img src="frappe_appointment/public/featured-image.png" width="1050" alt="Frappe Appointment">
 </div>
 
-- Testing actions
+- Testing actions 2
 
 ## Key Features
 
