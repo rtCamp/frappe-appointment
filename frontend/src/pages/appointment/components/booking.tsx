@@ -7,9 +7,10 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Clock,
   Calendar as CalendarIcon,
-  ArrowLeft,
   Tag,
   CircleAlert,
+  ChevronLeft,
+  Home,
 } from "lucide-react";
 import { useFrappeGetCall, useFrappePostCall } from "frappe-react-sdk";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
@@ -300,6 +301,13 @@ const Booking = ({ type, banner }: BookingProp) => {
                       Google Meet
                     </Typography>
                   )}
+                  <Typography
+                    className="hidden md:flex text-blue-600 dark:text-blue-400 mt-1 items-center hover:underline cursor-pointer"
+                    onClick={() => navigate(`/in/${meetingId}`)}
+                  >
+                    <Home className="inline-block w-4 h-4 mr-1" />
+                    Home
+                  </Typography>
                 </div>
               </div>
               <div className="max-lg:w-full shrink-0 lg:max-h-[31rem] md:overflow-hidden">
@@ -362,7 +370,7 @@ const Booking = ({ type, banner }: BookingProp) => {
                             }}
                             className="rounded-xl md:border md:h-96 w-full flex md:px-6 p-0"
                           />
-                          <div className="mt-4 gap-5 flex max-md:flex-col md:justify-between md:items-center ">
+                          <div className="mt-4 gap-5 flex max-md:flex-col md:justify-between md:items-center">
                             {/* Timezone */}
 
                             <TimeZoneSelect
@@ -407,7 +415,7 @@ const Booking = ({ type, banner }: BookingProp) => {
                             }
                             disabled={rescheduleLoading}
                           >
-                            <ArrowLeft className="h-4 w-4" />
+                            <ChevronLeft className="w-4 h-4" />
                             Back
                           </Button>
                           {state.showReschedule && (
@@ -548,6 +556,21 @@ const Booking = ({ type, banner }: BookingProp) => {
           </div>
         </div>
       </div>
+
+      {/* Back Button for Mobile */}
+      {(!state.isMobileView || !state.expanded) && !state.showMeetingForm && (
+        <div className="md:hidden flex justify-between md:pt-4 max-md:h-14 max-md:fixed max-md:bottom-0 max-md:left-0 max-md:w-screen max-md:border max-md:z-10 max-md:bg-background max-md:border-t max-md:items-center max-md:px-4">
+          <Button
+            type="button"
+            className="text-blue-500 dark:text-blue-400 hover:text-blue-600 dark:hover:text-blue-400 md:hover:bg-blue-50 md:dark:hover:bg-blue-800/10 max-md:px-0 max-md:hover:underline max-md:hover:bg-transparent"
+            onClick={() => navigate(`/in/${meetingId}`)}
+            variant="ghost"
+          >
+            <ChevronLeft className="w-4 h-4" /> Home
+          </Button>
+        </div>
+      )}
+
       {selectedSlot?.start_time && (
         <SuccessAlert
           open={state.appointmentScheduled}
