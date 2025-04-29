@@ -10,7 +10,7 @@ from frappe_appointment.helpers.overrides import add_response_code
 from frappe_appointment.overrides.event_override import APPOINTMENT_GROUP, _create_event_for_appointment_group
 
 
-@frappe.whitelist(allow_guest=True)
+=
 @add_response_code
 def get_time_slots(appointment_group_id: str, date: str, user_timezone_offset: str, **args):
     if not appointment_group_id:
