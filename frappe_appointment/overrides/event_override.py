@@ -18,6 +18,7 @@ from frappe_appointment.constants import (
     USER_APPOINTMENT_AVAILABILITY,
 )
 from frappe_appointment.frappe_appointment.doctype.appointment_group.appointment_group import (
+    hours_to_time_slot,
     is_valid_time_slots,
     vaild_date,
 )
@@ -117,6 +118,15 @@ class EventOverride(Event):
     def after_insert(self):
         pass  # This exists to prevent errors in derived classes.
 
+    def as_dict(self, *args, **kwargs):
+        """
+        Inject the reschedule_url in the event dict
+        """
+        event_dict = super().as_dict(*args, **kwargs)
+        if isinstance(event_dict, dict):
+            event_dict["reschedule_url"] = self.reschedule_url
+        return event_dict
+
     def before_save(self):
         super().before_save()
         if not hasattr(self, "ics_event_description"):
@@ -180,6 +190,31 @@ class EventOverride(Event):
                 meet_id,
             )
         super().on_trash()
+
+    @property
+    def reschedule_url(self):
+        """Get the reschedule url for the event"""
+        if not self.name:
+            return None
+        if self.custom_appointment_group:
+            appointment_group = frappe.get_doc(APPOINTMENT_GROUP, self.custom_appointment_group)
+            if not appointment_group.allow_rescheduling:
+                return None
+            return frappe.utils.get_url(
+                "/schedule/gr/{0}?reschedule=1&event_token={1}".format(
+                    quote_plus(self.custom_appointment_group), encrypt(self.name)
+                )
+            )
+        elif self.custom_user_calendar:
+            user_calendar = frappe.get_doc(USER_APPOINTMENT_AVAILABILITY, self.custom_user_calendar)
+            duration = frappe.get_doc("Appointment Slot Duration", self.custom_appointment_slot_duration)
+            if not duration.allow_rescheduling:
+                return None
+            return frappe.utils.get_url(
+                "/schedule/in/{0}?type={1}&reschedule=1&event_token={2}".format(
+                    user_calendar.slug, self.custom_appointment_slot_duration, encrypt(self.name)
+                )
+            )
 
     def on_update(self):
         self.sync_communication()  # Overrided this because we have made reference doctype and name non-mandatory in Event Participants
@@ -493,6 +528,20 @@ def _create_event_for_appointment_group(
     google_calendar_api_obj, account = get_google_calendar_object(appointment_group.event_creator)
 
     if reschedule:
+        if not appointment_group.allow_rescheduling:
+            return frappe.throw(_("Rescheduling is not allowed for this event."))
+        minimum_notice_for_reschedule = appointment_group.minimum_notice_for_reschedule  # in hours
+        if (
+            minimum_notice_for_reschedule
+            and hours_to_time_slot(start_time, user_timezone_offset) < minimum_notice_for_reschedule
+        ):
+            return frappe.throw(
+                _("This event cannot be rescheduled as it is less than {0} hours away.").format(
+                    minimum_notice_for_reschedule
+                )
+            )
+        if minimum_notice_for_reschedule:
+            pass
         try:
             event_id = decrypt(event_info.get("event_token"))
         except Exception:
@@ -523,19 +572,18 @@ def _create_event_for_appointment_group(
             # clear all previous logs
             clear_messages()
 
-            if success_message:
-                if return_event_id:
-                    return {
-                        "message": success_message,
-                        "event_id": event.name,
-                    }
-                return frappe.msgprint(success_message)
+            resp = {"message": success_message or _("Event has been updated successfully."), "event_id": event.name}
+
+            resp["meeting_provider"] = event.custom_meeting_provider
+            resp["meet_link"] = event.custom_meet_link
+
+            if appointment_group.allow_rescheduling:
+                resp["reschedule_url"] = event.reschedule_url
+
+            resp["google_calendar_event_url"] = event.custom_google_calendar_event_url
 
             if return_event_id:
-                return {
-                    "message": "Event has been updated successfully.",
-                    "event_id": event.name,
-                }
+                return resp
             return frappe.msgprint(_("Event has been updated successfully."))
         except Exception:
             return frappe.throw(_("Unable to Update an event"))
@@ -589,10 +637,15 @@ def _create_event_for_appointment_group(
         return frappe.msgprint(success_message)
 
     if return_event_id:
-        return {
-            "message": _("Event has been created"),
-            "event_id": event.name,
-        }
+        resp = {"message": _("Event has been created"), "event_id": event.name}
+        resp["meeting_provider"] = event.custom_meeting_provider
+        resp["meet_link"] = event.custom_meet_link
+        if appointment_group.allow_rescheduling:
+            event = frappe.get_doc("Event", event.name)
+            resp["reschedule_url"] = event.reschedule_url
+        resp["google_calendar_event_url"] = event.custom_google_calendar_event_url
+
+        return resp
     return frappe.msgprint(_("Event has been created"))
 
 
@@ -695,13 +748,19 @@ def get_events_from_doc(doctype, docname, past_events=False):
         else:
             event["ends_on"] = frappe.utils.format_datetime(ends_on, "MMM dd, yyyy, HH:mm")
 
+        appointment_group = frappe.get_doc(APPOINTMENT_GROUP, event["custom_appointment_group"])
+        allow_rescheduling = appointment_group.allow_rescheduling if appointment_group else 0
+
         event["url"] = "/app/event/" + event["name"]
-        event["reschedule_url"] = frappe.utils.get_url(
-            "/schedule/gr/{0}?reschedule=1&event_token={1}".format(
-                quote_plus(event["custom_appointment_group"]),
-                encrypt(event["name"]),
+        event["reschedule_url"] = None
+        if allow_rescheduling:
+            event["reschedule_url"] = frappe.utils.get_url(
+                "/schedule/gr/{0}?reschedule=1&event_token={1}".format(
+                    quote_plus(event["custom_appointment_group"]),
+                    encrypt(event["name"]),
+                )
             )
-        )
+
         all_events[event["state"]].append(event)
     return all_events
 
@@ -772,6 +831,8 @@ def get_personal_meetings(user, past_events=False):
         starts_on = event.get("starts_on")
         ends_on = event.get("ends_on")
 
+        duration_id = event.get("custom_appointment_slot_duration")
+
         event["state"] = "upcoming"
         if event["status"] == "Open":
             if ends_on < cur_datetime:
@@ -800,11 +861,17 @@ def get_personal_meetings(user, past_events=False):
         else:
             event["ends_on"] = frappe.utils.format_datetime(ends_on, "MMM dd, yyyy, HH:mm")
 
+        duration = frappe.get_doc("Appointment Slot Duration", duration_id)
+        allow_rescheduling = duration.allow_rescheduling if duration else 0
+
         event["url"] = "/app/event/" + event["name"]
-        event["reschedule_url"] = (
-            frappe.utils.get_url("/schedule/in/{0}".format(user_availability.get("slug")))
-            + f"?type={quote_plus(event['custom_appointment_slot_duration'])}&reschedule=1&event_token={encrypt(event['name'])}"
-        )
+        event["reschedule_url"] = None
+
+        if allow_rescheduling:
+            event["reschedule_url"] = (
+                frappe.utils.get_url("/schedule/in/{0}".format(user_availability.get("slug")))
+                + f"?type={quote_plus(event['custom_appointment_slot_duration'])}&reschedule=1&event_token={encrypt(event['name'])}"
+            )
         all_events[event["state"]].append(event)
 
     return all_events

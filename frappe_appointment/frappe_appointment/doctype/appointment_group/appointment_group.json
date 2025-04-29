@@ -16,6 +16,8 @@
   "members",
   "section_break_3djy",
   "duration_for_event",
+  "allow_rescheduling",
+  "minimum_notice_for_reschedule",
   "column_break_xzbw",
   "minimum_buffer_time",
   "limits_for_event_section",
@@ -231,10 +233,24 @@
    "label": "Email Template",
    "mandatory_depends_on": "send_email_alerts",
    "options": "Email Template"
+  },
+  {
+   "default": "1",
+   "fieldname": "allow_rescheduling",
+   "fieldtype": "Check",
+   "label": "Allow Rescheduling"
+  },
+  {
+   "depends_on": "allow_rescheduling",
+   "description": "Minimum number of hours before the event within which rescheduling is not allowed.",
+   "fieldname": "minimum_notice_for_reschedule",
+   "fieldtype": "Int",
+   "label": "Minimum Notice for Reschedule",
+   "non_negative": 1
   }
  ],
  "links": [],
- "modified": "2025-04-17 03:05:58.808956",
+ "modified": "2025-04-23 11:11:22.130701",
  "modified_by": "Administrator",
  "module": "Frappe Appointment",
  "name": "Appointment Group",

@@ -156,6 +156,24 @@ def is_valid_time_slots(
     return False
 
 
+def hours_to_time_slot(start_time, user_timezone_offset, current_time=None) -> int:
+    """
+    Returns the number of hours between current time and the given start time.
+
+    Args:
+        start_time (str): Start time in the format "YYYY-MM-DD HH:MM:SS"
+        user_timezone_offset (str): User's timezone offset
+        current_time (str, optional): Current time in the format "YYYY-MM-DD HH:MM:SS". Defaults to None. If None, current time will be used.
+
+    Returns:
+        int: Number of hours between current time and the given start time
+    """
+    start_time = datetime.datetime.strptime(start_time, "%Y-%m-%d %H:%M:%S%z")
+    current_time = utc_to_given_time_zone(current_time or datetime.datetime.now(), user_timezone_offset)
+
+    return int((start_time - current_time).total_seconds() / 3600)
+
+
 def get_time_slots_for_given_date(appointment_group: object, datetime: datetime):
     date = datetime.date()
     weekday = get_weekday(datetime)
