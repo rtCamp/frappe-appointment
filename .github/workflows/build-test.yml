@@ -25,18 +25,33 @@ jobs:
           cd /home/frappe
           su frappe bash -c "bench init frappe-bench --skip-redis-config-generation --no-procfile --skip-assets"
 
+      - name: Get Dependent Apps
+        run: |
+          cd /home/frappe/frappe-bench
+          # Use public URL for public repos, authenticated URL for private repos
+          if [ "${{ github.event.pull_request.head.repo.private }}" = "false" ]; then
+            # This is a public repository (could be a fork or not)
+            git clone https://github.com/${{ github.event.pull_request.head.repo.full_name }} -b ${{ github.event.pull_request.head.ref }} --depth=1 app_repo
+          else
+            # Private repository, use authentication
+            git clone https://rtbot:${{ secrets.RTBOT_TOKEN }}@github.com/${{ github.event.pull_request.head.repo.full_name }} -b ${{ github.event.pull_request.head.ref }} --depth=1 app_repo
+          fi
+          DEPS=$(grep -E "required_apps\s*=\s*\[" app_repo/*/hooks.py | sed 's/.*\[\(.*\)\]/\1/g' | tr -d '"' | tr -d "'" | tr ',' '\n' | awk '{$1=$1};1')
+          rm -rf app_repo
+          for dep in $DEPS; do
+            su frappe bash -c "bench get-app $dep"
+          done
+
       - name: Get APP and Build
         run: |
           cd /home/frappe/frappe-bench
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            REPO="${{ github.event.pull_request.head.repo.full_name }}"
-            BRANCH="${{ github.event.pull_request.head.ref }}"
+          if [ "${{ github.event.pull_request.head.repo.private }}" = "false" ]; then
+            # Public fork
+            su frappe bash -c "bench get-app https://github.com/${{ github.event.pull_request.head.repo.full_name }} --branch ${{ github.event.pull_request.head.ref }}"
           else
-            REPO="${{ github.repository }}"
-            BRANCH="${{ github.head_ref || github.ref_name }}"
+            # Private fork (requires token)
+            su frappe bash -c "bench get-app https://rtbot:${{ secrets.RTBOT_TOKEN }}@github.com/${{ github.event.pull_request.head.repo.full_name }} --branch ${{ github.event.pull_request.head.ref }}"
           fi
-          echo "Cloning from $REPO at branch $BRANCH"
-          su frappe bash -c "bench get-app https://github.com/${REPO} --branch ${BRANCH}"
 
       - name: Cleanup
         if: ${{ always() }}
