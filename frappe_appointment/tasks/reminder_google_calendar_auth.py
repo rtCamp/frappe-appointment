@@ -18,6 +18,9 @@ def send_reminder_mail():
 
         for google_calendar in google_calendars:
             google_calendar = frappe.get_doc("Google Calendar", google_calendar.name)
+            user = frappe.get_doc("User", google_calendar.user)
+            if not user.enabled:
+                continue
             if google_calendar.user == google_calendar.google_calendar_id:
                 if not google_calendar_authorized(google_calendar):
                     frappe.db.set_value(
