@@ -861,7 +861,11 @@ def get_personal_meetings(user, past_events=False):
         else:
             event["ends_on"] = frappe.utils.format_datetime(ends_on, "MMM dd, yyyy, HH:mm")
 
-        duration = frappe.get_doc("Appointment Slot Duration", duration_id)
+        try:
+            duration = frappe.get_doc("Appointment Slot Duration", duration_id)
+        except Exception:
+            duration = None
+            frappe.clear_last_message()
         allow_rescheduling = duration.allow_rescheduling if duration else 0
 
         event["url"] = "/app/event/" + event["name"]
