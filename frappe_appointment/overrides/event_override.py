@@ -391,6 +391,20 @@ class EventOverride(Event):
             return {"status": False, "message": "Unable to create an event"}
 
 
+def has_permission(doc, user):
+    if user == "Administrator":
+        return True
+    if doc.event_type == "Public" or doc.owner == user:
+        return True
+    doctype_links = doc.custom_doctype_link_with_event
+    for doctype_link in doctype_links:
+        reference_doctype = doctype_link.reference_doctype
+        reference_docname = doctype_link.reference_docname
+        if frappe.has_permission(reference_doctype, "read", reference_docname):
+            return True
+    return False
+
+
 def send_meet_email(doc, appointment_group, user_calendar, metadata, ics_event_description=None):
     """Sent the meeting link email to the given user using the provided Email Template"""
     doc.reload()
@@ -861,7 +875,11 @@ def get_personal_meetings(user, past_events=False):
         else:
             event["ends_on"] = frappe.utils.format_datetime(ends_on, "MMM dd, yyyy, HH:mm")
 
-        duration = frappe.get_doc("Appointment Slot Duration", duration_id)
+        try:
+            duration = frappe.get_doc("Appointment Slot Duration", duration_id)
+        except Exception:
+            duration = None
+            frappe.clear_last_message()
         allow_rescheduling = duration.allow_rescheduling if duration else 0
 
         event["url"] = "/app/event/" + event["name"]

@@ -63,7 +63,15 @@ def get_meeting_windows(slug):
 
 @frappe.whitelist(allow_guest=True)
 @add_response_code
-def get_time_slots(duration_id: str, date: str, user_timezone_offset: str):
+def get_time_slots(
+    duration_id: str, date: str = None, user_timezone_offset: str = None, start_date: str = None, end_date: str = None
+):
+    if not date and not (start_date and end_date):
+        return {"error": "Date is required"}, 400
+
+    if not user_timezone_offset:
+        return {"error": "User timezone offset is required"}, 400
+
     duration = frappe.get_doc("Appointment Slot Duration", duration_id)
 
     user_availability = frappe.get_all(
@@ -79,7 +87,46 @@ def get_time_slots(duration_id: str, date: str, user_timezone_offset: str):
 
     appointment_group = frappe.get_doc(appointment_group_obj)
 
-    data = _get_time_slots_for_day(appointment_group, date, user_timezone_offset)
+    if date:
+        data = _get_time_slots_for_day(appointment_group, date, user_timezone_offset)
+    else:
+        data = {
+            "all_available_slots_for_data": [],
+            "dates": [],
+            "duration": None,
+            "starttime": None,
+            "endtime": None,
+            "total_slots": 0,
+            "available_days": [],
+        }
+
+        date = start_date
+        cache_dict = {}
+        while True:
+            datetime = frappe.utils.get_datetime(date)
+            enddatetime = frappe.utils.get_datetime(end_date)
+            if datetime > enddatetime:
+                break
+            _data = _get_time_slots_for_day(
+                appointment_group, date, user_timezone_offset, time_slot_cache_dict=cache_dict
+            )
+            if _data["is_invalid_date"]:
+                date = _data["next_valid_date"]
+                if not isinstance(_data["next_valid_date"], str):
+                    date = _data["next_valid_date"].strftime("%Y-%m-%d")
+            else:
+                data["all_available_slots_for_data"].extend(_data["all_available_slots_for_data"])
+                data["dates"].append(_data["date"])
+                data["duration"] = _data["duration"]
+                data["starttime"] = (
+                    min(_data["starttime"], data["starttime"]) if data["starttime"] else _data["starttime"]
+                )
+                data["endtime"] = max(_data["endtime"], data["endtime"]) if data["endtime"] else _data["endtime"]
+                data["total_slots"] += _data["total_slots_for_day"]
+                for available_day in _data["available_days"]:
+                    if available_day not in data["available_days"]:
+                        data["available_days"].append(available_day)
+                date = frappe.utils.add_days(date, 1)
 
     if not data:
         return None
@@ -198,6 +245,7 @@ def create_dummy_appointment_group(duration, user_availability):
     appointment_group_obj = {
         "doctype": "Appointment Group",
         "group_name": "Personal Meeting",
+        "name": "dummy_appointment_group_personal_meeting",
         "event_creator": user_availability.get("google_calendar"),
         "event_organizer": user_availability.get("user"),
         "members": [{"user": user_availability.get("name"), "is_mandatory": 1}],
