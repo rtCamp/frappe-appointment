@@ -68,7 +68,9 @@ class AppointmentGroup(Document):
             return frappe.throw(frappe._("Please add at least one mandatory member to the appointment group."))
 
 
-def _get_time_slots_for_day(appointment_group: object, date: str, user_timezone_offset: str) -> object:
+def _get_time_slots_for_day(
+    appointment_group: object, date: str, user_timezone_offset: str, time_slot_cache_dict: dict = None
+) -> object:
     try:
         datetime_today = get_datetime(date)
         datetime_tomorrow = add_days(datetime_today, 1)
@@ -78,13 +80,13 @@ def _get_time_slots_for_day(appointment_group: object, date: str, user_timezone_
 
         if int(user_timezone_offset) > 0:
             all_time_slots_global_object = {
-                "yesterday": get_time_slots_for_given_date(appointment_group, datetime_yesterday),
-                "today": get_time_slots_for_given_date(appointment_group, datetime_today),
+                "yesterday": get_time_slots_for_given_date(appointment_group, datetime_yesterday, time_slot_cache_dict),
+                "today": get_time_slots_for_given_date(appointment_group, datetime_today, time_slot_cache_dict),
             }
         else:
             all_time_slots_global_object = {
-                "today": get_time_slots_for_given_date(appointment_group, datetime_today),
-                "tomorrow": get_time_slots_for_given_date(appointment_group, datetime_tomorrow),
+                "today": get_time_slots_for_given_date(appointment_group, datetime_today, time_slot_cache_dict),
+                "tomorrow": get_time_slots_for_given_date(appointment_group, datetime_tomorrow, time_slot_cache_dict),
             }
 
         user_time_slots = get_user_time_slots(all_time_slots_global_object, date, user_timezone_offset)
@@ -175,7 +177,20 @@ def hours_to_time_slot(start_time, user_timezone_offset, current_time=None) -> i
     return int((start_time - current_time).total_seconds() / 3600)
 
 
-def get_time_slots_for_given_date(appointment_group: object, datetime: datetime):
+def get_time_slots_for_given_date(appointment_group: object, datetime: datetime, time_slot_cache_dict=None):
+    if time_slot_cache_dict is not None:
+        if appointment_group.name in time_slot_cache_dict:
+            if datetime in time_slot_cache_dict[appointment_group.name]:
+                return time_slot_cache_dict[appointment_group.name][datetime]
+        else:
+            time_slot_cache_dict[appointment_group.name] = {}
+    data = _get_time_slots_for_given_date(appointment_group, datetime)
+    if time_slot_cache_dict is not None:
+        time_slot_cache_dict[appointment_group.name][datetime] = data
+    return data
+
+
+def _get_time_slots_for_given_date(appointment_group: object, datetime: datetime):
     date = datetime.date()
     weekday = get_weekday(datetime)
 

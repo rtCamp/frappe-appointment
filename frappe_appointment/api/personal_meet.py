@@ -101,12 +101,15 @@ def get_time_slots(
         }
 
         date = start_date
+        cache_dict = {}
         while True:
             datetime = frappe.utils.get_datetime(date)
             enddatetime = frappe.utils.get_datetime(end_date)
             if datetime > enddatetime:
                 break
-            _data = _get_time_slots_for_day(appointment_group, date, user_timezone_offset)
+            _data = _get_time_slots_for_day(
+                appointment_group, date, user_timezone_offset, time_slot_cache_dict=cache_dict
+            )
             if _data["is_invalid_date"]:
                 date = _data["next_valid_date"]
                 if not isinstance(_data["next_valid_date"], str):
