@@ -245,6 +245,7 @@ def create_dummy_appointment_group(duration, user_availability):
     appointment_group_obj = {
         "doctype": "Appointment Group",
         "group_name": "Personal Meeting",
+        "name": "dummy_appointment_group_personal_meeting",
         "event_creator": user_availability.get("google_calendar"),
         "event_organizer": user_availability.get("user"),
         "members": [{"user": user_availability.get("name"), "is_mandatory": 1}],
