@@ -179,14 +179,11 @@ def hours_to_time_slot(start_time, user_timezone_offset, current_time=None) -> i
 
 def get_time_slots_for_given_date(appointment_group: object, datetime: datetime, time_slot_cache_dict=None):
     if time_slot_cache_dict is not None:
-        if appointment_group.name in time_slot_cache_dict:
-            if datetime in time_slot_cache_dict[appointment_group.name]:
-                return time_slot_cache_dict[appointment_group.name][datetime]
-        else:
-            time_slot_cache_dict[appointment_group.name] = {}
+        if datetime in time_slot_cache_dict:
+            return time_slot_cache_dict[datetime]
     data = _get_time_slots_for_given_date(appointment_group, datetime)
     if time_slot_cache_dict is not None:
-        time_slot_cache_dict[appointment_group.name][datetime] = data
+        time_slot_cache_dict[datetime] = data
     return data
 
 
