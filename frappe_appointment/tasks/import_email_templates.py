@@ -57,17 +57,7 @@ def import_email_templates():
         try:
             frappe.get_doc(email_template).insert(ignore_permissions=True)
         except frappe.DuplicateEntryError:
-            # update the existing template
-            existing_template = frappe.get_doc("Email Template", email_template["name"])
-            for key, value in email_template.items():
-                if key not in [
-                    "doctype",
-                    "name",
-                    "modified",
-                    "docstatus",
-                ]:  # Avoid updating fields that should not be changed
-                    existing_template.set(key, value)
-            existing_template.save(ignore_permissions=True)
+            pass  # Do not update existing templates
         except Exception as e:
             print(f"Error importing email template {email_template['name']}: {e}")
             continue
