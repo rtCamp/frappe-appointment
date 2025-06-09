@@ -59,6 +59,9 @@ def insert_event_in_google_calendar_override(
     if doc.custom_meet_link:
         event.update({"location": doc.custom_meet_link})
 
+    if doc.custom_create_free_event:
+        event.update({"transparency": "transparent"})
+
     event.update({"attendees": get_attendees(doc)})
 
     conference_data_version = 0
