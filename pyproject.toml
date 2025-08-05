@@ -1,7 +1,7 @@
 [project]
 name = "frappe_appointment"
 authors = [
-    { name = "rtCamp", email = "sys@rtcamp.com"}
+    { name = "rtCamp", email = "frappe@rtcamp.com"}
 ]
 description = "The appointment scheduling app with team support in Frappe."
 requires-python = ">=3.10"
