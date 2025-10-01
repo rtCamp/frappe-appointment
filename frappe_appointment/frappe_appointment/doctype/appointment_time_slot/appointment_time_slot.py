@@ -122,8 +122,9 @@ def get_google_calendar_slots_member(
     calendar_data = freebusy_response.get("calendars", {}).get(google_calendar.google_calendar_id, {})
     
     if calendar_data.get("errors"):
-        # If there are errors, assume all time is busy for safety
-        frappe.log_error(f"Google Calendar freebusy errors for {member}: {calendar_data['errors']}")
+        # If there are errors, log them and return empty list (assume no busy periods)
+        error_messages = [error.get("reason", "Unknown error") for error in calendar_data["errors"]]
+        frappe.log_error(f"Google Calendar freebusy errors for {member}: {error_messages}")
         return []
 
     busy_periods = calendar_data.get("busy", [])
@@ -131,28 +132,48 @@ def get_google_calendar_slots_member(
     # Convert busy periods to standardized format and filter by time range
     busy_slots = []
     for busy_period in busy_periods:
-        # Parse start and end times in UTC
-        start_utc = datetime.fromisoformat(busy_period["start"].replace('Z', '+00:00'))
-        end_utc = datetime.fromisoformat(busy_period["end"].replace('Z', '+00:00'))
-        
-        # Remove timezone info to match expected format
-        start_utc = start_utc.replace(tzinfo=None)
-        end_utc = end_utc.replace(tzinfo=None)
-        
-        # Check if this busy period overlaps with our requested time range
-        if check_if_datetime_in_range(start_utc, end_utc, starttime, endtime):
-            # Convert to the format expected by the rest of the system
-            busy_slot = {
-                "start": {
-                    "dateTime": start_utc.isoformat() + "Z",
-                    "timeZone": "UTC"
-                },
-                "end": {
-                    "dateTime": end_utc.isoformat() + "Z", 
-                    "timeZone": "UTC"
+        try:
+            # Parse start and end times in UTC, handling both Z and +00:00 formats
+            start_str = busy_period["start"]
+            end_str = busy_period["end"]
+            
+            # Normalize timezone format
+            if start_str.endswith('Z'):
+                start_str = start_str.replace('Z', '+00:00')
+            if end_str.endswith('Z'):
+                end_str = end_str.replace('Z', '+00:00')
+            
+            # Handle milliseconds if present
+            if '.000+00:00' in start_str:
+                start_str = start_str.replace('.000+00:00', '+00:00')
+            if '.000+00:00' in end_str:
+                end_str = end_str.replace('.000+00:00', '+00:00')
+                
+            start_utc = datetime.fromisoformat(start_str)
+            end_utc = datetime.fromisoformat(end_str)
+            
+            # Remove timezone info to match expected format
+            start_utc = start_utc.replace(tzinfo=None)
+            end_utc = end_utc.replace(tzinfo=None)
+            
+            # Check if this busy period overlaps with our requested time range
+            if check_if_datetime_in_range(start_utc, end_utc, starttime, endtime):
+                # Convert to the format expected by the rest of the system
+                busy_slot = {
+                    "start": {
+                        "dateTime": start_utc.isoformat() + "Z",
+                        "timeZone": "UTC"
+                    },
+                    "end": {
+                        "dateTime": end_utc.isoformat() + "Z", 
+                        "timeZone": "UTC"
+                    }
                 }
-            }
-            busy_slots.append(busy_slot)
+                busy_slots.append(busy_slot)
+        except (ValueError, KeyError) as e:
+            # Skip invalid busy periods and log the error
+            frappe.log_error(f"Error parsing busy period for {member}: {busy_period}. Error: {str(e)}")
+            continue
 
     return busy_slots
 
