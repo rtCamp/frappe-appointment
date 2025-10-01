@@ -251,13 +251,8 @@ def _get_time_slots_for_given_date(appointment_group: object, datetime: datetime
         member_time_slots, starttime, endtime, date, appointment_group
     )
 
-    if not all_slots and all_slots != []:
-        return get_response_body(
-            avaiable_time_slot_for_day=[],
-            appointment_group=appointment_group,
-            date=date,
-            date_validation_obj=date_validation_obj,
-        )
+    # all_slots is now always a list (empty list for no busy slots)
+    # No need to check for False/None since errors are handled differently
 
     all_slots = update_cal_slots_with_events(all_slots, booking_frequency_reached_obj["events"])
 
@@ -526,14 +521,14 @@ def vaild_date(date: datetime, appointment_group: object) -> object:
 
 def update_cal_slots_with_events(all_slots: list, all_events: list) -> list:
     """
-        Function to take all Frappe events and all Google Calendar available time slots and create a new list where each slot has updated `starts_on` and `ends_on` fields.
+        Function to take all Frappe events and all Google Calendar busy time slots and create a new list where each slot has updated `starts_on` and `ends_on` fields.
 
         Args:
-    all_slots (list): List of all Google slots available
+    all_slots (list): List of all Google busy slots from freebusy API
     all_events (list): List of all Frappe Events
 
         Returns:
-        List: List of all slots with the updated `starts_on` and `ends_on` fields
+        List: List of all busy slots with the updated `starts_on` and `ends_on` fields
     """
     update_slots = []
     for currernt_slot in all_slots:
@@ -553,16 +548,16 @@ def update_cal_slots_with_events(all_slots: list, all_events: list) -> list:
 def get_avaiable_time_slot_for_day(
     all_slots: list, starttime: datetime, endtime: datetime, appointment_group: object
 ) -> list:
-    """Generate time available time slots for a given date based on Google slots within the range [starttime, endtime].
+    """Generate available time slots for a given date based on Google busy slots within the range [starttime, endtime].
 
     Args:
-    all_slots (list): All Google slots
+    all_slots (list): All Google busy slots from freebusy API
     starttime (datetime): Start time from which slots should be generated
     endtime (datetime): End time until which slots should be generated
     appointment_group (object): Appointment Group
 
     Returns:
-    list: List of available slots
+    list: List of available slots (gaps between busy periods)
     """
     available_slots = []
 
