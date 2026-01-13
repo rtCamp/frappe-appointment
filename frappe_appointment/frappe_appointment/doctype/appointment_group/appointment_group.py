@@ -717,8 +717,16 @@ def get_member_leave_holiday_data(appointment_group, start_date, end_date):
     employee_names = [e.name for e in employees]
 
     # Batch fetch all leaves for date range
-    start_str = start_date.strftime("%Y-%m-%d") if hasattr(start_date, 'strftime') else start_date
-    end_str = end_date.strftime("%Y-%m-%d") if hasattr(end_date, 'strftime') else end_date
+    # Convert dates to strings if they're datetime objects
+    if hasattr(start_date, 'strftime'):
+        start_str = start_date.strftime("%Y-%m-%d")
+    else:
+        start_str = start_date
+    
+    if hasattr(end_date, 'strftime'):
+        end_str = end_date.strftime("%Y-%m-%d")
+    else:
+        end_str = end_date
 
     leaves = frappe.get_all(
         "Leave Application",
@@ -754,12 +762,18 @@ def get_member_leave_holiday_data(appointment_group, start_date, end_date):
             fields=["parent", "holiday_date"]
         )
 
-        # Map holiday list to employees for cross-reference
+        # Create a dictionary mapping holiday_list to holidays for O(N+M) complexity
+        holiday_list_map = {}
+        for h in holidays:
+            if h.parent not in holiday_list_map:
+                holiday_list_map[h.parent] = []
+            holiday_list_map[h.parent].append(h.holiday_date)
+        
+        # Map holidays to employees
         for emp in employees:
-            if emp.holiday_list:
-                for h in holidays:
-                    if h.parent == emp.holiday_list:
-                        holiday_dates.add((emp.name, h.holiday_date.strftime("%Y-%m-%d")))
+            if emp.holiday_list and emp.holiday_list in holiday_list_map:
+                for holiday_date in holiday_list_map[emp.holiday_list]:
+                    holiday_dates.add((emp.name, holiday_date.strftime("%Y-%m-%d")))
 
     return {
         "employees": employee_map,
@@ -792,6 +806,8 @@ def is_member_on_leave_or_is_holiday_cached(appointment_group, date, cache):
 
         employee = cache["employees"].get(member.user)
         if not employee:
+            # Employee not found - consistent with original behavior (return False)
+            # This means we can't check for leaves/holidays, so we don't block the slot
             return False
 
         # O(1) lookup instead of query
