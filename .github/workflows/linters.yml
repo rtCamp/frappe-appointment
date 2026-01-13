@@ -28,7 +28,7 @@ jobs:
           python3 -m pip freeze --local
           pip install pre-commit --break-system-packages
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - run: |
           git config --global --add safe.directory $GITHUB_WORKSPACE
           git fetch --no-tags --prune --depth=1 origin +refs/heads/*:refs/remotes/origin/*
