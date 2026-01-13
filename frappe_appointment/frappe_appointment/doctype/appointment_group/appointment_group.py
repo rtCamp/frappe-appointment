@@ -289,6 +289,8 @@ def get_member_availability_cached(member_user):
 
     if cache_key not in frappe.local.appointment_cache:
         availability = frappe.get_doc("User Appointment Availability", member_user)
+        # Cache both days and time_slots for potential reuse in other functions
+        # that may need more detailed availability information
         frappe.local.appointment_cache[cache_key] = {
             'days': [day.day for day in availability.appointment_time_slot],
             'time_slots': availability.appointment_time_slot
