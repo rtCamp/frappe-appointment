@@ -14,27 +14,51 @@ def send_reminder_mail():
         if not setup_reminder_template():
             return
 
-        google_calendars = frappe.get_all("Google Calendar", {"enable": 1})
+        # Fetch calendars with needed fields to avoid N+1 queries
+        google_calendars = frappe.get_all(
+            "Google Calendar",
+            filters={"enable": 1},
+            fields=["name", "user", "google_calendar_id", "custom_is_google_calendar_authorized"],
+        )
 
-        for google_calendar in google_calendars:
-            google_calendar = frappe.get_doc("Google Calendar", google_calendar.name)
-            user = frappe.get_doc("User", google_calendar.user)
-            if not user.enabled:
+        if not google_calendars:
+            return
+
+        # Batch fetch user enabled status to avoid N+1 queries
+        user_ids = list(set(gc.user for gc in google_calendars))
+        users = frappe.get_all("User", filters={"name": ["in", user_ids]}, fields=["name", "enabled"])
+        enabled_users = {u.name for u in users if u.enabled}
+
+        calendars_needing_reminder = []
+
+        for gc in google_calendars:
+            # Skip if user is disabled
+            if gc.user not in enabled_users:
                 continue
-            if google_calendar.user == google_calendar.google_calendar_id:
-                if not google_calendar_authorized(google_calendar):
-                    frappe.db.set_value(
-                        "Google Calendar", google_calendar.name, "custom_is_google_calendar_authorized", False
-                    )
 
-                    send_email_template_mail(
-                        google_calendar,
-                        args={"google_calendar": google_calendar},
-                        email_template=GOOGLE_CALENDAR_AUTH_EMAIL_TEMPLATE,
-                        recipients=[google_calendar.user],
-                    )
+            # Only check personal calendars (user == google_calendar_id)
+            if gc.user != gc.google_calendar_id:
+                continue
 
-            frappe.db.commit()
+            # Need full doc only for authorization check
+            full_gc = frappe.get_doc("Google Calendar", gc.name)
+            if not google_calendar_authorized(full_gc):
+                frappe.db.set_value(
+                    "Google Calendar", gc.name, "custom_is_google_calendar_authorized", False
+                )
+                calendars_needing_reminder.append(full_gc)
+
+        # Send all emails and commit once
+        for gc in calendars_needing_reminder:
+            send_email_template_mail(
+                gc,
+                args={"google_calendar": gc},
+                email_template=GOOGLE_CALENDAR_AUTH_EMAIL_TEMPLATE,
+                recipients=[gc.user],
+            )
+
+        frappe.db.commit()  # Single commit at the end
+
     except Exception:
         frappe.log_error(title="send_reminder_google_calendar_auth_mail_failed", message=frappe.get_traceback())
 
