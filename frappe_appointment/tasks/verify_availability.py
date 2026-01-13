@@ -51,63 +51,121 @@ def get_availability_status_for_appointment_group(appointment_group, publish_rea
 
 
 def get_availability_status_for_all_appointment_groups():
-    appointment_groups = frappe.get_all("Appointment Group")
+    # Batch fetch all appointment groups with needed fields to avoid N+1 queries
+    appointment_groups = frappe.get_all(
+        "Appointment Group",
+        fields=[
+            "name",
+            "send_email_alerts",
+            "email_address_to_send",
+            "min_slot_threshold",
+            "group_name",
+            "availability_email_template",
+            "event_availability_window",
+        ],
+    )
+
+    if not appointment_groups:
+        return {}, [], {}, {}
+
+    # Batch fetch all members for all groups in a single query
+    all_group_names = [g.name for g in appointment_groups]
+    all_members = frappe.get_all(
+        "Members",
+        filters={"parent": ["in", all_group_names], "parenttype": "Appointment Group"},
+        fields=["parent", "user", "is_mandatory"],
+    )
+
+    # Group members by parent appointment group
+    members_by_group = {}
+    for member in all_members:
+        if member.parent not in members_by_group:
+            members_by_group[member.parent] = []
+        members_by_group[member.parent].append(member)
+
+    # Batch fetch all user emails for mandatory members
+    mandatory_user_ids = list(set(m.user for m in all_members if m.is_mandatory))
+    user_emails = {}
+    if mandatory_user_ids:
+        user_data = frappe.get_all(
+            "User",
+            filters={"name": ["in", mandatory_user_ids]},
+            fields=["name", "email"],
+        )
+        user_emails = {u.name: u.email for u in user_data if u.email}
+
+    # Process each appointment group and calculate availability
     data = {}
-    for appointment_group in appointment_groups:
+    for ag in appointment_groups:
         try:
-            appointment_group = frappe.get_doc("Appointment Group", appointment_group.name)
-            data[appointment_group.name] = get_availability_status_for_appointment_group(appointment_group)
+            # Load the full document for this group (still needed for get_time_slots_for_given_date)
+            appointment_group_doc = frappe.get_doc("Appointment Group", ag.name)
+            data[ag.name] = get_availability_status_for_appointment_group(appointment_group_doc)
         except Exception as e:
             frappe.log_error(
                 "Error in getting availability status for appointment group",
                 f"Error: {e}",
                 "Appointment Group",
-                appointment_group.name,
+                ag.name,
             )
-    return data
+
+    return data, appointment_groups, members_by_group, user_emails
 
 
 def verify_appointment_group_members_availabililty():
     skip_availability_cron = frappe.conf.get("frappe_appointments", {}).get("skip_availability_cron", False)
     if skip_availability_cron:
         return
-    data = get_availability_status_for_all_appointment_groups()
-    send_availability_email(data)
+    data, appointment_groups, members_by_group, user_emails = get_availability_status_for_all_appointment_groups()
+    send_availability_email(data, appointment_groups, members_by_group, user_emails)
 
 
-def send_availability_email(data):
+def send_availability_email(data, appointment_groups, members_by_group, user_emails):
     if not data:
         return
-    for appointment_group in data:
-        doc = frappe.get_doc("Appointment Group", appointment_group)
-        if not doc.send_email_alerts:
+
+    # Index appointment groups by name for quick lookup
+    groups_by_name = {g.name: g for g in appointment_groups}
+
+    for appointment_group_name in data:
+        ag = groups_by_name.get(appointment_group_name)
+        if not ag or not ag.send_email_alerts:
             continue
-        min_slot_threshold = doc.min_slot_threshold
-        total_slots = sum(data[appointment_group].values())
+
+        min_slot_threshold = ag.min_slot_threshold
+        total_slots = sum(data[appointment_group_name].values())
         if min_slot_threshold >= 0 and total_slots > min_slot_threshold:
             continue
-        group_name = doc.group_name
-        if not doc.availability_email_template or not doc.email_address_to_send:
+
+        group_name = ag.group_name
+        if not ag.availability_email_template or not ag.email_address_to_send:
             frappe.log_error(
                 "Error sending email for appointment group",
-                f"Email template or email address not set for appointment group {appointment_group}",
+                f"Email template or email address not set for appointment group {appointment_group_name}",
                 "Appointment Group",
-                appointment_group,
+                appointment_group_name,
             )
             continue
-        appointment_group_url = frappe.utils.get_url(f"/app/appointment-group/{appointment_group}", full_address=True)
+
+        appointment_group_url = frappe.utils.get_url(
+            f"/app/appointment-group/{appointment_group_name}", full_address=True
+        )
         daywise_slots_data = "<ul>"
-        for date, slots in data[appointment_group].items():
+        for date, slots in data[appointment_group_name].items():
             daywise_slots_data += f"<li><b>{date}</b>: {slots}</li>"
         daywise_slots_data += "</ul>"
 
-        email_addresses = [doc.email_address_to_send]
-        for member in doc.members:
+        # Build email addresses list using cached user emails
+        email_addresses = [ag.email_address_to_send]
+        group_members = members_by_group.get(appointment_group_name, [])
+        for member in group_members:
             if member.is_mandatory:
-                user = frappe.get_doc("User", member.user)
-                if user.email:
-                    email_addresses.append(user.email)
+                user_email = user_emails.get(member.user)
+                if user_email:
+                    email_addresses.append(user_email)
 
+        # Load the document only for send_email_template_mail which needs a doc object
+        doc = frappe.get_doc("Appointment Group", appointment_group_name)
         send_email_template_mail(
             doc,
             {
@@ -117,7 +175,7 @@ def send_availability_email(data):
                 "appointment_group_url": appointment_group_url,
                 "min_threshold": min_slot_threshold,
             },
-            doc.availability_email_template,
+            ag.availability_email_template,
             email_addresses,
             None,
         )
