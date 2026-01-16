@@ -69,7 +69,7 @@ class AppointmentGroup(Document):
 
 
 def _get_time_slots_for_day(
-    appointment_group: object, date: str, user_timezone_offset: str, time_slot_cache_dict: dict = None
+    appointment_group: object, date: str, user_timezone_offset: str, time_slot_cache_dict: dict = None, leave_holiday_cache: dict = None
 ) -> object:
     try:
         datetime_today = get_datetime(date)
@@ -80,13 +80,13 @@ def _get_time_slots_for_day(
 
         if int(user_timezone_offset) > 0:
             all_time_slots_global_object = {
-                "yesterday": get_time_slots_for_given_date(appointment_group, datetime_yesterday, time_slot_cache_dict),
-                "today": get_time_slots_for_given_date(appointment_group, datetime_today, time_slot_cache_dict),
+                "yesterday": get_time_slots_for_given_date(appointment_group, datetime_yesterday, time_slot_cache_dict, leave_holiday_cache),
+                "today": get_time_slots_for_given_date(appointment_group, datetime_today, time_slot_cache_dict, leave_holiday_cache),
             }
         else:
             all_time_slots_global_object = {
-                "today": get_time_slots_for_given_date(appointment_group, datetime_today, time_slot_cache_dict),
-                "tomorrow": get_time_slots_for_given_date(appointment_group, datetime_tomorrow, time_slot_cache_dict),
+                "today": get_time_slots_for_given_date(appointment_group, datetime_today, time_slot_cache_dict, leave_holiday_cache),
+                "tomorrow": get_time_slots_for_given_date(appointment_group, datetime_tomorrow, time_slot_cache_dict, leave_holiday_cache),
             }
 
         user_time_slots = get_user_time_slots(all_time_slots_global_object, date, user_timezone_offset)
@@ -177,17 +177,17 @@ def hours_to_time_slot(start_time, user_timezone_offset, current_time=None) -> i
     return int((start_time - current_time).total_seconds() / 3600)
 
 
-def get_time_slots_for_given_date(appointment_group: object, datetime: datetime, time_slot_cache_dict=None):
+def get_time_slots_for_given_date(appointment_group: object, datetime: datetime, time_slot_cache_dict=None, leave_holiday_cache=None):
     if time_slot_cache_dict is not None:
         if datetime in time_slot_cache_dict:
             return time_slot_cache_dict[datetime]
-    data = _get_time_slots_for_given_date(appointment_group, datetime)
+    data = _get_time_slots_for_given_date(appointment_group, datetime, leave_holiday_cache)
     if time_slot_cache_dict is not None:
         time_slot_cache_dict[datetime] = data
     return data
 
 
-def _get_time_slots_for_given_date(appointment_group: object, datetime: datetime):
+def _get_time_slots_for_given_date(appointment_group: object, datetime: datetime, leave_holiday_cache=None):
     date = datetime.date()
     weekday = get_weekday(datetime)
 
@@ -197,7 +197,7 @@ def _get_time_slots_for_given_date(appointment_group: object, datetime: datetime
 
     date_validation_obj["available_days"] = weekend_availability["available_days"]
 
-    if is_member_on_leave_or_is_holiday(appointment_group, date):
+    if is_member_on_leave_or_is_holiday_cached(appointment_group, date, leave_holiday_cache):
         return get_response_body(
             avaiable_time_slot_for_day=[],
             appointment_group=appointment_group,
@@ -679,6 +679,145 @@ def get_max_min_time_slot(appointmen_time_slots: list, max_start_time: str, min_
         min_end_time = min(min_end_time, format_time(get_time_str(appointmen_time_slot.end_time)))
 
     return [max_start_time, min_end_time]
+
+
+def get_member_leave_holiday_data(appointment_group, start_date, end_date):
+    """
+    Batch fetch all leave and holiday data for date range.
+
+    Args:
+    appointment_group (object): Appointment group containing members
+    start_date (datetime): Start date of the range
+    end_date (datetime): End date of the range
+
+    Returns:
+    dict: Dictionary containing employee map, leave dates set, and holiday dates set
+    """
+    installed_apps = frappe.get_installed_apps()
+    if "erpnext" not in installed_apps or "hrms" not in installed_apps:
+        return None
+
+    mandatory_members = [m for m in appointment_group.members if m.is_mandatory]
+    member_emails = [m.user for m in mandatory_members]
+
+    if not member_emails:
+        return None
+
+    # Batch fetch employees
+    employees = frappe.get_all(
+        "Employee",
+        filters={"company_email": ["in", member_emails]},
+        fields=["name", "company_email", "holiday_list"]
+    )
+
+    if not employees:
+        return {"employees": {}, "leave_dates": set(), "holiday_dates": set()}
+
+    employee_map = {e.company_email: e for e in employees}
+    employee_names = [e.name for e in employees]
+
+    # Batch fetch all leaves for date range
+    # Convert dates to strings if they're datetime objects
+    if hasattr(start_date, 'strftime'):
+        start_str = start_date.strftime("%Y-%m-%d")
+    else:
+        start_str = start_date
+    
+    if hasattr(end_date, 'strftime'):
+        end_str = end_date.strftime("%Y-%m-%d")
+    else:
+        end_str = end_date
+
+    leaves = frappe.get_all(
+        "Leave Application",
+        filters={
+            "employee": ["in", employee_names],
+            "from_date": ["<=", end_str],
+            "to_date": [">=", start_str],
+            "status": "Approved",
+        },
+        fields=["employee", "from_date", "to_date"]
+    )
+
+    # Build set of (employee, date) tuples for quick lookup
+    leave_dates = set()
+    for leave in leaves:
+        current = leave.from_date
+        to_date = leave.to_date
+        while current <= to_date:
+            leave_dates.add((leave.employee, current.strftime("%Y-%m-%d")))
+            current = frappe.utils.add_days(current, 1)
+
+    # Batch fetch holidays from all relevant holiday lists
+    holiday_lists = list(set(e.holiday_list for e in employees if e.holiday_list))
+
+    holiday_dates = set()
+    if holiday_lists:
+        holidays = frappe.get_all(
+            "Holiday",  # Child table
+            filters={
+                "parent": ["in", holiday_lists],
+                "holiday_date": ["between", [start_str, end_str]]
+            },
+            fields=["parent", "holiday_date"]
+        )
+
+        # Create a dictionary mapping holiday_list to holidays for O(N+M) complexity
+        holiday_list_map = {}
+        for h in holidays:
+            if h.parent not in holiday_list_map:
+                holiday_list_map[h.parent] = []
+            holiday_list_map[h.parent].append(h.holiday_date)
+        
+        # Map holidays to employees
+        for emp in employees:
+            if emp.holiday_list and emp.holiday_list in holiday_list_map:
+                for holiday_date in holiday_list_map[emp.holiday_list]:
+                    holiday_dates.add((emp.name, holiday_date.strftime("%Y-%m-%d")))
+
+    return {
+        "employees": employee_map,
+        "leave_dates": leave_dates,
+        "holiday_dates": holiday_dates
+    }
+
+
+def is_member_on_leave_or_is_holiday_cached(appointment_group, date, cache):
+    """
+    Check leave/holiday using pre-fetched cached data.
+
+    Args:
+    appointment_group (object): Appointment group containing members
+    date (datetime): Date to check
+    cache (dict): Pre-fetched cache containing employee, leave, and holiday data
+
+    Returns:
+    bool: True if the date is invalid due to mandatory member leaves or holiday, False otherwise
+    """
+    if cache is None:
+        # Fall back to the original function if no cache is provided
+        return is_member_on_leave_or_is_holiday(appointment_group, date)
+
+    date_str = date.strftime("%Y-%m-%d")
+
+    for member in appointment_group.members:
+        if not member.is_mandatory:
+            continue
+
+        employee = cache["employees"].get(member.user)
+        if not employee:
+            # Employee not found - consistent with original behavior (return False)
+            # This means we can't check for leaves/holidays, so we don't block the slot
+            return False
+
+        # O(1) lookup instead of query
+        if (employee.name, date_str) in cache["leave_dates"]:
+            return True
+
+        if (employee.name, date_str) in cache["holiday_dates"]:
+            return True
+
+    return False
 
 
 def is_member_on_leave_or_is_holiday(appointment_group, date):
