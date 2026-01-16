@@ -273,6 +273,32 @@ def _get_time_slots_for_given_date(appointment_group: object, datetime: datetime
     )
 
 
+def get_member_availability_cached(member_user):
+    """Get member availability with request-level caching.
+
+    Args:
+        member_user (str): User ID for the member
+
+    Returns:
+        dict: Cached availability data containing days and time_slots
+    """
+    cache_key = f"member_availability_{member_user}"
+
+    if not hasattr(frappe.local, 'appointment_cache'):
+        frappe.local.appointment_cache = {}
+
+    if cache_key not in frappe.local.appointment_cache:
+        availability = frappe.get_doc("User Appointment Availability", member_user)
+        # Cache both days and time_slots for potential reuse in other functions
+        # that may need more detailed availability information
+        frappe.local.appointment_cache[cache_key] = {
+            'days': [day.day for day in availability.appointment_time_slot],
+            'time_slots': availability.appointment_time_slot
+        }
+
+    return frappe.local.appointment_cache[cache_key]
+
+
 def check_availability(date_validation_obj: object, weekday: str, appointment_group: object) -> object:
     """
     Check if data is valid based on weekdays in user availability.
@@ -293,8 +319,8 @@ def check_availability(date_validation_obj: object, weekday: str, appointment_gr
     available_days = set(ALL_DAYS)
 
     for member in mandatory_members:
-        availability = frappe.get_doc("User Appointment Availability", member.user)
-        user_available_days = [day.day for day in availability.appointment_time_slot]
+        cached = get_member_availability_cached(member.user)
+        user_available_days = cached['days']
         available_days = available_days.intersection(set(user_available_days))
 
     res["available_days"] = available_days
