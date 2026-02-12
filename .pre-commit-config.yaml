@@ -39,7 +39,7 @@ repos:
         always_run: true
 
   - repo: https://github.com/semgrep/pre-commit
-    rev: 'v1.91.0'
+    rev: 'v1.150.0'
     hooks:
       - id: semgrep-ci
         args: ['--config', './.frappe-semgrep/rules', '--config','r/python.lang.correctness','--error', '--skip-unknown-extensions', '--metrics','off']
