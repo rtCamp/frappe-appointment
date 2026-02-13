@@ -20,7 +20,7 @@ class GoogleCalendarOverride(GoogleCalendar):
 
 
 @frappe.whitelist()
-def google_callback(code: str = None):
+def google_callback(code=None):
     """
     Authorization code is sent to callback as per the API configuration
     """

@@ -461,16 +461,16 @@ def send_meet_email(doc, appointment_group, user_calendar, metadata, ics_event_d
         frappe.log_error(title="Appointment time slot book response email error " + doc.name)
 
 
-@frappe.whitelist(allow_guest=True)  # nosemgrep
+@frappe.whitelist(allow_guest=True)
 def create_event_for_appointment_group(
     appointment_group_id: str,
     date: str,
     start_time: str,
     end_time: str,
     user_timezone_offset: str,
-    event_participants: list,
-    success_message: str = "",
-    return_event_id: bool = False,
+    event_participants,
+    success_message="",
+    return_event_id=False,
     **args,
 ):
     """API Endpoint to Create the Event
@@ -663,7 +663,7 @@ def _create_event_for_appointment_group(
     return frappe.msgprint(_("Event has been created"))
 
 
-@frappe.whitelist(allow_guest=True)  # nosemgrep
+@frappe.whitelist(allow_guest=True)
 def check_one_time_schedule(
     appointment_group_id: str,
     **args,
@@ -684,7 +684,7 @@ def check_one_time_schedule(
 
 
 @frappe.whitelist()
-def get_events_from_doc(doctype: str, docname: str, past_events: bool = False):
+def get_events_from_doc(doctype, docname, past_events=False):
     """Get the event details from the given doc
 
     Args:
@@ -780,7 +780,7 @@ def get_events_from_doc(doctype: str, docname: str, past_events: bool = False):
 
 
 @frappe.whitelist()
-def get_personal_meetings(user: str, past_events: bool = False):
+def get_personal_meetings(user, past_events=False):
     """Get the personal meeting details from the given doc
 
     Args:

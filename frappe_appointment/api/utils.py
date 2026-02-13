@@ -1,7 +1,7 @@
 import frappe
 
 
-@frappe.whitelist()  # nosemgrep
+@frappe.whitelist()
 def check_google_calendar_setup(user):
     user_appointment_availability = None
     try:
