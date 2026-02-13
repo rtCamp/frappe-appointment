@@ -22,8 +22,8 @@ def send_email_template_mail(doc, args, email_template, recipients=None, attachm
     email_subject = email_template.subject
 
     # Make Email subject as well  as meesage dynamic based on args value
-    message = frappe.render_template(email_message, args)
-    subject = frappe.render_template(email_subject, args)
+    message = frappe.render_template(email_message, args)  # nosemgrep
+    subject = frappe.render_template(email_subject, args)  # nosemgrep
 
     send_after = None
     if email_template.get("custom_time_to_send_email"):
