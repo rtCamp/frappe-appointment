@@ -8,3 +8,4 @@ frappe_appointment.patches.v0_1.change_fieldtype_to_duration
 frappe_appointment.patches.v0_1.add_appointment_manager_role
 frappe_appointment.patches.v0_1.add_event_creator
 frappe_appointment.patches.v0_1.update_route_appointment
+frappe_appointment.patches.v0_1.add_default_email_templates
