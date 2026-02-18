@@ -21,7 +21,7 @@ jobs:
       run:
         shell: bash
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       # Check for file changes based on path
       - name: Check if frontend changed
@@ -44,7 +44,7 @@ jobs:
       # npm dependencies vulnerability check
       - name: Install Node
         if: steps.changed-frontend.outputs.frontend_changed == 'true'
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: lts/*
       - name: Run npm audit
