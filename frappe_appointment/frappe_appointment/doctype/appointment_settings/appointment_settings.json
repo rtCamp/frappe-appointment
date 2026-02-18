@@ -30,14 +30,14 @@
    "label": "Default Email Templates"
   },
   {
-   "default": "[Default] Appointment Scheduled",
+   "default": "",
    "fieldname": "default_personal_email_template",
    "fieldtype": "Link",
    "label": "Personal Meeting",
    "options": "Email Template"
   },
   {
-   "default": "[Default] Appointment Scheduled",
+   "default": "",
    "fieldname": "default_group_email_template",
    "fieldtype": "Link",
    "label": "Group Meeting",
@@ -48,7 +48,7 @@
    "fieldtype": "Column Break"
   },
   {
-   "default": "[Default] Appointment Group Availability",
+   "default": "",
    "fieldname": "default_availability_alerts_email_template",
    "fieldtype": "Link",
    "label": "Availability Alerts",
@@ -106,7 +106,7 @@
    "label": "Email Template for Organisers"
   },
   {
-   "default": "[Default] Appointment Scheduled - Organisers",
+   "default": "",
    "fieldname": "personal_organisers_email_template",
    "fieldtype": "Link",
    "label": "Personal Organisers Email Template",
