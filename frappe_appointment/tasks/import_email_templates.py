@@ -52,7 +52,7 @@ EMAIL_TEMPLATES = [
 ]
 
 
-def import_email_templates():
+def import_email_templates_and_set_default_settings():
     for email_template in EMAIL_TEMPLATES:
         try:
             frappe.get_doc(email_template).insert(ignore_permissions=True)
@@ -62,3 +62,20 @@ def import_email_templates():
             print(f"Error importing email template {email_template['name']}: {e}")
             continue
     print("Email Templates Imported")
+    update_settings_with_default_templates()
+
+
+def update_settings_with_default_templates():
+    try:
+        frappe.db.set_single_value(
+            "Appointment Settings",
+            {
+                "default_personal_email_template": "[Default] Appointment Scheduled",
+                "default_group_email_template": "[Default] Appointment Scheduled",
+                "default_availability_alerts_email_template": "[Default] Appointment Group Availability",
+                "personal_organisers_email_template": "[Default] Appointment Scheduled - Organisers",
+            },
+        )
+        print("Appointment Settings updated with default email templates.")
+    except Exception as e:
+        print(f"Error updating Appointment Settings with default templates: {e}")
