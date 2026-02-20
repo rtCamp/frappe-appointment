@@ -10,6 +10,7 @@ dynamic = ["version"]
 dependencies = [
     # "frappe~=15.0.0" # Installed and managed by bench.
     "ics~=0.7.2",
+    "tatsu==5.16.0"
 ]
 
 [build-system]
