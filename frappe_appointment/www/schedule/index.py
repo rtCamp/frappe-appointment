@@ -5,8 +5,8 @@ import frappe
 
 no_cache = 1
 
-SCRIPT_TAG_PATTERN = re.compile(r"\<script[^<]*\</script\>")
-CLOSING_SCRIPT_TAG_PATTERN = re.compile(r"</script\>")
+SCRIPT_TAG_PATTERN = re.compile(r"<script\b[^>]*>.*?</script\b[^>]*>", flags=re.IGNORECASE | re.DOTALL)
+CLOSING_SCRIPT_TAG_PATTERN = re.compile(r"</script\b[^>]*>", flags=re.IGNORECASE)
 
 
 def get_context(context):

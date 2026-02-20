@@ -2,7 +2,7 @@ app_name = "frappe_appointment"
 app_title = "Frappe Appointment"
 app_publisher = "rtCamp"
 app_description = "The appointment scheduling app with team support in Frappe."
-app_email = "sys@rtcamp.com"
+app_email = "frappe@rtcamp.com"
 app_license = "GNU AFFERO GENERAL PUBLIC LICENSE (v3)"
 # required_apps = []
 
@@ -23,7 +23,7 @@ app_include_js = [
     "/assets/frappe_appointment/js/duration_override.js",
 ]
 
-before_install = "frappe_appointment.tasks.import_email_templates.import_email_templates"
+after_install = "frappe_appointment.tasks.import_email_templates.import_email_templates_and_set_default_settings"
 
 after_sync = [
     "frappe_appointment.tasks.setup_erpnext_fields.setup_erpnext_fields",
@@ -33,7 +33,6 @@ after_sync = [
 after_migrate = [
     "frappe_appointment.tasks.setup_erpnext_fields.setup_erpnext_fields",
     "frappe_appointment.tasks.import_form_tour_google_calendar.import_doc",
-    "frappe_appointment.tasks.import_email_templates.import_email_templates",
 ]
 
 # include js, css files in header of web template
