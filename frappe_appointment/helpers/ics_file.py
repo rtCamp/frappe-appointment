@@ -1,7 +1,7 @@
 import uuid
 
 import frappe
-from frappe.utils.data import get_datetime
+from frappe.utils.data import get_datetime, now_datetime
 
 from frappe_appointment.helpers.utils import convert_datetime_to_utc
 
@@ -18,7 +18,26 @@ def escape_ics_text(value):
 
 
 def format_ics_datetime(value):
+    """Return RFC5545 datetime string for a UTC datetime object."""
     return value.strftime("%Y%m%dT%H%M%SZ")
+
+
+def fold_ics_line(line, limit=75):
+    if len(line) <= limit:
+        return line
+
+    folded_lines = [line[:limit]]
+    remaining = line[limit:]
+    while remaining:
+        folded_lines.append(f" {remaining[: limit - 1]}")
+        remaining = remaining[limit - 1 :]
+
+    return "\r\n".join(folded_lines)
+
+
+def build_organizer_line(user_name, user_email):
+    safe_email = (user_email or "").replace("\r", "").replace("\n", "").strip()
+    return f"ORGANIZER;CN={escape_ics_text(user_name)}:MAILTO:{safe_email}"
 
 
 def add_ics_file_in_attachment(event, ics_event_description=None):
@@ -27,16 +46,19 @@ def add_ics_file_in_attachment(event, ics_event_description=None):
     event_description = escape_ics_text(ics_event_description or event.description)
     event_start = format_ics_datetime(convert_datetime_to_utc(get_datetime(event.starts_on)))
     event_end = format_ics_datetime(convert_datetime_to_utc(get_datetime(event.ends_on)))
+    event_timestamp = format_ics_datetime(convert_datetime_to_utc(now_datetime()))
 
     organizer = None
     if event.appointment_group and event.appointment_group.event_organizer:
-        user_name, user_email = frappe.db.get_value(
+        user_details = frappe.db.get_value(
             "User", event.appointment_group.event_organizer, ["full_name", "email"]
         )
-        organizer = f"ORGANIZER;CN={escape_ics_text(user_name)}:MAILTO:{user_email}"
+        if user_details:
+            organizer = build_organizer_line(*user_details)
     elif event.user_calendar and event.user_calendar.user:
-        user_name, user_email = frappe.db.get_value("User", event.user_calendar.user, ["full_name", "email"])
-        organizer = f"ORGANIZER;CN={escape_ics_text(user_name)}:MAILTO:{user_email}"
+        user_details = frappe.db.get_value("User", event.user_calendar.user, ["full_name", "email"])
+        if user_details:
+            organizer = build_organizer_line(*user_details)
 
     ics_lines = [
         "BEGIN:VCALENDAR",
@@ -45,7 +67,7 @@ def add_ics_file_in_attachment(event, ics_event_description=None):
         "CALSCALE:GREGORIAN",
         "BEGIN:VEVENT",
         f"UID:{event_uid}",
-        f"DTSTAMP:{event_start}",
+        f"DTSTAMP:{event_timestamp}",
         f"DTSTART:{event_start}",
         f"DTEND:{event_end}",
         f"SUMMARY:{event_subject}",
@@ -54,7 +76,7 @@ def add_ics_file_in_attachment(event, ics_event_description=None):
     if organizer:
         ics_lines.append(organizer)
     ics_lines.extend(["END:VEVENT", "END:VCALENDAR"])
-    ics_content = "\r\n".join(ics_lines) + "\r\n"
+    ics_content = "\r\n".join(fold_ics_line(line) for line in ics_lines) + "\r\n"
 
     attached_file = frappe.get_doc(
         {
