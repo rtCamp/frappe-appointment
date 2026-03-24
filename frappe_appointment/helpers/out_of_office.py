@@ -30,6 +30,7 @@ def create_out_of_office_google_calander_event(
             "end": date_object.get("end"),
             "eventType": "outOfOffice",  # Note this will only work for organazation email addresses
             "summary": "Out of Office",
+            "visibility": "public",
         }
 
         event = google_calendar.events().insert(calendarId="primary", body=event).execute()
