@@ -5,7 +5,10 @@ import frappe
 import frappe.utils
 import pytz
 
-from frappe_appointment.frappe_appointment.doctype.appointment_group.appointment_group import _get_time_slots_for_day
+from frappe_appointment.frappe_appointment.doctype.appointment_group.appointment_group import (
+    _get_time_slots_for_day,
+    get_member_leave_holiday_data,
+)
 from frappe_appointment.helpers.overrides import add_response_code
 from frappe_appointment.helpers.utils import duration_to_string
 from frappe_appointment.overrides.event_override import _create_event_for_appointment_group
@@ -100,6 +103,11 @@ def get_time_slots(
             "available_days": [],
         }
 
+        # Initialize leave/holiday cache for the date range
+        start_datetime = frappe.utils.get_datetime(start_date)
+        end_datetime = frappe.utils.get_datetime(end_date)
+        leave_holiday_cache = get_member_leave_holiday_data(appointment_group, start_datetime, end_datetime)
+
         date = start_date
         cache_dict = {}
         while True:
@@ -108,7 +116,7 @@ def get_time_slots(
             if datetime > enddatetime:
                 break
             _data = _get_time_slots_for_day(
-                appointment_group, date, user_timezone_offset, time_slot_cache_dict=cache_dict
+                appointment_group, date, user_timezone_offset, time_slot_cache_dict=cache_dict, leave_holiday_cache=leave_holiday_cache
             )
             if _data["is_invalid_date"]:
                 date = _data["next_valid_date"]
