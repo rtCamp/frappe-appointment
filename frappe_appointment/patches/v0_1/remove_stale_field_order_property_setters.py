@@ -16,7 +16,6 @@ def execute():
     for r in rows:
         frappe.delete_doc("Property Setter", r["name"], force=True, ignore_permissions=True)
         affected.add(r["doc_type"])
-    frappe.db.commit()
     for dt in affected:
         frappe.clear_cache(doctype=dt)
     print(f"Removed {len(rows)} stale field_order Property Setter(s) across {len(affected)} doctype(s).")
