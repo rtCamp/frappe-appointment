@@ -2,7 +2,7 @@ import frappe
 
 
 @frappe.whitelist()
-def check_google_calendar_setup(user):
+def check_google_calendar_setup(user: str):
     user_appointment_availability = None
     try:
         user_appointment_availability = frappe.get_doc("User Appointment Availability", {"user": user}).name
