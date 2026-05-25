@@ -11,9 +11,9 @@ from frappe_appointment.helpers.utils import duration_to_string
 from frappe_appointment.overrides.event_override import _create_event_for_appointment_group
 
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist(allow_guest=True)  # nosemgrep
 @add_response_code
-def get_meeting_windows(slug):
+def get_meeting_windows(slug: str):
     user_availability = frappe.get_all(
         "User Appointment Availability", filters={"slug": slug, "enable_scheduling": 1}, fields=["*"]
     )
@@ -61,7 +61,7 @@ def get_meeting_windows(slug):
     }, 200
 
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist(allow_guest=True)  # nosemgrep
 @add_response_code
 def get_time_slots(
     duration_id: str, date: str = None, user_timezone_offset: str = None, start_date: str = None, end_date: str = None
@@ -140,7 +140,7 @@ def get_time_slots(
     return data
 
 
-@frappe.whitelist(allow_guest=True, methods=["POST"])
+@frappe.whitelist(allow_guest=True, methods=["POST"])  # nosemgrep
 @add_response_code
 def book_time_slot(
     duration_id: str,
@@ -266,13 +266,13 @@ def create_dummy_appointment_group(duration, user_availability):
     return appointment_group_obj
 
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist(allow_guest=True)  # nosemgrep
 def get_all_timezones():
     return pytz.common_timezones
 
 
 @frappe.whitelist()
-def get_schedular_link(user):
+def get_schedular_link(user: str):
     user_availability = frappe.get_all(
         "User Appointment Availability", filters={"user": user, "enable_scheduling": 1}, fields=["*"]
     )

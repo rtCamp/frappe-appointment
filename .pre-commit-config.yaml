@@ -39,7 +39,7 @@ repos:
         always_run: true
 
   - repo: https://github.com/semgrep/pre-commit
-    rev: 'v1.150.0'
+    rev: 'v1.163.0'
     hooks:
       - id: semgrep-ci
         args: ['--config', './.frappe-semgrep/rules', '--config','r/python.lang.correctness','--error', '--skip-unknown-extensions', '--metrics','off']
@@ -61,7 +61,7 @@ repos:
 
 
   - repo: https://github.com/pre-commit/mirrors-eslint
-    rev: v8.44.0
+    rev: v10.4.0
     hooks:
       - id: eslint
         types_or: [javascript]
