@@ -4,7 +4,7 @@ authors = [
     { name = "rtCamp", email = "frappe@rtcamp.com"}
 ]
 description = "The appointment scheduling app with team support in Frappe."
-requires-python = ">=3.10"
+requires-python = ">=3.14,<3.15"
 readme = "README.md"
 dynamic = ["version"]
 dependencies = [
@@ -29,7 +29,7 @@ line-length = 120
 
 [tool.ruff]
 line-length = 120
-target-version = "py310"
+target-version = "py314"
 exclude = [
     "**/doctype/*/boilerplate/*.py" # boilerplate are template strings, not valid python
 ]
