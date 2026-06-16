@@ -41,7 +41,7 @@ def send_email_template_mail(doc, args, email_template, recipients=None, attachm
             "recipients": recipients[0],
             "reference_doctype": doc.doctype,
             "reference_name": doc.name,
-            "email_template": email_template.name,
+            "email_template": email_template.name if email_template else None,
             "message_id": get_string_between("<", get_message_id(), ">"),
             "communication_type": "Communication",
             "has_attachment": 1 if attachments else 0,
