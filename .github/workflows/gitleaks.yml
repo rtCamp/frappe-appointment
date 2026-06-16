@@ -1,0 +1,26 @@
+name: Gitleaks
+
+on:
+  push:
+    branches:
+      - version-16
+      - version-16-hotfix
+  pull_request:
+    branches:
+      - version-16
+      - version-16-hotfix
+
+jobs:
+  gitleaks:
+    name: Gitleaks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@v3
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
