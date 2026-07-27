@@ -58,7 +58,7 @@ def send_email_template_mail(doc, args, email_template, recipients=None, attachm
 
         for attachment in attachments:
             # _file is function-local here, not a module-level global; the multitenancy rule is a false positive
-            # nosemgrep
+            # nosemgrep: frappe-breaks-multitenancy
             _file = frappe.get_doc("File", attachment["fid"], ignore_permissions=True)
             fcontent = _file.get_content()
             new_attachments.append({"fname": _file.file_name, "fcontent": fcontent})
