@@ -23,7 +23,7 @@ jobs:
       - name: fix tar dependency in alpine container image
         run: |
           apk --no-cache add tar nodejs npm python3 git bash py3-pip
-          apk --no-cache add prettier --repository=https://dl-cdn.alpinelinux.org/alpine/edge/testing
+          npm install -g prettier
           # check python modules installed versions
           python3 -m pip freeze --local
           pip install pre-commit --break-system-packages
