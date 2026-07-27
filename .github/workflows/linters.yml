@@ -15,7 +15,7 @@ jobs:
     name: "Frappe Linter"
     runs-on: ubuntu-latest
     container:
-      image: alpine:latest # latest used here for simplicity, not recommended
+      image: alpine:3.20 # pinned: alpine:latest moved to an npm that blocks the git-based prettier hook install
     defaults:
       run:
         shell: sh
