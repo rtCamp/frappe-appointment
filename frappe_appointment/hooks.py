@@ -206,7 +206,7 @@ scheduler_events = {
 # Testing
 # -------
 
-# before_tests = "frappe_appointment.install.before_tests"
+before_tests = "frappe_appointment.tests.before_tests"
 
 # Overriding Methods
 # ------------------------------
