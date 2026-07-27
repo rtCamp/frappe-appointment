@@ -53,7 +53,7 @@ class AppointmentGroup(Document):
                 return frappe.throw(
                     frappe._(f"Please set Zoom Account ID, Client ID and Secret in {appointment_settings_link}.")
                 )
-            g_calendar = frappe.get_doc("Google Calendar", self.event_creator, "Google Calendar")
+            g_calendar = frappe.get_doc("Google Calendar", self.event_creator)
             if not g_calendar.custom_zoom_user_email:
                 g_calendar_link = frappe.utils.get_link_to_form("Google Calendar", self.event_creator)
                 return frappe.throw(frappe._(f"Please set Zoom User Email in {g_calendar_link}."))
