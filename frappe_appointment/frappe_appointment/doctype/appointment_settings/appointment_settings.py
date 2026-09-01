@@ -6,7 +6,7 @@ from frappe.model.document import Document
 
 
 class AppointmentSettings(Document):
-	pass
+    pass
 
 
 @frappe.whitelist()

@@ -27,7 +27,7 @@ frappe.ui.form.on("User Appointment Availability", {
       frm.set_df_property(
         "slug",
         "description",
-        "<p class='red'>Slug can only contain lowercase letters, numbers, underscores (_) and hyphens (-), and cannot start or end with a hyphen.</p>"
+        "<p class='red'>Slug can only contain lowercase letters, numbers, underscores (_) and hyphens (-), and cannot start or end with a hyphen.</p>",
       );
     } else {
       frappe.call({
@@ -39,12 +39,16 @@ frappe.ui.form.on("User Appointment Availability", {
         callback: function (r) {
           if (r.message) {
             if (r.message.is_available) {
-              frm.set_df_property("slug", "description", "<p class='green'>Available</p>");
+              frm.set_df_property(
+                "slug",
+                "description",
+                "<p class='green'>Available</p>",
+              );
             } else if (r.message.suggested_slug) {
               frm.set_df_property(
                 "slug",
                 "description",
-                `<p class='red'>This slug is not available. You can use <a class="desc_link" id="suggested_slug">${r.message.suggested_slug}</a> instead.</p>`
+                `<p class='red'>This slug is not available. You can use <a class="desc_link" id="suggested_slug">${r.message.suggested_slug}</a> instead.</p>`,
               );
 
               $("#suggested_slug").unbind("click"); // Prevent multiple click events
@@ -55,7 +59,7 @@ frappe.ui.form.on("User Appointment Availability", {
               frm.set_df_property(
                 "slug",
                 "description",
-                "<p class='red'>This slug is not available. Please choose another.</p>"
+                "<p class='red'>This slug is not available. Please choose another.</p>",
               );
             }
           }
