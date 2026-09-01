@@ -48,6 +48,7 @@ repos:
     rev: v4.0.0-alpha.8
     hooks:
       - id: prettier
+        language_version: system
         types_or: [javascript, vue, scss]
         # Ignore any files that might contain jinja / bundles
         exclude: |
@@ -64,6 +65,7 @@ repos:
     rev: v10.4.0
     hooks:
       - id: eslint
+        language_version: system
         types_or: [javascript]
         args: ['--quiet']
         # Ignore any files that might contain jinja / bundles
