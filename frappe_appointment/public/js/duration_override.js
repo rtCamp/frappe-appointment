@@ -40,7 +40,10 @@ frappe.ui.form.ControlDuration = class extends frappe.ui.form.ControlDuration {
 
     this.$wrapper.find(".duration-input").blur((e) => {
       // if blur event is due to clicking on the picker, or other input box, don't hide the picker.
-      if (e.relatedTarget && e.relatedTarget.classList.contains("duration-input")) {
+      if (
+        e.relatedTarget &&
+        e.relatedTarget.classList.contains("duration-input")
+      ) {
         return;
       }
       this.$picker.hide();

@@ -1,15 +1,18 @@
 frappe.ui.form.on("Appointment Group", {
   setup: function (frm) {
-    frappe.realtime.on("appointment_group_availability_updated", function (data) {
-      frappe.show_alert(
-        {
-          message: __("Slots availability updated"),
-          indicator: "green",
-        },
-        5
-      );
-      frm.reload_doc();
-    });
+    frappe.realtime.on(
+      "appointment_group_availability_updated",
+      function (data) {
+        frappe.show_alert(
+          {
+            message: __("Slots availability updated"),
+            indicator: "green",
+          },
+          5,
+        );
+        frm.reload_doc();
+      },
+    );
   },
   refresh: function (frm) {
     if (frm.doc.__islocal) {
@@ -21,7 +24,10 @@ frappe.ui.form.on("Appointment Group", {
             frm.set_value("response_email_template", r.message.group);
           }
           if (r.message?.availability) {
-            frm.set_value("availability_email_template", r.message.availability);
+            frm.set_value(
+              "availability_email_template",
+              r.message.availability,
+            );
           }
         },
       });
@@ -34,7 +40,9 @@ frappe.ui.form.on("Appointment Group", {
         update_slots_availability(frm);
       });
     }
-    frm.sidebar.add_user_action(__("See on Website")).attr("href", "/schedule/gr/" + frm.doc.name);
+    frm.sidebar
+      .add_user_action(__("See on Website"))
+      .attr("href", "/schedule/gr/" + frm.doc.name);
   },
   onload: function (frm) {
     if (frm.doc.__islocal) {
@@ -50,10 +58,11 @@ function update_slots_availability(frm) {
       message: __("Updating slots availability in background"),
       indicator: "blue",
     },
-    5
+    5,
   );
   frappe.call({
-    method: "frappe_appointment.tasks.verify_availability.update_availability_status_for_appointment_group",
+    method:
+      "frappe_appointment.tasks.verify_availability.update_availability_status_for_appointment_group",
     args: {
       appointment_group: frm.doc.name,
     },
@@ -77,7 +86,9 @@ function addAvailableSlotsInfo(frm) {
     });
   }
 
-  let table = $(`<table class="table table-bordered small" style="white-space: nowrap;"></table>`);
+  let table = $(
+    `<table class="table table-bordered small" style="white-space: nowrap;"></table>`,
+  );
   let thead = $(`<thead></thead>`).appendTo(table);
   let tbody = $(`<tbody></tbody>`).appendTo(table);
   let tr = $(`<tr></tr>`).appendTo(thead);
@@ -97,5 +108,9 @@ function addAvailableSlotsInfo(frm) {
   html += "<div class='available-slots-table overflow-x-scroll'>";
   html += table.prop("outerHTML");
   html += "</div>";
-  frm.dashboard.add_section(html, __("Available Slots"), "available-slots-section");
+  frm.dashboard.add_section(
+    html,
+    __("Available Slots"),
+    "available-slots-section",
+  );
 }
