@@ -10,6 +10,7 @@ from frappe.desk.doctype.event.event import Event
 from frappe.integrations.doctype.google_calendar.google_calendar import (
     get_google_calendar_object,
 )
+from frappe.rate_limiter import rate_limit
 from frappe.twofactor import decrypt, encrypt
 from frappe.utils import get_datetime, now
 
@@ -289,7 +290,7 @@ class EventOverride(Event):
 
         members = self.appointment_group.members
 
-        google_calendar_api_obj, account = get_google_calendar_object(self.appointment_group.event_creator)
+        _, account = get_google_calendar_object(self.appointment_group.event_creator)
 
         idx = len(self.event_participants) + 1
 
@@ -462,6 +463,7 @@ def send_meet_email(doc, appointment_group, user_calendar, metadata, ics_event_d
 
 
 @frappe.whitelist(allow_guest=True)  # nosemgrep
+@rate_limit(limit=20, seconds=60 * 60)
 def create_event_for_appointment_group(
     appointment_group_id: str,
     date: str,
@@ -523,7 +525,7 @@ def _create_event_for_appointment_group(
     personal = event_info.get("personal", False)
 
     if not is_valid_time_slots(appointment_group, date, user_timezone_offset, start_time, end_time):
-        return frappe.throw(_("This slot is not available, please book another slot."))
+        return frappe.throw(frappe._("This slot is not available, please book another slot."))
 
     if not event_info.get("subject"):
         if personal:
@@ -532,18 +534,18 @@ def _create_event_for_appointment_group(
             event_info["subject"] = appointment_group.name + " " + now()
 
     if not vaild_date(get_datetime(date), appointment_group)["is_valid"]:
-        return frappe.throw(_("Invalid Date"))
+        return frappe.throw(frappe._("Invalid Date"))
 
     members = appointment_group.members
 
     if len(members) <= 0:
-        return frappe.throw(_("No Member found"))
+        return frappe.throw(frappe._("No Member found"))
 
-    google_calendar_api_obj, account = get_google_calendar_object(appointment_group.event_creator)
+    _, account = get_google_calendar_object(appointment_group.event_creator)
 
     if reschedule:
         if not appointment_group.allow_rescheduling:
-            return frappe.throw(_("Rescheduling is not allowed for this event."))
+            return frappe.throw(frappe._("Rescheduling is not allowed for this event."))
         minimum_notice_for_reschedule = appointment_group.minimum_notice_for_reschedule  # in hours
         if (
             minimum_notice_for_reschedule
@@ -560,10 +562,10 @@ def _create_event_for_appointment_group(
             event_id = decrypt(event_info.get("event_token"))
         except Exception:
             frappe.clear_last_message()
-            frappe.throw(_("Invalid Event Token. Make sure you are using the correct link."))
+            frappe.throw(frappe._("Invalid Event Token. Make sure you are using the correct link."))
         try:
             if not event_id:
-                return frappe.throw(_("Unable to Update an event"))
+                return frappe.throw(frappe._("Unable to Update an event"))
 
             event = frappe.get_doc("Event", event_id)
 
@@ -586,7 +588,10 @@ def _create_event_for_appointment_group(
             # clear all previous logs
             clear_messages()
 
-            resp = {"message": success_message or _("Event has been updated successfully."), "event_id": event.name}
+            resp = {
+                "message": success_message or frappe._("Event has been updated successfully."),
+                "event_id": event.name,
+            }
 
             resp["meeting_provider"] = event.custom_meeting_provider
             resp["meet_link"] = event.custom_meet_link
@@ -598,9 +603,9 @@ def _create_event_for_appointment_group(
 
             if return_event_id:
                 return resp
-            return frappe.msgprint(_("Event has been updated successfully."))
+            return frappe.msgprint(frappe._("Event has been updated successfully."))
         except Exception:
-            return frappe.throw(_("Unable to Update an event"))
+            return frappe.throw(frappe._("Unable to Update an event"))
 
     calendar_event = {
         "doctype": "Event",
@@ -651,7 +656,7 @@ def _create_event_for_appointment_group(
         return frappe.msgprint(success_message)
 
     if return_event_id:
-        resp = {"message": _("Event has been created"), "event_id": event.name}
+        resp = {"message": frappe._("Event has been created"), "event_id": event.name}
         resp["meeting_provider"] = event.custom_meeting_provider
         resp["meet_link"] = event.custom_meet_link
         if appointment_group.allow_rescheduling:
@@ -660,10 +665,11 @@ def _create_event_for_appointment_group(
         resp["google_calendar_event_url"] = event.custom_google_calendar_event_url
 
         return resp
-    return frappe.msgprint(_("Event has been created"))
+    return frappe.msgprint(frappe._("Event has been created"))
 
 
 @frappe.whitelist(allow_guest=True)  # nosemgrep
+@rate_limit(limit=100, seconds=60 * 60)
 def check_one_time_schedule(
     appointment_group_id: str,
     **args,
@@ -680,7 +686,7 @@ def check_one_time_schedule(
             ],
         )
         if scheduled_events:
-            return frappe.throw(_("Event can be scheduled only once."))
+            return frappe.throw(frappe._("Event can be scheduled only once."))
 
 
 @frappe.whitelist()
@@ -694,7 +700,17 @@ def get_events_from_doc(doctype: str, docname: str, past_events: bool = False):
     Returns:
     dict: Event details
     """
+    if not isinstance(doctype, str) or not isinstance(docname, str):
+        frappe.throw(frappe._("Invalid parameters"), frappe.PermissionError)
+
+    # Authorisation boundary: the caller must be able to read the document they are asking
+    # about. This is the same rule `has_permission` above applies to a single Event, so every
+    # event linked to this document is one the caller is already entitled to read.
+    frappe.has_permission(doctype, "read", doc=docname, throw=True)
+
     events = set()
+    # permissions established at the boundary above; `Event DocType Link` is a child table and
+    # cannot be queried with `get_list` without a parent
     event_doctype_links = frappe.get_all(
         "Event DocType Link",
         filters={"reference_doctype": doctype, "reference_docname": docname},
@@ -793,11 +809,16 @@ def get_personal_meetings(user: str, past_events: bool = False):
     doctype = "User Appointment Availability"
     docname = user
 
+    # `frappe.get_doc` performs no read check of its own -- ask for one explicitly, so a caller
+    # can only read a scheduling calendar they are entitled to (shipped grant is `if_owner`).
     user_availability = frappe.get_doc(doctype, docname)
+    user_availability.check_permission("read")
     if not user_availability:
         return None
 
     events = set()
+    # permissions established at the boundary above; `Event DocType Link` is a child table and
+    # cannot be queried with `get_list` without a parent
     event_doctype_links = frappe.get_all(
         "Event DocType Link",
         filters={"reference_doctype": doctype, "reference_docname": docname},

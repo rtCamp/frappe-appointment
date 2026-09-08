@@ -4,14 +4,19 @@ import re
 import frappe
 import frappe.utils
 import pytz
+from frappe.rate_limiter import rate_limit
 
 from frappe_appointment.frappe_appointment.doctype.appointment_group.appointment_group import _get_time_slots_for_day
 from frappe_appointment.helpers.overrides import add_response_code
 from frappe_appointment.helpers.utils import duration_to_string
 from frappe_appointment.overrides.event_override import _create_event_for_appointment_group
 
+# Upper bound on the caller-supplied `start_date`..`end_date` window walked by `get_time_slots`.
+MAX_RANGE_DAYS = 62
+
 
 @frappe.whitelist(allow_guest=True)  # nosemgrep
+@rate_limit(limit=100, seconds=60 * 60)
 @add_response_code
 def get_meeting_windows(slug: str):
     user_availability = frappe.get_all(
@@ -62,6 +67,7 @@ def get_meeting_windows(slug: str):
 
 
 @frappe.whitelist(allow_guest=True)  # nosemgrep
+@rate_limit(limit=100, seconds=60 * 60)
 @add_response_code
 def get_time_slots(
     duration_id: str, date: str = None, user_timezone_offset: str = None, start_date: str = None, end_date: str = None
@@ -72,10 +78,19 @@ def get_time_slots(
     if not user_timezone_offset:
         return {"error": "User timezone offset is required"}, 400
 
+    if start_date and end_date:
+        span = frappe.utils.date_diff(end_date, start_date)
+        if span < 0 or span > MAX_RANGE_DAYS:
+            return {"error": f"Date range must be between 0 and {MAX_RANGE_DAYS} days"}, 400
+
     duration = frappe.get_doc("Appointment Slot Duration", duration_id)
 
+    # `enable_scheduling` is the flag that publishes this calendar; it must gate every
+    # guest-reachable path, not only `get_meeting_windows`.
     user_availability = frappe.get_all(
-        "User Appointment Availability", filters={"name": duration.get("parent")}, fields=["*"]
+        "User Appointment Availability",
+        filters={"name": duration.get("parent"), "enable_scheduling": 1},
+        fields=["*"],
     )
 
     if not user_availability:
@@ -102,7 +117,8 @@ def get_time_slots(
 
         date = start_date
         cache_dict = {}
-        while True:
+        # counted, so a `next_valid_date` that fails to advance cannot spin the worker
+        for _ in range(MAX_RANGE_DAYS + 1):
             datetime = frappe.utils.get_datetime(date)
             enddatetime = frappe.utils.get_datetime(end_date)
             if datetime > enddatetime:
@@ -141,6 +157,7 @@ def get_time_slots(
 
 
 @frappe.whitelist(allow_guest=True, methods=["POST"])  # nosemgrep
+@rate_limit(limit=20, seconds=60 * 60)
 @add_response_code
 def book_time_slot(
     duration_id: str,
@@ -155,8 +172,12 @@ def book_time_slot(
 ):
     duration = frappe.get_doc("Appointment Slot Duration", duration_id)
 
+    # `enable_scheduling` is the flag that publishes this calendar; it must gate every
+    # guest-reachable path, not only `get_meeting_windows`.
     user_availability = frappe.get_all(
-        "User Appointment Availability", filters={"name": duration.get("parent")}, fields=["*"]
+        "User Appointment Availability",
+        filters={"name": duration.get("parent"), "enable_scheduling": 1},
+        fields=["*"],
     )
 
     if not user_availability:

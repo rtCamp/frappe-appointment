@@ -14,23 +14,20 @@ jobs:
   pre-commit:
     name: "Frappe Linter"
     runs-on: ubuntu-latest
-    container:
-      image: alpine:latest # latest used here for simplicity, not recommended
-    defaults:
-      run:
-        shell: sh
     steps:
-      - name: fix tar dependency in alpine container image
-        run: |
-          apk --no-cache add tar nodejs npm python3 git bash py3-pip
-          apk --no-cache add prettier --repository=https://dl-cdn.alpinelinux.org/alpine/edge/testing
-          # check python modules installed versions
-          python3 -m pip freeze --local
-          pip install pre-commit --break-system-packages
-
       - uses: actions/checkout@v6
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - run: pip install pre-commit
+
       - run: |
-          git config --global --add safe.directory $GITHUB_WORKSPACE
           git fetch --no-tags --prune --depth=1 origin +refs/heads/*:refs/remotes/origin/*
 
       - name: Get changed files
@@ -40,8 +37,7 @@ jobs:
           echo "Diff between ${{ github.base_ref }} and ${{ github.sha }}"
           echo "files=$( echo "$DIFF" | xargs echo )" >> $GITHUB_OUTPUT
 
-
-      - name: Cache pre-commit since we use pre-commit from container
+      - name: Cache pre-commit
         uses: actions/cache@v5
         with:
           path: ~/.cache/pre-commit

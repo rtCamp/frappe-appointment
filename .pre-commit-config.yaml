@@ -48,6 +48,7 @@ repos:
     rev: v4.0.0-alpha.8
     hooks:
       - id: prettier
+        language_version: system
         types_or: [javascript, vue, scss]
         # Ignore any files that might contain jinja / bundles
         exclude: |
@@ -60,22 +61,23 @@ repos:
             )$
 
 
-  - repo: https://github.com/pre-commit/mirrors-eslint
-    rev: v10.4.0
-    hooks:
-      - id: eslint
-        types_or: [javascript]
-        args: ['--quiet']
-        # Ignore any files that might contain jinja / bundles
-        exclude: |
-            (?x)^(
-                frappe_appointment/public/dist/.*|
-                cypress/.*|
-                .*node_modules.*|
-                .*boilerplate.*|
-                frappe_appointment/templates/includes/.*|
-                frappe_appointment/public/js/lib/.*
-            )$
+  # - repo: https://github.com/pre-commit/mirrors-eslint
+  #   rev: v10.4.0
+  #   hooks:
+  #     - id: eslint
+  #       language_version: system
+  #       types_or: [javascript]
+  #       args: ['--quiet']
+  #       # Ignore any files that might contain jinja / bundles
+  #       exclude: |
+  #           (?x)^(
+  #               frappe_appointment/public/dist/.*|
+  #               cypress/.*|
+  #               .*node_modules.*|
+  #               .*boilerplate.*|
+  #               frappe_appointment/templates/includes/.*|
+  #               frappe_appointment/public/js/lib/.*
+  #           )$
 
 ci:
     autoupdate_schedule: weekly

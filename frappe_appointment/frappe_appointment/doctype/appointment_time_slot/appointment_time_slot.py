@@ -5,7 +5,6 @@ from datetime import datetime
 from functools import cmp_to_key
 
 import frappe
-from frappe import _
 from frappe.integrations.doctype.google_calendar.google_calendar import (
     get_google_calendar_object,
 )
@@ -91,9 +90,9 @@ def get_google_calendar_slots_member(
     google_calendar = frappe.get_doc("Google Calendar", google_calendar_id)
 
     try:
-        google_calendar_api_obj, account = get_google_calendar_object(google_calendar.name)
+        google_calendar_api_obj, _ = get_google_calendar_object(google_calendar.name)
     except Exception:
-        raise GoogleBadRequest(_("Google Calendar - Could not create Google Calendar API object."))
+        raise GoogleBadRequest(frappe._("Google Calendar - Could not create Google Calendar API object."))
 
     events = []
 
@@ -128,7 +127,9 @@ def get_google_calendar_slots_member(
         # )
     except Exception as err:
         frappe.throw(
-            _("Google Calendar - Could not fetch event from Google Calendar, error code {0}.").format(err.resp.status)
+            frappe._("Google Calendar - Could not fetch event from Google Calendar, error code {0}.").format(
+                err.resp.status
+            )
         )
 
     events_items = events["items"]
