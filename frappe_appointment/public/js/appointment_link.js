@@ -5,7 +5,11 @@ const dialog_setup = {};
 
 window.copy_to_clipboard = function (text) {
   if (!navigator.clipboard) {
-    frappe.msgprint(__("Clipboard API not supported. Please copy the value manually: {0}", [text]));
+    frappe.msgprint(
+      __("Clipboard API not supported. Please copy the value manually: {0}", [
+        text,
+      ]),
+    );
     return;
   }
   navigator.clipboard.writeText(text).then(() => {
@@ -25,7 +29,11 @@ function compose_mail(frm, subject, recipient, message) {
 
   const email_accounts = frappe.boot.email_accounts
     .filter((account) => {
-      return !["All Accounts", "Sent", "Spam", "Trash"].includes(account.email_account) && account.enable_outgoing;
+      return (
+        !["All Accounts", "Sent", "Spam", "Trash"].includes(
+          account.email_account,
+        ) && account.enable_outgoing
+      );
     })
     .map((e) => e.email_id);
 
@@ -65,7 +73,11 @@ function generate_table(data) {
   return html;
 }
 
-function create_meetings_section(frm, r, title = "Upcoming & Ongoing Meetings") {
+function create_meetings_section(
+  frm,
+  r,
+  title = "Upcoming & Ongoing Meetings",
+) {
   if (frm.doctype === "User Appointment Availability") {
     var html = "<div class='appointment-meeting-container'>";
     is_data_available = false;
@@ -113,7 +125,9 @@ function make_section_close() {
   const sections = document.querySelectorAll(".form-dashboard-section");
   sections.forEach((section) => {
     if (section.querySelector(".appointment-meeting-container")) {
-      if (!section.querySelector(".section-head").classList.contains("collapsed")) {
+      if (
+        !section.querySelector(".section-head").classList.contains("collapsed")
+      ) {
         section.querySelector(".section-head").click();
       }
     }
@@ -127,7 +141,7 @@ function generate_appointment_dialogue(
   show_past = true,
   show_ongoing = true,
   past_collapsed = true,
-  frm = null
+  frm = null,
 ) {
   const data = r.message;
   if (!data) {
@@ -183,16 +197,28 @@ function generate_appointment_dialogue(
     size: "large",
   });
   if (show_ongoing && data.ongoing.length > 0) {
-    dialog.fields_dict.ongoing_appointments.$wrapper.html(generate_table(data.ongoing));
-    dialog.fields_dict.ongoing_appointments_section.wrapper.find(".section-head").css("font-size", "1.25em");
+    dialog.fields_dict.ongoing_appointments.$wrapper.html(
+      generate_table(data.ongoing),
+    );
+    dialog.fields_dict.ongoing_appointments_section.wrapper
+      .find(".section-head")
+      .css("font-size", "1.25em");
   }
   if (show_upcoming && data.upcoming.length > 0) {
-    dialog.fields_dict.upcoming_appointments.$wrapper.html(generate_table(data.upcoming));
-    dialog.fields_dict.upcoming_appointments_section.wrapper.find(".section-head").css("font-size", "1.25em");
+    dialog.fields_dict.upcoming_appointments.$wrapper.html(
+      generate_table(data.upcoming),
+    );
+    dialog.fields_dict.upcoming_appointments_section.wrapper
+      .find(".section-head")
+      .css("font-size", "1.25em");
   }
   if (show_past && data.past.length > 0) {
-    dialog.fields_dict.past_appointments.$wrapper.html(generate_table(data.past));
-    dialog.fields_dict.past_appointments_section.wrapper.find(".section-head").css("font-size", "1.25em");
+    dialog.fields_dict.past_appointments.$wrapper.html(
+      generate_table(data.past),
+    );
+    dialog.fields_dict.past_appointments_section.wrapper
+      .find(".section-head")
+      .css("font-size", "1.25em");
   }
   dialog.show();
 }
@@ -219,17 +245,27 @@ $(document).on("form-refresh", function (event, frm) {
             frm.trigger("copy_appointment_link");
           });
 
-          const personal_meet_menu = frm.page.add_custom_button_group("Personal Meeting");
-          frm.page.add_custom_menu_item(personal_meet_menu, __("Appointment Link with Duration"), () => {
-            frm.trigger("copy_appointment_link_with_duration");
-          });
+          const personal_meet_menu =
+            frm.page.add_custom_button_group("Personal Meeting");
+          frm.page.add_custom_menu_item(
+            personal_meet_menu,
+            __("Appointment Link with Duration"),
+            () => {
+              frm.trigger("copy_appointment_link_with_duration");
+            },
+          );
 
-          frm.page.add_custom_menu_item(personal_meet_menu, __("View Past Meetings"), () => {
-            frm.trigger("view_personal_meetings");
-          });
+          frm.page.add_custom_menu_item(
+            personal_meet_menu,
+            __("View Past Meetings"),
+            () => {
+              frm.trigger("view_personal_meetings");
+            },
+          );
 
           frappe.call({
-            method: "frappe_appointment.overrides.event_override.get_personal_meetings",
+            method:
+              "frappe_appointment.overrides.event_override.get_personal_meetings",
             args: {
               user: frm.doc.name,
               past_events: true,
@@ -255,15 +291,24 @@ $(document).on("form-refresh", function (event, frm) {
                 appointment_group = appointment_groups[0];
               }
 
-              const appointment_group_menu = frm.page.add_custom_button_group("Appointments");
+              const appointment_group_menu =
+                frm.page.add_custom_button_group("Appointments");
 
-              frm.page.add_custom_menu_item(appointment_group_menu, __("Schedule"), () => {
-                frm.trigger("schedule_appointment");
-              });
+              frm.page.add_custom_menu_item(
+                appointment_group_menu,
+                __("Schedule"),
+                () => {
+                  frm.trigger("schedule_appointment");
+                },
+              );
 
-              frm.page.add_custom_menu_item(appointment_group_menu, __("View"), () => {
-                frm.trigger("view_appointment");
-              });
+              frm.page.add_custom_menu_item(
+                appointment_group_menu,
+                __("View"),
+                () => {
+                  frm.trigger("view_appointment");
+                },
+              );
             }
           },
         });
@@ -271,7 +316,8 @@ $(document).on("form-refresh", function (event, frm) {
       },
       view_appointment: function (frm) {
         frappe.call({
-          method: "frappe_appointment.overrides.event_override.get_events_from_doc",
+          method:
+            "frappe_appointment.overrides.event_override.get_events_from_doc",
           args: {
             doctype: doctype,
             docname: frm.docname,
@@ -293,7 +339,10 @@ $(document).on("form-refresh", function (event, frm) {
             if (r?.message?.url) {
               if (!navigator.clipboard) {
                 frappe.msgprint(
-                  __("Clipboard API not supported. Please copy the value manually: {0}", [r.message.url])
+                  __(
+                    "Clipboard API not supported. Please copy the value manually: {0}",
+                    [r.message.url],
+                  ),
                 );
                 return;
               }
@@ -302,7 +351,9 @@ $(document).on("form-refresh", function (event, frm) {
               });
             } else {
               frappe.msgprint(
-                __("No appointment link found. Please make sure Personal Meetings are enabled for this user.")
+                __(
+                  "No appointment link found. Please make sure Personal Meetings are enabled for this user.",
+                ),
               );
             }
           },
@@ -316,7 +367,10 @@ $(document).on("form-refresh", function (event, frm) {
           },
           freeze: true,
           callback: function (r) {
-            if (r.message?.available_durations && r.message.available_durations.length > 0) {
+            if (
+              r.message?.available_durations &&
+              r.message.available_durations.length > 0
+            ) {
               const dialog = new frappe.ui.Dialog({
                 title: __("Appointment Link"),
                 fields: [
@@ -347,7 +401,9 @@ $(document).on("form-refresh", function (event, frm) {
               dialog.show();
             } else {
               frappe.msgprint(
-                __("No appointment link found. Please make sure Personal Meetings are enabled for this user.")
+                __(
+                  "No appointment link found. Please make sure Personal Meetings are enabled for this user.",
+                ),
               );
             }
           },
@@ -355,14 +411,23 @@ $(document).on("form-refresh", function (event, frm) {
       },
       view_personal_meetings: function (frm) {
         frappe.call({
-          method: "frappe_appointment.overrides.event_override.get_personal_meetings",
+          method:
+            "frappe_appointment.overrides.event_override.get_personal_meetings",
           args: {
             user: frm.doc.name,
             past_events: true,
           },
           freeze: true,
           callback: function (r) {
-            generate_appointment_dialogue(r, "Past Meetings", false, true, false, false, frm);
+            generate_appointment_dialogue(
+              r,
+              "Past Meetings",
+              false,
+              true,
+              false,
+              false,
+              frm,
+            );
           },
         });
       },
@@ -382,7 +447,7 @@ $(document).on("form-refresh", function (event, frm) {
               description: appointment_group
                 ? null
                 : __(
-                    "Multiple appointment groups are available for this doctype. Please select one to schedule an appointment."
+                    "Multiple appointment groups are available for this doctype. Please select one to schedule an appointment.",
                   ),
               reqd: 1,
             },
@@ -457,28 +522,34 @@ $(document).on("form-refresh", function (event, frm) {
         dialog.fields_dict.event_title.$input.on("change", () => {
           update_link();
         });
-        dialog.fields_dict.appointment_group.$input_area.find(".link-btn > .btn-clear").on("click", () => {
-          appointment_group = null;
-          update_link();
-        });
-        dialog.fields_dict.appointment_group.$input.on("change awesomplete-selectcomplete", () => {
-          if (dialog.fields_dict.appointment_group.$input.val()) {
-            frappe.call({
-              method:
-                "frappe_appointment.frappe_appointment.doctype.appointment_group.appointment_group.get_appointment_group_from_id",
-              args: {
-                appointment_group_id: dialog.fields_dict.appointment_group.$input.val(),
-              },
-              callback: function (r) {
-                appointment_group = r.message;
-                update_link();
-              },
-            });
-          } else {
+        dialog.fields_dict.appointment_group.$input_area
+          .find(".link-btn > .btn-clear")
+          .on("click", () => {
             appointment_group = null;
             update_link();
-          }
-        });
+          });
+        dialog.fields_dict.appointment_group.$input.on(
+          "change awesomplete-selectcomplete",
+          () => {
+            if (dialog.fields_dict.appointment_group.$input.val()) {
+              frappe.call({
+                method:
+                  "frappe_appointment.frappe_appointment.doctype.appointment_group.appointment_group.get_appointment_group_from_id",
+                args: {
+                  appointment_group_id:
+                    dialog.fields_dict.appointment_group.$input.val(),
+                },
+                callback: function (r) {
+                  appointment_group = r.message;
+                  update_link();
+                },
+              });
+            } else {
+              appointment_group = null;
+              update_link();
+            }
+          },
+        );
         dialog.fields_dict.copy_appointment_link.$input.on("click", () => {
           if (!appointment_link) {
             frappe.msgprint(__("Please enter an email to schedule with"));
@@ -514,7 +585,7 @@ $(document).on("form-refresh", function (event, frm) {
             frm,
             `Schedule an Appointment: ${dialog.fields_dict.event_title.value}`,
             dialog.fields_dict.external_email.value,
-            message
+            message,
           );
         });
 

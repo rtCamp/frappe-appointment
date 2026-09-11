@@ -1,6 +1,7 @@
 import frappe
 import frappe.utils
 from frappe import _
+from frappe.rate_limiter import rate_limit
 
 from frappe_appointment.frappe_appointment.doctype.appointment_group.appointment_group import _get_time_slots_for_day
 from frappe_appointment.helpers.overrides import add_response_code
@@ -8,6 +9,7 @@ from frappe_appointment.overrides.event_override import APPOINTMENT_GROUP, _crea
 
 
 @frappe.whitelist(allow_guest=True)  # nosemgrep
+@rate_limit(limit=100, seconds=60 * 60)
 @add_response_code
 def get_time_slots(appointment_group_id: str, date: str, user_timezone_offset: str, **args):
     if not appointment_group_id:
@@ -26,6 +28,7 @@ def get_time_slots(appointment_group_id: str, date: str, user_timezone_offset: s
 
 
 @frappe.whitelist(allow_guest=True)  # nosemgrep
+@rate_limit(limit=20, seconds=60 * 60)
 @add_response_code
 def book_time_slot(
     appointment_group_id: str,

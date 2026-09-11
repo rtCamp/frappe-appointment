@@ -54,9 +54,13 @@ class UserAppointmentAvailability(Document):
                 frappe.throw(frappe._("Slug already exists. Please set a unique slug."))
         if self.enable_scheduling and self.meeting_provider == "Zoom":
             appointment_settings = frappe.get_single("Appointment Settings")
-            appointment_settings_link = frappe.utils.get_link_to_form("Appointment Settings", None, "Appointment Settings")
+            appointment_settings_link = frappe.utils.get_link_to_form(
+                "Appointment Settings", None, "Appointment Settings"
+            )
             if not appointment_settings.enable_zoom:
-                return frappe.throw(frappe._(f"Zoom is not enabled. Please enable it from {appointment_settings_link}."))
+                return frappe.throw(
+                    frappe._(f"Zoom is not enabled. Please enable it from {appointment_settings_link}.")
+                )
             if (
                 not appointment_settings.zoom_client_id
                 or not appointment_settings.get_password("zoom_client_secret")
