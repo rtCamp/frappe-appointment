@@ -162,7 +162,8 @@ has_permission = {
 # DocType Class
 # ---------------
 # Override standard doctype classes
-# nosemgrep
+# This app deliberately customizes core DocTypes for appointment behaviour.
+# nosemgrep: frappe-semgrep.rules.override-doctype-class
 override_doctype_class = {
     "Event": "frappe_appointment.overrides.event_override.EventOverride",
     "Google Calendar": "frappe_appointment.overrides.google_calendar_override.GoogleCalendarOverride",
@@ -206,7 +207,7 @@ scheduler_events = {
 # Testing
 # -------
 
-# before_tests = "frappe_appointment.install.before_tests"
+before_tests = "frappe_appointment.tests.before_tests"
 
 # Overriding Methods
 # ------------------------------

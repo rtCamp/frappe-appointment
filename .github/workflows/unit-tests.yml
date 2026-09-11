@@ -1,0 +1,72 @@
+name: Unit Tests
+permissions:
+  contents: read
+
+on:
+  push:
+    branches: [version-16, version-16-hotfix]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  Tests:
+    runs-on: ubuntu-latest
+
+    services:
+      redis-cache:
+        image: redis:alpine
+        ports: ["13000:6379"]
+      redis-queue:
+        image: redis:alpine
+        ports: ["11000:6379"]
+      mariadb:
+        image: mariadb:10.6
+        env:
+          MYSQL_ROOT_PASSWORD: root
+        ports: ["3306:3306"]
+        options: --health-cmd="mysqladmin ping -uroot -proot" --health-interval=5s --health-timeout=2s --health-retries=3
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.14"
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/pyproject.toml') }}
+          restore-keys: ${{ runner.os }}-pip-
+
+      - name: Setup bench
+        run: |
+          pip install frappe-bench
+          bench init --skip-redis-config-generation --skip-assets --frappe-branch version-16 --python "$(which python)" ~/frappe-bench
+          mysql --host 127.0.0.1 --port 3306 -u root -proot -e "SET GLOBAL character_set_server = 'utf8mb4'"
+          mysql --host 127.0.0.1 --port 3306 -u root -proot -e "SET GLOBAL collation_server = 'utf8mb4_unicode_ci'"
+
+      - name: Install
+        working-directory: /home/runner/frappe-bench
+        run: |
+          bench get-app erpnext --branch version-16
+          bench get-app hrms --branch version-16
+          bench get-app frappe_appointment $GITHUB_WORKSPACE
+          bench new-site --db-root-password root --admin-password admin --no-mariadb-socket --install-app erpnext test_site
+          bench --site test_site install-app hrms
+          bench --site test_site install-app frappe_appointment
+        env:
+          CI: "Yes"
+
+      - name: Run tests
+        working-directory: /home/runner/frappe-bench
+        run: |
+          bench --site test_site set-config allow_tests true
+          bench --site test_site run-tests --app frappe_appointment
