@@ -33,3 +33,23 @@ class TestAddIcsFileInAttachment(IntegrationTestCase):
         event = self._event(appointment_group=frappe._dict(event_organizer=organizer))
         content = frappe.get_doc("File", add_ics_file_in_attachment(event)).get_content()
         self.assertIn("ORGANIZER", content)
+
+    def test_keeps_organizer_when_hide_flag_is_absent(self):
+        """Without hide_ics_organizer on the event, the ORGANIZER line carries the organizer's email."""
+        organizer = "test_fa_ics_org_default@example.com"
+        make_test_user(organizer)
+        event = self._event(appointment_group=frappe._dict(event_organizer=organizer))
+        content = frappe.get_doc("File", add_ics_file_in_attachment(event)).get_content()
+        self.assertIn("ORGANIZER", content)
+        self.assertIn(f"MAILTO:{organizer}", content)
+
+    def test_omits_organizer_when_hide_flag_is_set(self):
+        """With hide_ics_organizer=True on the event, the ICS has no ORGANIZER line and no organizer email."""
+        organizer = "test_fa_ics_org_hidden@example.com"
+        make_test_user(organizer)
+        event = self._event(appointment_group=frappe._dict(event_organizer=organizer))
+        event.hide_ics_organizer = True
+        content = frappe.get_doc("File", add_ics_file_in_attachment(event)).get_content()
+        self.assertNotIn("ORGANIZER", content)
+        self.assertNotIn(organizer, content)
+        self.assertIn("Sync Meet", content)
