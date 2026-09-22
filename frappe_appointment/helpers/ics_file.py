@@ -23,7 +23,12 @@ def add_ics_file_in_attachment(event, ics_event_description=None):
     event_object.uid = str(uuid.uuid4())
     event_object.description = ics_event_description or event.description
 
-    if event.appointment_group and event.appointment_group.event_organizer:
+    # Optional opt-out: an Event override can set `hide_ics_organizer = True` (e.g. as a property)
+    # to omit the ORGANIZER line, so the recipient does not see the organiser's email. Defaults
+    # to keeping it.
+    hide_organizer = getattr(event, "hide_ics_organizer", False)
+
+    if not hide_organizer and event.appointment_group and event.appointment_group.event_organizer:
         user_name, user_email = frappe.db.get_value(
             "User", event.appointment_group.event_organizer, ["full_name", "email"]
         )
@@ -34,7 +39,7 @@ def add_ics_file_in_attachment(event, ics_event_description=None):
                 value=f"MAILTO:{user_email}",
             )
         )
-    elif event.user_calendar and event.user_calendar.user:
+    elif not hide_organizer and event.user_calendar and event.user_calendar.user:
         user_name, user_email = frappe.db.get_value("User", event.user_calendar.user, ["full_name", "email"])
         event_object.extra.append(
             ContentLine(
