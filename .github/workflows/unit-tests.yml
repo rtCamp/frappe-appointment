@@ -4,7 +4,7 @@ permissions:
 
 on:
   push:
-    branches: [version-16, version-16-hotfix]
+    branches: [version-16, develop]
   pull_request:
 
 concurrency:
