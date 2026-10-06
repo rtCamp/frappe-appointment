@@ -49,15 +49,15 @@ jobs:
       - name: Setup bench
         run: |
           pip install frappe-bench
-          bench init --skip-redis-config-generation --skip-assets --frappe-branch version-16 --python "$(which python)" ~/frappe-bench
+          bench init --skip-redis-config-generation --skip-assets --frappe-branch v16.31.0 --python "$(which python)" ~/frappe-bench
           mysql --host 127.0.0.1 --port 3306 -u root -proot -e "SET GLOBAL character_set_server = 'utf8mb4'"
           mysql --host 127.0.0.1 --port 3306 -u root -proot -e "SET GLOBAL collation_server = 'utf8mb4_unicode_ci'"
 
       - name: Install
         working-directory: /home/runner/frappe-bench
         run: |
-          bench get-app erpnext --branch version-16
-          bench get-app hrms --branch version-16
+          bench get-app erpnext --branch v16.32.1
+          bench get-app hrms --branch v16.16.0
           bench get-app frappe_appointment $GITHUB_WORKSPACE
           bench new-site --db-root-password root --admin-password admin --no-mariadb-socket --install-app erpnext test_site
           bench --site test_site install-app hrms
