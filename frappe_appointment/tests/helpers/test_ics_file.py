@@ -1,9 +1,12 @@
+from unittest.mock import MagicMock, patch
+
 import frappe
 from frappe.tests import IntegrationTestCase
 from frappe.utils import get_datetime
 
 from frappe_appointment.helpers.ics_file import add_ics_file_in_attachment
-from frappe_appointment.tests import gcal_service_mock, make_test_user, mock_gcal_object
+from frappe_appointment.overrides.event_override import send_meet_email
+from frappe_appointment.tests import EVENT_OVERRIDE, gcal_service_mock, make_test_user, mock_gcal_object
 
 ICS_FILE = "frappe_appointment.helpers.ics_file"
 
@@ -112,10 +115,79 @@ class TestAddIcsFileInAttachment(IntegrationTestCase):
         ]
         self.assertLess(seq[0], seq[1])
 
-    def test_method_request_with_organizer_publish_without(self):
-        """METHOD is REQUEST when an ORGANIZER is present (an invite), PUBLISH otherwise."""
+    def test_request_uses_google_organizer_and_attendees(self):
+        """A Google-backed .ics is a REQUEST carrying Google's organizer and attendees, not the group's."""
+        group_organizer = "test_fa_ics_org_group@example.com"
+        make_test_user(group_organizer)
+        event, service = self._google_event(sequence=2)
+        event.appointment_group = frappe._dict(event_organizer=group_organizer)
+        service.events().get().execute.return_value = {
+            "iCalUID": "abc123@google.com",
+            "sequence": 2,
+            "organizer": {"email": "calendar-owner@example.com", "displayName": "Calendar Owner"},
+            "attendees": [{"email": "guest@example.com"}, {"email": "calendar-owner@example.com"}],
+        }
+        with mock_gcal_object(ICS_FILE, service=service):
+            content = frappe.get_doc("File", add_ics_file_in_attachment(event)).get_content()
+        self.assertIn("METHOD:REQUEST", content)
+        self.assertIn("MAILTO:calendar-owner@example.com", content)
+        self.assertNotIn(group_organizer, content)
+        self.assertIn("ATTENDEE", content)
+        self.assertIn("MAILTO:guest@example.com", content)
+
+    def test_hidden_organizer_drops_attendees_and_publishes(self):
+        """hide_ics_organizer also drops Google's attendee list (it includes the organiser) and uses PUBLISH."""
+        event, service = self._google_event(sequence=0)
+        event.hide_ics_organizer = True
+        service.events().get().execute.return_value = {
+            "iCalUID": "abc123@google.com",
+            "organizer": {"email": "calendar-owner@example.com"},
+            "attendees": [{"email": "calendar-owner@example.com"}],
+        }
+        with mock_gcal_object(ICS_FILE, service=service):
+            content = frappe.get_doc("File", add_ics_file_in_attachment(event)).get_content()
+        self.assertNotIn("calendar-owner@example.com", content)
+        self.assertIn("METHOD:PUBLISH", content)
+
+    def test_publish_without_google_attendees(self):
+        """Without Google's attendee list the .ics is PUBLISH, even when it has an ORGANIZER."""
         organizer = "test_fa_ics_org_method@example.com"
         make_test_user(organizer)
         with_org = self._event(appointment_group=frappe._dict(event_organizer=organizer))
-        self.assertIn("METHOD:REQUEST", frappe.get_doc("File", add_ics_file_in_attachment(with_org)).get_content())
-        self.assertIn("METHOD:PUBLISH", frappe.get_doc("File", add_ics_file_in_attachment(self._event())).get_content())
+        content = frappe.get_doc("File", add_ics_file_in_attachment(with_org)).get_content()
+        self.assertIn("ORGANIZER", content)
+        self.assertIn("METHOD:PUBLISH", content)
+
+
+class TestSendMeetEmailIcsIdentity(IntegrationTestCase):
+    def _doc(self, organisers):
+        doc = MagicMock(custom_meet_link="https://meet.example.com/x", event_participants=[1])
+        doc.custom_doctype_link_with_event = [frappe._dict(reference_doctype="User", reference_docname="Guest")]
+        doc.get_organisers_event.return_value = organisers
+        doc.get_recipients_event.return_value = ["guest@example.com"]
+        return doc
+
+    def test_no_identity_lookup_without_email_templates(self):
+        """No response template configured → no Google lookup for the .ics identity."""
+        group = MagicMock(response_email_template=None)
+        with (
+            patch(f"{EVENT_OVERRIDE}.get_ics_identity") as get_identity,
+            patch(f"{EVENT_OVERRIDE}.send_email_template_mail") as send_mail,
+        ):
+            send_meet_email(self._doc(organisers=[]), group, None, {})
+        get_identity.assert_not_called()
+        send_mail.assert_not_called()
+
+    def test_identity_looked_up_once_for_both_emails(self):
+        """The organiser and booker emails share one .ics identity lookup."""
+        user_calendar = MagicMock(response_email_template="Booker Template")
+        settings = frappe._dict(personal_organisers_email_template="Organiser Template")
+        with (
+            patch(f"{EVENT_OVERRIDE}.get_ics_identity", return_value=frappe._dict(uid="u")) as get_identity,
+            patch(f"{EVENT_OVERRIDE}.add_ics_file_in_attachment", return_value="FILE-1"),
+            patch(f"{EVENT_OVERRIDE}.send_email_template_mail") as send_mail,
+            patch.object(frappe, "get_single", return_value=settings),
+        ):
+            send_meet_email(self._doc(organisers=["organiser@example.com"]), None, user_calendar, {})
+        get_identity.assert_called_once()
+        self.assertEqual(send_mail.call_count, 2)
