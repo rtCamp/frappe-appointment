@@ -10,7 +10,7 @@ from frappe_appointment.frappe_appointment.doctype.appointment_group.appointment
 from frappe_appointment.helpers.email import send_email_template_mail
 
 
-@frappe.whitelist()
+@frappe.whitelist(methods=["POST"])
 def update_availability_status_for_appointment_group(appointment_group: str):
     if isinstance(appointment_group, str):
         appointment_group = frappe.get_doc("Appointment Group", appointment_group)
