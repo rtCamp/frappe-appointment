@@ -27,7 +27,7 @@ from frappe_appointment.helpers.email import send_email_template_mail
 from frappe_appointment.helpers.google_calendar import (
     insert_event_in_google_calendar_override,
 )
-from frappe_appointment.helpers.ics_file import add_ics_file_in_attachment
+from frappe_appointment.helpers.ics_file import add_ics_file_in_attachment, get_ics_identity
 from frappe_appointment.helpers.utils import utc_to_sys_time
 from frappe_appointment.helpers.zoom import create_meeting, delete_meeting, update_meeting
 
@@ -418,6 +418,8 @@ def send_meet_email(doc, appointment_group, user_calendar, metadata, ics_event_d
             ag_dict = appointment_group.as_dict() if appointment_group else user_calendar.as_dict()
             ag_dict["meet_link"] = doc.custom_meet_link  # For backward compatibility
 
+            ics_identity = get_ics_identity(doc)
+
             args = dict(
                 appointment_group=ag_dict,
                 meet_link=doc.custom_meet_link,
@@ -438,7 +440,7 @@ def send_meet_email(doc, appointment_group, user_calendar, metadata, ics_event_d
                         args,
                         organisers_email_template,
                         recipients=organisers,
-                        attachments=[{"fid": add_ics_file_in_attachment(doc)}],
+                        attachments=[{"fid": add_ics_file_in_attachment(doc, ics_identity=ics_identity)}],
                     )
 
             if (appointment_group and appointment_group.response_email_template) or (
@@ -454,7 +456,9 @@ def send_meet_email(doc, appointment_group, user_calendar, metadata, ics_event_d
                         else user_calendar.response_email_template
                     ),
                     recipients=doc.get_recipients_event(),
-                    attachments=[{"fid": add_ics_file_in_attachment(doc, ics_event_description)}],
+                    attachments=[
+                        {"fid": add_ics_file_in_attachment(doc, ics_event_description, ics_identity=ics_identity)}
+                    ],
                 )
 
             frappe.db.commit()
