@@ -10,6 +10,7 @@ import ErrorFallback from "./components/error-fallback";
  */
 const Appointment = lazy(() => import("@/pages/appointment"));
 const GroupAppointment = lazy(() => import("@/pages/group-appointment"));
+const Setup = lazy(() => import("@/pages/setup"));
 const NotFound = lazy(() => import("@/pages/notFound"));
 
 const Router = () => {
@@ -17,6 +18,7 @@ const Router = () => {
     <>
       <Route path="/in/:meetId" element={<Appointment />} errorElement={<ErrorFallback />}></Route>
       <Route path="/gr/:groupId" element={<GroupAppointment />} errorElement={<ErrorFallback />}></Route>
+      <Route path="/" element={<Setup />} errorElement={<ErrorFallback />}></Route>
       <Route path="*" element={<NotFound />} />
     </>
   );
