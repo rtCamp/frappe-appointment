@@ -356,6 +356,12 @@ const Setup = () => {
                   <ExternalLink className="h-4 w-4" /> View my booking page
                 </a>
               )}
+              {sessionUser?.roles.includes("System Manager") && (
+                // A full page load, so the broken-link check above doesn't see a history entry.
+                <a href="/schedule/admin" className="text-muted-foreground hover:text-foreground hover:underline">
+                  Set up Appointments for your team
+                </a>
+              )}
               <a href={deskLink} className="text-muted-foreground hover:text-foreground hover:underline">
                 Open full settings in Desk
               </a>
