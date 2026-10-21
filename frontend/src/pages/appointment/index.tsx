@@ -77,7 +77,7 @@ const Appointment = () => {
       setMeetingDurationCards(data?.message?.durations);
     }
     if (error) {
-      navigate("/");
+      navigate("/not-found", { replace: true });
     }
   }, [data, error]);
 

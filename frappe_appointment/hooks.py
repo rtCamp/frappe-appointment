@@ -6,6 +6,15 @@ app_email = "frappe@rtcamp.com"
 app_license = "GNU AFFERO GENERAL PUBLIC LICENSE (v3)"
 # required_apps = []
 
+add_to_apps_screen = [
+    {
+        "name": "frappe_appointment",
+        "logo": "/assets/frappe_appointment/frappe-appointment-logo.png",
+        "title": "Appointments",
+        "route": "/schedule",
+    }
+]
+
 
 # Includes in <head>
 # ------------------

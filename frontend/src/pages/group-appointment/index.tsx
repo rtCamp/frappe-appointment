@@ -93,7 +93,7 @@ const GroupAppointment = () => {
       updateDateQuery(validData);
     }
     if (fetchError) {
-      navigate("/");
+      navigate("/not-found", { replace: true });
     }
   }, [data, fetchError, mutate, navigate, dispatch]);
 

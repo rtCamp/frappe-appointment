@@ -1,0 +1,88 @@
+/*
+ * Espresso (Frappe UI) design tokens for the in-app screens.
+ * Scoped to .espresso so the public booking pages keep their own theme.
+ * Use them through the Tailwind names in tailwind.config.js (bg-surface-gray-2, text-ink-gray-8, ...).
+ */
+@font-face {
+  font-family: InterVar;
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+  src: url("/assets/frappe/css/fonts/inter/InterVariable.woff2") format("woff2");
+}
+
+.espresso {
+  --surface-base: oklch(1 0 0);
+  --surface-sidebar: oklch(0.979 0 0);
+  --surface-elevation-2: oklch(1 0 0);
+  --surface-elevation-3: oklch(1 0 0);
+  --surface-gray-1: oklch(0.979 0 0);
+  --surface-gray-2: oklch(0.964 0 0);
+  --surface-gray-3: oklch(0.946 0 0);
+  --surface-gray-4: oklch(0.913 0 0);
+  --surface-gray-9: oklch(0.341 0 0);
+  --surface-gray-10: oklch(0.205 0 0);
+  --surface-red-2: oklch(0.947 0.026 17.626);
+  --surface-green-2: oklch(0.965 0.03 155.987);
+  --surface-amber-2: oklch(0.967 0.045 91.733);
+  --surface-blue-2: oklch(0.96 0.021 241.348);
+  --ink-base: oklch(1 0 0);
+  --ink-gray-4: oklch(0.683 0 0);
+  --ink-gray-5: oklch(0.586 0 0);
+  --ink-gray-6: oklch(0.439 0 0);
+  --ink-gray-7: oklch(0.341 0 0);
+  --ink-gray-8: oklch(0.205 0 0);
+  --ink-gray-9: oklch(0.168 0 0);
+  --ink-red-7: oklch(0.497 0.185 27.335);
+  --ink-green-7: oklch(0.53 0.122 156.15);
+  --ink-amber-7: #bb6f0c;
+  --ink-blue-5: oklch(0.641 0.186 251.565);
+  --ink-blue-7: oklch(0.561 0.168 252.355);
+  --ink-blue-link: oklch(0.641 0.186 251.565);
+  --outline-gray-1: oklch(0.946 0 0);
+  --outline-gray-2: oklch(0.913 0 0);
+  --outline-gray-3: oklch(0.83 0 0);
+  --outline-gray-4: oklch(0.683 0 0);
+  --outline-gray-5: oklch(0.586 0 0);
+  --elevation-sm: inset 0px 0.25px 1.5px 0px #ffffff29, 0px 0px 1px 0px #00000033, 0px 1px 3px 0px #00000024;
+  --elevation-2xl: 0px 0px 1px 0px #00000059, 0px 24px 48px -12px #0000003d;
+  --focus-ring: 0px 0px 0px 2px #ffffff, 0px 0px 0px 4px #c7c7c7;
+}
+
+.dark .espresso {
+  --surface-base: oklch(0.205 0 0);
+  --surface-sidebar: oklch(1 0 0 / 0);
+  --surface-elevation-2: oklch(0.281 0 0);
+  --surface-elevation-3: oklch(0.341 0 0);
+  --surface-gray-1: oklch(0.239 0 0);
+  --surface-gray-2: oklch(0.281 0 0);
+  --surface-gray-3: oklch(0.341 0 0);
+  --surface-gray-4: oklch(0.379 0 0);
+  --surface-gray-9: oklch(0.885 0 0);
+  --surface-gray-10: oklch(0.979 0 0);
+  --surface-red-2: oklch(0.333 0.082 22.544);
+  --surface-green-2: oklch(0.295 0.057 157.43);
+  --surface-amber-2: oklch(0.303 0.062 60.12);
+  --surface-blue-2: oklch(0.305 0.092 256.675);
+  --ink-base: oklch(0.205 0 0);
+  --ink-gray-4: oklch(0.58 0 0);
+  --ink-gray-5: oklch(0.58 0 0);
+  --ink-gray-6: oklch(0.683 0 0);
+  --ink-gray-7: oklch(0.754 0 0);
+  --ink-gray-8: oklch(0.885 0 0);
+  --ink-gray-9: oklch(0.979 0 0);
+  --ink-red-7: oklch(0.727 0.169 22.177);
+  --ink-green-7: oklch(0.766 0.089 162.244);
+  --ink-amber-7: oklch(0.763 0.137 69.783);
+  --ink-blue-5: oklch(0.586 0.143 248.605);
+  --ink-blue-7: oklch(0.777 0.112 244.656);
+  --ink-blue-link: oklch(0.538 0.154 253.819);
+  --outline-gray-1: oklch(0.26 0 0);
+  --outline-gray-2: #292929;
+  --outline-gray-3: oklch(0.379 0 0);
+  --outline-gray-4: oklch(0.457 0 0);
+  --outline-gray-5: oklch(0.58 0 0);
+  --elevation-sm: inset 0px 0.5px 0.5px 0.5px #ffffff08, 0px 0px 14px 0px #0000002e, 0px 1px 3px 0px #000000b2;
+  --elevation-2xl: 0px 0px 1px 0px #ffffff40, 0px 24px 48px -12px #000000b2;
+  --focus-ring: 0px 0px 0px 3px #464646cc;
+}
