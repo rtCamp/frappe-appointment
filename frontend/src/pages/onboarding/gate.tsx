@@ -6,11 +6,7 @@ import { ReactNode, useState } from "react";
 import { CalendarDays } from "lucide-react";
 
 import { BASE_ROUTE } from "@/lib/constant";
-
-const solidButton =
-  "inline-flex items-center justify-center rounded-lg bg-surface-gray-10 px-3 text-ink-base hover:bg-surface-gray-9 focus-visible:outline-none focus-visible:shadow-es-focus";
-const subtleButton =
-  "inline-flex items-center justify-center rounded-lg bg-surface-gray-2 px-3 text-ink-gray-8 hover:bg-surface-gray-3 focus-visible:outline-none focus-visible:shadow-es-focus";
+import { buttonClass } from "./styles";
 
 const GateCard = ({ title, body, children }: { title: string; body: string; children?: ReactNode }) => (
   <div className="espresso font-espresso min-h-screen flex items-center justify-center px-4 py-10 bg-surface-gray-1 text-ink-gray-8">
@@ -38,7 +34,7 @@ export const LoginGate = () => (
     <div className="flex flex-col gap-2.5">
       <a
         href={`/login?redirect-to=${encodeURIComponent(BASE_ROUTE)}`}
-        className={`${solidButton} h-10 rounded-[10px] text-es-lg font-medium`}
+        className={buttonClass("solid", "lg")}
       >
         Log in with your ERP account
       </a>
@@ -79,7 +75,7 @@ export const NotReadyGate = () => {
         <div className="rounded-[10px] bg-surface-gray-1 px-3.5 py-3 text-es-p-sm text-ink-gray-7">“{note}”</div>
         <button
           type="button"
-          className={`${subtleButton} h-8 text-es-base font-medium`}
+          className={buttonClass("subtle", "md")}
           onClick={async () => {
             if (await copyText(note)) {
               setCopied(true);
@@ -99,16 +95,8 @@ export const LoadErrorGate = ({ onRetry }: { onRetry: () => void }) => (
     title="Couldn't load your setup"
     body="Something went wrong while loading your calendar and hours. Check your connection and try again."
   >
-    <button type="button" className={`${solidButton} h-8 text-es-base font-medium`} onClick={onRetry}>
+    <button type="button" className={buttonClass("solid", "md")} onClick={onRetry}>
       Try again
     </button>
   </GateCard>
-);
-
-/** Stand-in until the setup steps exist. */
-export const ReadyGate = () => (
-  <GateCard
-    title="You're all set to start"
-    body="Google is set up on this site. Connecting your calendar comes next."
-  />
 );

@@ -1,15 +1,16 @@
 /**
- * /schedule: where people set up their booking page. For now it shows the gate card
- * that decides whether they can start.
+ * /schedule: where people set up their booking page. A gate card first decides whether they
+ * can start; then the setup steps.
  */
 import { useFrappeGetCall } from "frappe-react-sdk";
 
 import MetaTags from "@/components/meta-tags";
-import { ONBOARDING_STATUS, OnboardingStatus, getSessionUser } from "./api";
-import { LoadErrorGate, LoginGate, NotReadyGate, ReadyGate, WebsiteUserGate } from "./gate";
+import { ONBOARDING_STATUS, OnboardingStatus, SessionUser, getSessionUser } from "./api";
+import { LoadErrorGate, LoginGate, NotReadyGate, WebsiteUserGate } from "./gate";
+import Setup from "./setup";
 import "@/styles/espresso.css";
 
-const SignedIn = () => {
+const SignedIn = ({ user }: { user: SessionUser }) => {
   const { data, error, isLoading, mutate } = useFrappeGetCall<{ message: OnboardingStatus }>(ONBOARDING_STATUS);
 
   if (isLoading) return null;
@@ -18,14 +19,17 @@ const SignedIn = () => {
   const status = data.message;
   if (status.user_type !== "System User") return <WebsiteUserGate />;
   if (!status.google_ready) return <NotReadyGate />;
-  return <ReadyGate />;
+  return <Setup user={user} />;
 };
 
-const Onboarding = () => (
-  <>
-    <MetaTags title="Appointments" description="Set up your booking page" />
-    {getSessionUser() ? <SignedIn /> : <LoginGate />}
-  </>
-);
+const Onboarding = () => {
+  const user = getSessionUser();
+  return (
+    <>
+      <MetaTags title="Appointments" description="Set up your booking page" />
+      {user ? <SignedIn user={user} /> : <LoginGate />}
+    </>
+  );
+};
 
 export default Onboarding;
