@@ -103,7 +103,10 @@ const AppMenu = ({ user }: { user: SessionUser }) => {
             <ArrowLeftRight className="w-4 h-4 text-ink-gray-6" aria-hidden="true" />
             Switch to Desk
           </a>
-          <button role="menuitem" type="button" className={menuItemClass} onClick={() => setTheme(isDark ? "light" : "dark")}>
+          <button role="menuitem" type="button" className={menuItemClass} onClick={() => {
+              setTheme(isDark ? "light" : "dark");
+              setOpen(false);
+            }}>
             {isDark ? (
               <Sun className="w-4 h-4 text-ink-gray-6" aria-hidden="true" />
             ) : (

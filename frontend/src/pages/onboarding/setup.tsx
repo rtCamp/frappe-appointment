@@ -4,10 +4,22 @@
 import { useCallback, useContext, useEffect, useState } from "react";
 import { FrappeConfig, FrappeContext } from "frappe-react-sdk";
 
-import { CALENDAR_FIELDS, CalendarInfo, GOOGLE_CALENDAR, SessionUser, errorText, isConnected, pickCalendar } from "./api";
+import {
+  AVAILABILITY,
+  Availability,
+  CALENDAR_FIELDS,
+  CalendarInfo,
+  GOOGLE_CALENDAR,
+  SessionUser,
+  errorText,
+  isConnected,
+  isNotYours,
+  pickCalendar,
+} from "./api";
 import { Frame } from "./frame";
 import { Button, Notice, StepHeader, Stepper } from "./ui";
 import CalendarStep from "./steps/calendar";
+import HoursStep from "./steps/hours";
 
 const STEPS = ["Calendar", "Hours", "Booking page"];
 
@@ -26,6 +38,9 @@ const PlaceholderStep = ({ title, onBack }: { title: string; onBack: () => void 
 const Setup = ({ user }: { user: SessionUser }) => {
   const { db } = useContext(FrappeContext) as FrappeConfig;
   const [calendars, setCalendars] = useState<CalendarInfo[] | null>(null);
+  const [availability, setAvailability] = useState<Availability | null>(null);
+  const [availabilityNotYours, setAvailabilityNotYours] = useState(false);
+  const [timeZone, setTimeZone] = useState(user.timeZone);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [step, setStep] = useState<number | null>(null);
 
@@ -38,9 +53,24 @@ const Setup = ({ user }: { user: SessionUser }) => {
         orderBy: { field: "modified", order: "desc" },
         limit: 20,
       });
+      // The availability record is named after the user; it may not exist yet, or belong to someone else.
+      let saved: Availability | null = null;
+      let notYours = false;
+      try {
+        saved = (await db.getDoc<Availability>(AVAILABILITY, user.name)) as Availability;
+      } catch (err) {
+        if (isNotYours(err)) notYours = true;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        else if ((err as any)?.exc_type !== "DoesNotExistError" && (err as any)?.httpStatus !== 404) throw err;
+      }
       setCalendars(list);
+      setAvailability(saved);
+      setAvailabilityNotYours(notYours);
       // Start at the first unfinished step the first time the page loads.
-      setStep((current) => current ?? (isConnected(pickCalendar(list)) ? 1 : 0));
+      setStep(
+        (current) =>
+          current ?? (!isConnected(pickCalendar(list)) ? 0 : saved?.appointment_time_slot.length ? 2 : 1)
+      );
     } catch (err) {
       setLoadError(errorText(err));
     }
@@ -51,14 +81,14 @@ const Setup = ({ user }: { user: SessionUser }) => {
   }, [load]);
 
   const calendar = calendars ? pickCalendar(calendars) : null;
-  const done = [isConnected(calendar), false, false];
+  const done = [isConnected(calendar), !!availability?.appointment_time_slot.length, false];
 
   let content = null;
   if (loadError) {
     content = (
       <Notice
         tone="red"
-        title="Couldn't load your calendar"
+        title="Couldn't load your setup"
         actions={
           <Button variant="solid" onClick={load}>
             Try again
@@ -81,7 +111,22 @@ const Setup = ({ user }: { user: SessionUser }) => {
             onContinue={() => setStep(1)}
           />
         )}
-        {step === 1 && <PlaceholderStep title="When can people book you?" onBack={() => setStep(0)} />}
+        {step === 1 && calendar && (
+          <HoursStep
+            key={availability?.name ?? "new"}
+            user={user.name}
+            timeZone={timeZone}
+            calendar={calendar.name}
+            availability={availability}
+            notYours={availabilityNotYours}
+            onSaved={async (saved) => {
+              setTimeZone(saved);
+              await load();
+              setStep(2);
+            }}
+            onBack={() => setStep(0)}
+          />
+        )}
         {step === 2 && <PlaceholderStep title="Set up your booking page" onBack={() => setStep(1)} />}
       </>
     );
