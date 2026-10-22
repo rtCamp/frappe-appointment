@@ -146,11 +146,12 @@ const SECTIONS: { label: string; icon: ComponentType<{ className?: string }> }[]
   { label: "Availability", icon: Clock },
 ];
 
-/** Content widths: the setup steps, the admin guide (with its side list), Home, and full-width tables. */
+/** Content widths: the setup steps, the admin guide (with its side list), Home, settings pages, and full-width tables. */
 const WIDTHS = {
   narrow: "max-w-[640px] pt-10 gap-8",
   wide: "max-w-[960px] pt-8 gap-7",
   home: "max-w-[896px] pt-5 gap-7",
+  page: "max-w-[770px] pt-5 gap-7",
   full: "pt-2 gap-4",
 };
 

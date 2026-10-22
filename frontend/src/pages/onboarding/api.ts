@@ -21,6 +21,8 @@ export interface OnboardingStatus {
   is_admin?: boolean;
   google_ready?: boolean;
   zoom_ready?: boolean;
+  /** Approved leave and holidays block booking days (HR apps installed, and the user is an Employee). */
+  blocks_time_off?: boolean;
 }
 
 /** For System Managers: what to paste into Google Cloud, and what Google Settings already holds. */
@@ -183,6 +185,9 @@ export const siteNow = (siteTimeZone: string) => {
   const shifted = new Date(Date.now() + zoneOffset(siteTimeZone, new Date()) * 60000);
   return shifted.toISOString().slice(0, 19).replace("T", " ");
 };
+
+export const NOT_YOURS =
+  "Your availability was created by someone else in Desk, so you can't change it here. Ask your admin to fix it.";
 
 /** Errors from a document the user isn't allowed to open: someone else created it in Desk. */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

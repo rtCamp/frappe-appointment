@@ -20,6 +20,7 @@ def get_onboarding_status():
         "is_admin": "System Manager" in frappe.get_roles(),
         "google_ready": is_google_ready(),
         "zoom_ready": is_zoom_ready(),
+        "blocks_time_off": blocks_time_off(frappe.session.user),
     }
 
 
@@ -63,3 +64,15 @@ def is_zoom_ready() -> bool:
         and settings.zoom_client_id
         and settings.get_password("zoom_client_secret", raise_exception=False)
     )
+
+
+def blocks_time_off(user: str) -> bool:
+    """Approved leave and holidays block the user's booking days.
+
+    Same conditions as is_member_on_leave_or_is_holiday: ERPNext and HRMS installed, and an
+    Employee whose company email is the user's.
+    """
+    installed_apps = frappe.get_installed_apps()
+    if "erpnext" not in installed_apps or "hrms" not in installed_apps:
+        return False
+    return bool(frappe.db.exists("Employee", {"company_email": user}))

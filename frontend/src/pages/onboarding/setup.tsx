@@ -26,21 +26,32 @@ import BookingStep from "./steps/booking";
 import DoneStep from "./steps/done";
 import Home from "./home";
 import MeetingTypes from "./meeting-types";
+import AvailabilityPage from "./availability";
 
 const STEPS = ["Calendar", "Hours", "Booking page"];
 const DONE = 3;
 
 /** A setup step (0-2), the done screen (3), or an app section once setup is finished. */
-type View = number | "home" | "types";
+type View = number | "home" | "types" | "availability";
 
-const SECTION_VIEWS: Record<string, View> = { Home: "home", "Meeting types": "types" };
+const SECTION_VIEWS: Record<string, View> = { Home: "home", "Meeting types": "types", Availability: "availability" };
 
-const Setup = ({ user, zoomReady }: { user: SessionUser; zoomReady: boolean }) => {
+const Setup = ({
+  user: sessionUser,
+  zoomReady,
+  blocksTimeOff,
+}: {
+  user: SessionUser;
+  zoomReady: boolean;
+  blocksTimeOff: boolean;
+}) => {
   const { db } = useContext(FrappeContext) as FrappeConfig;
   const [calendars, setCalendars] = useState<CalendarInfo[] | null>(null);
   const [availability, setAvailability] = useState<Availability | null>(null);
   const [availabilityNotYours, setAvailabilityNotYours] = useState(false);
-  const [timeZone, setTimeZone] = useState(user.timeZone);
+  const [timeZone, setTimeZone] = useState(sessionUser.timeZone);
+  // The boot data's time zone goes stale once the user changes it here.
+  const user = { ...sessionUser, timeZone };
   const [loadError, setLoadError] = useState<string | null>(null);
   const [view, setView] = useState<View | null>(null);
   // Set when Home sends someone to reconnect their calendar, so the Calendar step leads back to Home.
@@ -177,6 +188,7 @@ const Setup = ({ user, zoomReady }: { user: SessionUser; zoomReady: boolean }) =
             calendar={calendar.name}
             availability={availability}
             notYours={availabilityNotYours}
+            blocksTimeOff={blocksTimeOff}
             onSaved={async (saved) => {
               setTimeZone(saved);
               await load();
@@ -206,6 +218,22 @@ const Setup = ({ user, zoomReady }: { user: SessionUser; zoomReady: boolean }) =
 
   if (view === "types" && availability && !loadError) {
     return <MeetingTypes user={user} availability={availability} nav={appNav("Meeting types")} onChanged={load} />;
+  }
+
+  if (view === "availability" && availability && !loadError) {
+    return (
+      <AvailabilityPage
+        user={user}
+        timeZone={timeZone}
+        availability={availability}
+        blocksTimeOff={blocksTimeOff}
+        nav={appNav("Availability")}
+        onSaved={async (saved) => {
+          setTimeZone(saved);
+          await load();
+        }}
+      />
+    );
   }
 
   if (view === "home" && availability) {

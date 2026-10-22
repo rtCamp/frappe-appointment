@@ -1,7 +1,9 @@
+from unittest.mock import patch
+
 import frappe
 from frappe.tests import IntegrationTestCase
 
-from frappe_appointment.api.onboarding import get_google_setup, get_onboarding_status
+from frappe_appointment.api.onboarding import blocks_time_off, get_google_setup, get_onboarding_status
 from frappe_appointment.tests import as_user, make_test_user, set_password_field, setup_appointment_settings
 
 DESK_USER = "test_fa_onb_desk@example.com"
@@ -43,7 +45,13 @@ class TestGetOnboardingStatus(IntegrationTestCase):
         set_zoom_settings(enable=0)
         self.assertEqual(
             self.status_for(DESK_USER),
-            {"user_type": "System User", "is_admin": False, "google_ready": True, "zoom_ready": False},
+            {
+                "user_type": "System User",
+                "is_admin": False,
+                "google_ready": True,
+                "zoom_ready": False,
+                "blocks_time_off": False,
+            },
         )
 
     def test_system_manager_is_admin(self):
@@ -137,3 +145,29 @@ class TestGetGoogleSetup(IntegrationTestCase):
         with as_user(ADMIN_USER):
             setup = get_google_setup()
         self.assertEqual((setup["enabled"], setup["client_id"], setup["has_client_secret"]), (False, "", False))
+
+
+HR_APPS = ("frappe", "erpnext", "hrms", "frappe_appointment")
+
+
+class TestBlocksTimeOff(IntegrationTestCase):
+    def test_needs_erpnext_and_hrms(self):
+        """Without both HR apps nothing checks leave or holidays, whatever the user's Employee record."""
+        for apps in (["frappe", "frappe_appointment"], ["frappe", "erpnext", "frappe_appointment"]):
+            with (
+                self.subTest(apps=apps),
+                patch("frappe.get_installed_apps", return_value=apps),
+                patch.object(frappe.db, "exists", return_value=True),
+            ):
+                self.assertFalse(blocks_time_off(DESK_USER))
+
+    def test_needs_an_employee(self):
+        """With the HR apps, it depends on an Employee with the user's company email."""
+        for found in (True, False):
+            with (
+                self.subTest(employee=found),
+                patch("frappe.get_installed_apps", return_value=HR_APPS),
+                patch.object(frappe.db, "exists", return_value=found) as exists,
+            ):
+                self.assertEqual(blocks_time_off(DESK_USER), found)
+                exists.assert_called_once_with("Employee", {"company_email": DESK_USER})

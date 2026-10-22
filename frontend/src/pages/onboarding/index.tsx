@@ -20,7 +20,7 @@ const SignedIn = ({ user }: { user: SessionUser }) => {
   const status = data.message;
   if (status.user_type !== "System User") return <WebsiteUserGate />;
   if (!status.google_ready) return status.is_admin ? <AdminSetup user={user} onDone={() => mutate()} /> : <NotReadyGate />;
-  return <Setup user={user} zoomReady={!!status.zoom_ready} />;
+  return <Setup user={user} zoomReady={!!status.zoom_ready} blocksTimeOff={!!status.blocks_time_off} />;
 };
 
 const Onboarding = () => {

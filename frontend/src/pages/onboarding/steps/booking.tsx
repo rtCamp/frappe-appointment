@@ -16,6 +16,7 @@ import {
   GOOGLE_CALENDAR,
   IS_SLUG_AVAILABLE,
   MeetingType,
+  NOT_YOURS,
   SLUG_PATTERN,
   durationLabel,
   errorText,
@@ -176,7 +177,7 @@ const BookingStep = ({
     } catch (err) {
       setError(
         isNotYours(err)
-          ? "Your availability was created by someone else in Desk, so you can't change it here. Ask your admin to fix it."
+          ? NOT_YOURS
           : errorText(err)
       );
     } finally {
