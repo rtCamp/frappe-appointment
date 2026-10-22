@@ -18,24 +18,13 @@ import {
   pickCalendar,
 } from "./api";
 import { Frame } from "./frame";
-import { Button, Notice, StepHeader, Stepper } from "./ui";
+import { Button, Notice, Stepper } from "./ui";
 import CalendarStep from "./steps/calendar";
 import HoursStep from "./steps/hours";
 import BookingStep from "./steps/booking";
+import DoneStep from "./steps/done";
 
 const STEPS = ["Calendar", "Hours", "Booking page"];
-
-/** Stand-in for the done screen until it's built. */
-const PlaceholderStep = ({ title, onBack }: { title: string; onBack: () => void }) => (
-  <>
-    <StepHeader title={title}>This screen isn't built yet.</StepHeader>
-    <div className="flex justify-between gap-2">
-      <Button size="md" onClick={onBack}>
-        Back
-      </Button>
-    </div>
-  </>
-);
 
 const Setup = ({ user, zoomReady }: { user: SessionUser; zoomReady: boolean }) => {
   const { db } = useContext(FrappeContext) as FrappeConfig;
@@ -144,7 +133,7 @@ const Setup = ({ user, zoomReady }: { user: SessionUser; zoomReady: boolean }) =
             onBack={() => setStep(1)}
           />
         )}
-        {step === 3 && <PlaceholderStep title="You're ready to take bookings" onBack={() => setStep(2)} />}
+        {step === 3 && availability?.slug && <DoneStep slug={availability.slug} onEdit={() => setStep(0)} />}
       </>
     );
   }

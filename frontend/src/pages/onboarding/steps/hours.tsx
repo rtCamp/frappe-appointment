@@ -101,7 +101,14 @@ const HoursStep = ({
   const badDays = days.filter((d) => d.on && !(d.start && d.end && d.end > d.start)).map((d) => d.day);
   const noDays = !days.some((d) => d.on);
 
+  const slotsFor = (list: DayHours[]) =>
+    list.filter((d) => d.on).map((d) => `${d.day} ${d.start} ${d.end}`).join("|");
+  const changed = timeZone !== savedTimeZone || !availability || slotsFor(days) !== slotsFor(initialDays(availability));
+
   const save = async () => {
+    // Nothing to write: just move on. (The server rejects any save while, say, a saved Zoom
+    // choice is no longer set up, so an unchanged step shouldn't depend on it.)
+    if (!changed) return onSaved(timeZone);
     setError(null);
     setSaving(true);
     try {

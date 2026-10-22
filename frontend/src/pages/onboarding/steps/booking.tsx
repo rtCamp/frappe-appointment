@@ -87,9 +87,10 @@ const BookingStep = ({
   const [slugState, setSlugState] = useState<SlugState>("checking");
   const [suggestion, setSuggestion] = useState<string | null>(null);
 
-  // Frappe fills an unset Select with its first option ("None"), so a booking page that was never
-  // set up (no link yet) starts on Google Meet instead.
-  const savedProvider = (availability.slug ? availability.meeting_provider || "Google Meet" : "Google Meet") as Provider;
+  // Frappe fills an unset Select with its first option ("None"), so a booking page that was never set up
+  // starts on Google Meet instead. A link alone doesn't mean it was set up: new records fetch the username.
+  const setUpBefore = !!availability.enable_scheduling || availability.available_durations.length > 0;
+  const savedProvider = (setUpBefore ? availability.meeting_provider || "Google Meet" : "Google Meet") as Provider;
   // Zoom stays selectable if it's already saved, so turning Zoom off on the site doesn't silently change it.
   const providers = PROVIDERS.filter((p) => p.id !== "Zoom" || zoomReady || savedProvider === "Zoom");
   const [provider, setProvider] = useState<Provider>(savedProvider);
@@ -136,7 +137,8 @@ const BookingStep = ({
   const meetingLinkOk = provider !== "Custom" || /^https?:\/\/\S+$/.test(meetingLink.trim());
   const zoomEmailOk = provider !== "Zoom" || /^\S+@\S+\.\S+$/.test(zoomEmail.trim());
   const typesOk = types.length > 0 && types.every((t) => t.title.trim());
-  const canFinish = linkOk && meetingLinkOk && zoomEmailOk && typesOk;
+  const zoomOff = provider === "Zoom" && !zoomReady;
+  const canFinish = linkOk && meetingLinkOk && zoomEmailOk && typesOk && !zoomOff;
 
   const finish = async () => {
     setError(null);
@@ -296,7 +298,12 @@ const BookingStep = ({
             )}
           </div>
         )}
-        {provider === "Zoom" && (
+        {zoomOff && (
+          <Notice tone="amber" title="Zoom is turned off on this site">
+            Your booking page was set to Zoom, but an admin has since turned Zoom off. Pick another option to save.
+          </Notice>
+        )}
+        {provider === "Zoom" && !zoomOff && (
           <div className="flex flex-col gap-1.5 mt-1">
             <label htmlFor="zoom-email" className="text-es-sm text-ink-gray-6">
               Zoom email
