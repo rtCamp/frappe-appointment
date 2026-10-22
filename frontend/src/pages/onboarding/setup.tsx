@@ -12,6 +12,7 @@ import {
   GOOGLE_CALENDAR,
   SessionUser,
   errorText,
+  isBookingLive,
   isConnected,
   isNotYours,
   pickCalendar,
@@ -20,13 +21,14 @@ import { Frame } from "./frame";
 import { Button, Notice, StepHeader, Stepper } from "./ui";
 import CalendarStep from "./steps/calendar";
 import HoursStep from "./steps/hours";
+import BookingStep from "./steps/booking";
 
 const STEPS = ["Calendar", "Hours", "Booking page"];
 
-/** Stand-in for the steps that aren't built yet. */
+/** Stand-in for the done screen until it's built. */
 const PlaceholderStep = ({ title, onBack }: { title: string; onBack: () => void }) => (
   <>
-    <StepHeader title={title}>This step isn't built yet.</StepHeader>
+    <StepHeader title={title}>This screen isn't built yet.</StepHeader>
     <div className="flex justify-between gap-2">
       <Button size="md" onClick={onBack}>
         Back
@@ -35,7 +37,7 @@ const PlaceholderStep = ({ title, onBack }: { title: string; onBack: () => void 
   </>
 );
 
-const Setup = ({ user }: { user: SessionUser }) => {
+const Setup = ({ user, zoomReady }: { user: SessionUser; zoomReady: boolean }) => {
   const { db } = useContext(FrappeContext) as FrappeConfig;
   const [calendars, setCalendars] = useState<CalendarInfo[] | null>(null);
   const [availability, setAvailability] = useState<Availability | null>(null);
@@ -69,7 +71,8 @@ const Setup = ({ user }: { user: SessionUser }) => {
       // Start at the first unfinished step the first time the page loads.
       setStep(
         (current) =>
-          current ?? (!isConnected(pickCalendar(list)) ? 0 : saved?.appointment_time_slot.length ? 2 : 1)
+          current ??
+          (!isConnected(pickCalendar(list)) ? 0 : !saved?.appointment_time_slot.length ? 1 : isBookingLive(saved) ? 3 : 2)
       );
     } catch (err) {
       setLoadError(errorText(err));
@@ -81,7 +84,7 @@ const Setup = ({ user }: { user: SessionUser }) => {
   }, [load]);
 
   const calendar = calendars ? pickCalendar(calendars) : null;
-  const done = [isConnected(calendar), !!availability?.appointment_time_slot.length, false];
+  const done = [isConnected(calendar), !!availability?.appointment_time_slot.length, isBookingLive(availability)];
 
   let content = null;
   if (loadError) {
@@ -101,7 +104,7 @@ const Setup = ({ user }: { user: SessionUser }) => {
   } else if (calendars && step !== null) {
     content = (
       <>
-        <Stepper steps={STEPS} current={step} done={done} />
+        {step < STEPS.length && <Stepper steps={STEPS} current={step} done={done} />}
         {step === 0 && (
           <CalendarStep
             key={calendar?.name ?? "new"}
@@ -127,13 +130,27 @@ const Setup = ({ user }: { user: SessionUser }) => {
             onBack={() => setStep(0)}
           />
         )}
-        {step === 2 && <PlaceholderStep title="Set up your booking page" onBack={() => setStep(1)} />}
+        {step === 2 && calendar && availability && (
+          <BookingStep
+            user={user.name}
+            fullName={user.fullName}
+            calendar={calendar}
+            availability={availability}
+            zoomReady={zoomReady}
+            onSaved={async () => {
+              await load();
+              setStep(3);
+            }}
+            onBack={() => setStep(1)}
+          />
+        )}
+        {step === 3 && <PlaceholderStep title="You're ready to take bookings" onBack={() => setStep(2)} />}
       </>
     );
   }
 
   return (
-    <Frame user={user} stepLabel={step !== null ? `Step ${step + 1} of ${STEPS.length}` : undefined}>
+    <Frame user={user} stepLabel={step !== null && step < STEPS.length ? `Step ${step + 1} of ${STEPS.length}` : undefined}>
       {content}
     </Frame>
   );

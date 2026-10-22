@@ -92,8 +92,16 @@ const CalendarStep = ({
       }
       const url = (await call.post(AUTHORIZE_GOOGLE_CALENDAR, { g_calendar: name, reauthorize: 1 })).message?.url;
       if (!url) throw new Error("Google sign-in isn't available. Ask your admin to check Google Settings.");
-      if (popup && !popup.closed) popup.location.href = url;
-      else setManualUrl(url);
+      if (popup && !popup.closed) {
+        popup.location.href = url;
+      } else if (popup) {
+        // The window was closed before Google loaded in it.
+        setDidNotFinish(true);
+        return;
+      } else {
+        // The browser blocked the window, so offer the link instead.
+        setManualUrl(url);
+      }
       setWaiting({ calendar: name, startedAt: Date.now() });
     } catch (err) {
       popup?.close();

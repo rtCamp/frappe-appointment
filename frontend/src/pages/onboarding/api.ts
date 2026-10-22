@@ -4,6 +4,10 @@ export const ONBOARDING_STATUS = "frappe_appointment.api.onboarding.get_onboardi
 export const GOOGLE_CALENDAR = "Google Calendar";
 export const AUTHORIZE_GOOGLE_CALENDAR = "frappe.integrations.doctype.google_calendar.google_calendar.authorize_access";
 export const AVAILABILITY = "User Appointment Availability";
+export const IS_SLUG_AVAILABLE =
+  "frappe_appointment.frappe_appointment.doctype.user_appointment_availability.user_appointment_availability.is_slug_available";
+export const DEFAULT_EMAIL_TEMPLATES =
+  "frappe_appointment.frappe_appointment.doctype.appointment_settings.appointment_settings.get_default_email_template";
 
 export const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"] as const;
 export type Day = (typeof DAYS)[number];
@@ -12,6 +16,7 @@ export type Day = (typeof DAYS)[number];
 export interface OnboardingStatus {
   user_type: string;
   google_ready?: boolean;
+  zoom_ready?: boolean;
 }
 
 export interface CalendarInfo {
@@ -20,6 +25,7 @@ export interface CalendarInfo {
   custom_is_google_calendar_authorized: 0 | 1;
   custom_ignore_all_day_events: 0 | 1;
   google_calendar_id: string | null;
+  custom_zoom_user_email: string | null;
   modified: string;
 }
 
@@ -29,6 +35,7 @@ export const CALENDAR_FIELDS = [
   "custom_is_google_calendar_authorized",
   "custom_ignore_all_day_events",
   "google_calendar_id",
+  "custom_zoom_user_email",
   "modified",
 ];
 
@@ -44,12 +51,47 @@ export interface TimeSlot {
   end_time: string;
 }
 
+/** A row of available_durations: one meeting type on the booking page. Durations are in seconds. */
+export interface MeetingType {
+  name?: string;
+  title: string;
+  duration: number;
+  minimum_buffer_time: number | null;
+  availability_window: number | null;
+  limit_booking_frequency: number | null;
+  minimum_notice_before_event: number | null;
+  allow_rescheduling: 0 | 1;
+  minimum_notice_for_reschedule: number | null;
+}
+
 /** The fields of User Appointment Availability these steps read; it is named after the user. */
 export interface Availability {
   name: string;
   google_calendar: string;
   appointment_time_slot: TimeSlot[];
+  enable_scheduling: 0 | 1;
+  slug: string | null;
+  meeting_provider: "None" | "Custom" | "Zoom" | "Google Meet" | "" | null;
+  meeting_link: string | null;
+  response_email_template: string | null;
+  available_durations: MeetingType[];
 }
+
+/** The booking page is on, has a link and offers at least one meeting type. */
+export const isBookingLive = (availability: Availability | null) =>
+  !!availability?.enable_scheduling && !!availability.slug && availability.available_durations.length > 0;
+
+/** Same rule as the server's SLUG_REGEX. */
+export const SLUG_PATTERN = /^[a-z0-9_]+(?:-[a-z0-9_]+)*$/;
+
+/** "Robin Roy" -> "robin-roy" */
+export const slugify = (text: string) =>
+  text
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9_]+/g, "-")
+    .replace(/^-+|-+$/g, "");
 
 /** "9:00:00" from the server -> "09:00" for a time input. */
 export const toInputTime = (value: string) => {

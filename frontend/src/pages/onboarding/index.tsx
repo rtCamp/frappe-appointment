@@ -19,7 +19,7 @@ const SignedIn = ({ user }: { user: SessionUser }) => {
   const status = data.message;
   if (status.user_type !== "System User") return <WebsiteUserGate />;
   if (!status.google_ready) return <NotReadyGate />;
-  return <Setup user={user} />;
+  return <Setup user={user} zoomReady={!!status.zoom_ready} />;
 };
 
 const Onboarding = () => {
