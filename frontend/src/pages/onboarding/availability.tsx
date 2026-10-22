@@ -1,6 +1,6 @@
 /**
  * Availability: the time zone and weekly hours once setup is finished, saved from the header.
- * Leaving with unsaved changes asks first.
+ * Leaving for another section with unsaved changes asks first.
  */
 import { useContext, useEffect, useState } from "react";
 import { Check, LoaderCircle } from "lucide-react";
@@ -52,7 +52,7 @@ const AvailabilityPage = ({
   }, [dirty]);
 
   const askFirst = (go: () => void) => (dirty ? setLeaving(() => go) : go());
-  const { onOpen, onSettings } = nav;
+  const { onOpen } = nav;
 
   const save = async () => {
     setError(null);
@@ -75,7 +75,6 @@ const AvailabilityPage = ({
       width="page"
       {...nav}
       onOpen={onOpen && ((section) => section !== "Availability" && askFirst(() => onOpen(section)))}
-      onSettings={onSettings && (() => askFirst(onSettings))}
       headerAction={
         <span className="flex items-center gap-2">
           {dirty ? (

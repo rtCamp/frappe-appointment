@@ -27,6 +27,7 @@ import DoneStep from "./steps/done";
 import Home from "./home";
 import MeetingTypes from "./meeting-types";
 import AvailabilityPage from "./availability";
+import SettingsDialog, { SettingsTab } from "./settings";
 
 const STEPS = ["Calendar", "Hours", "Booking page"];
 const DONE = 3;
@@ -54,8 +55,7 @@ const Setup = ({
   const user = { ...sessionUser, timeZone };
   const [loadError, setLoadError] = useState<string | null>(null);
   const [view, setView] = useState<View | null>(null);
-  // Set when Home sends someone to reconnect their calendar, so the Calendar step leads back to Home.
-  const [returnHome, setReturnHome] = useState(false);
+  const [settingsTab, setSettingsTab] = useState<SettingsTab | null>(null);
   const [toggling, setToggling] = useState(false);
   const [homeError, setHomeError] = useState<string | null>(null);
 
@@ -101,14 +101,14 @@ const Setup = ({
   const setUp = isSetUp(availability);
   const step = typeof view === "number" ? view : null;
 
-  /** The sidebar once setup is finished. Until the Settings dialog exists, Settings walks back through the setup steps. */
+  /** The sidebar and the Settings menu item, once setup is finished. */
   const appNav = (current?: string): FrameNav =>
     setUp
       ? {
           openSections: Object.keys(SECTION_VIEWS),
           current,
           onOpen: (section) => setView(SECTION_VIEWS[section]),
-          onSettings: () => setView(0),
+          onSettings: () => setSettingsTab("booking"),
         }
       : {};
 
@@ -157,10 +157,7 @@ const Setup = ({
           user={user}
           availability={availability}
           calendarConnected={isConnected(calendar)}
-          onReconnect={() => {
-            setReturnHome(true);
-            setView(0);
-          }}
+          onReconnect={() => setSettingsTab("calendar")}
         />
       </>
     );
@@ -174,10 +171,7 @@ const Setup = ({
             user={user.name}
             calendar={calendar}
             onChanged={load}
-            onContinue={() => {
-              setView(returnHome ? "home" : 1);
-              setReturnHome(false);
-            }}
+            onContinue={() => setView(1)}
           />
         )}
         {step === 1 && calendar && (
@@ -216,12 +210,11 @@ const Setup = ({
     );
   }
 
+  let page;
   if (view === "types" && availability && !loadError) {
-    return <MeetingTypes user={user} availability={availability} nav={appNav("Meeting types")} onChanged={load} />;
-  }
-
-  if (view === "availability" && availability && !loadError) {
-    return (
+    page = <MeetingTypes user={user} availability={availability} nav={appNav("Meeting types")} onChanged={load} />;
+  } else if (view === "availability" && availability && !loadError) {
+    page = (
       <AvailabilityPage
         user={user}
         timeZone={timeZone}
@@ -234,10 +227,8 @@ const Setup = ({
         }}
       />
     );
-  }
-
-  if (view === "home" && availability) {
-    return (
+  } else if (view === "home" && availability) {
+    page = (
       <Frame
         user={user}
         title="Home"
@@ -259,16 +250,34 @@ const Setup = ({
         {content}
       </Frame>
     );
+  } else {
+    page = (
+      <Frame
+        user={user}
+        stepLabel={step !== null && step < DONE ? `Step ${step + 1} of ${STEPS.length}` : undefined}
+        {...appNav()}
+      >
+        {content}
+      </Frame>
+    );
   }
 
   return (
-    <Frame
-      user={user}
-      stepLabel={step !== null && step < DONE ? `Step ${step + 1} of ${STEPS.length}` : undefined}
-      {...appNav()}
-    >
-      {content}
-    </Frame>
+    <>
+      {page}
+      {settingsTab && setUp && availability && (
+        <SettingsDialog
+          user={user.name}
+          availability={availability}
+          calendar={calendar}
+          zoomReady={zoomReady}
+          tab={settingsTab}
+          onTab={setSettingsTab}
+          onChanged={load}
+          onClose={() => setSettingsTab(null)}
+        />
+      )}
+    </>
   );
 };
 
