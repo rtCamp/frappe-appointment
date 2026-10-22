@@ -267,7 +267,7 @@ const Setup = ({
       {page}
       {settingsTab && setUp && availability && (
         <SettingsDialog
-          user={user.name}
+          user={user}
           availability={availability}
           calendar={calendar}
           zoomReady={zoomReady}

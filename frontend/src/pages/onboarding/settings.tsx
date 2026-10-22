@@ -3,12 +3,23 @@
  * Calendar it reads and writes, and video calls. Switches and pickers save straight away; typed values
  * have a Save button.
  */
-import { ReactNode, useContext, useEffect, useRef, useState } from "react";
-import { CalendarDays, ChevronDown, LoaderCircle, X } from "lucide-react";
+import { ReactNode, useCallback, useContext, useEffect, useRef, useState } from "react";
+import { CalendarDays, ChevronDown, LoaderCircle, Plus, X } from "lucide-react";
 import { FrappeConfig, FrappeContext } from "frappe-react-sdk";
 
 import { cn } from "@/lib/utils";
-import { AVAILABILITY, Availability, CalendarInfo, GOOGLE_CALENDAR, errorText, isConnected, slotsAsText } from "./api";
+import {
+  AVAILABILITY,
+  Availability,
+  CalendarInfo,
+  EMAIL_TEMPLATE,
+  GOOGLE_CALENDAR,
+  SessionUser,
+  errorText,
+  isConnected,
+  slotsAsText,
+} from "./api";
+import EmailEditor from "./email-editor";
 import GoogleConnectNotices from "./google-connect-notices";
 import OtherCalendar from "./other-calendar";
 import SlugField from "./slug-field";
@@ -25,8 +36,6 @@ const TABS: { id: SettingsTab; label: string }[] = [
   { id: "calendar", label: "Calendar" },
   { id: "video", label: "Video calls" },
 ];
-
-const EMAIL_TEMPLATE = "Email Template";
 
 /** A setting: what it is on the left, its control on the right. */
 const Row = ({ title, description, children, last }: { title: ReactNode; description?: string; children?: ReactNode; last?: boolean }) => (
@@ -61,19 +70,39 @@ const useAvailabilitySave = (availability: Availability, onChanged: () => Promis
   return { busy, error, save };
 };
 
-const BookingTab = ({ availability, onChanged }: { availability: Availability; onChanged: () => Promise<void> }) => {
+const BookingTab = ({
+  user,
+  availability,
+  onChanged,
+}: {
+  user: SessionUser;
+  availability: Availability;
+  onChanged: () => Promise<void>;
+}) => {
   const { db } = useContext(FrappeContext) as FrappeConfig;
   const { busy, error, save } = useAvailabilitySave(availability, onChanged);
   const savedSlug = availability.slug ?? "";
   const [slug, setSlug] = useState(savedSlug);
   const slugCheck = useSlugCheck(slug, savedSlug);
   const [templates, setTemplates] = useState<string[] | null>(null);
+  // The email open in the editor: a template's name, "" for a new one, or null when closed.
+  const [editing, setEditing] = useState<string | null>(null);
+
+  const loadTemplates = useCallback(
+    () =>
+      db
+        .getDocList<{ name: string }>(EMAIL_TEMPLATE, { fields: ["name"], orderBy: { field: "name", order: "asc" }, limit: 500 })
+        .then((list) => setTemplates(list.map((t) => t.name)))
+        .catch(() => setTemplates([])),
+    [db]
+  );
 
   useEffect(() => {
-    db.getDocList<{ name: string }>(EMAIL_TEMPLATE, { fields: ["name"], orderBy: { field: "name", order: "asc" }, limit: 500 })
-      .then((list) => setTemplates(list.map((t) => t.name)))
-      .catch(() => setTemplates([]));
-  }, [db]);
+    loadTemplates();
+  }, [loadTemplates]);
+
+  const canEdit = user.canWrite.includes(EMAIL_TEMPLATE);
+  const canCreate = user.canCreate.includes(EMAIL_TEMPLATE);
 
   const template = availability.response_email_template ?? "";
   const options = templates && template && !templates.includes(template) ? [template, ...templates] : templates ?? [];
@@ -115,28 +144,56 @@ const BookingTab = ({ availability, onChanged }: { availability: Availability; o
       </div>
 
       <Row title="Confirmation email" description="The email people get after they book." last>
-        <span className="relative w-[220px] max-w-full">
-          <select
-            aria-label="Confirmation email"
-            value={template}
-            disabled={!templates || busy === "template"}
-            onChange={(e) => save("template", { response_email_template: e.target.value })}
-            className="w-full h-7 pl-2 pr-7 appearance-none truncate rounded-lg border border-transparent bg-surface-gray-2 text-es-base text-ink-gray-8 cursor-pointer hover:bg-surface-gray-3 focus:outline-none focus:border-outline-gray-4 focus:shadow-es-focus disabled:cursor-wait"
-          >
-            {!template && (
-              <option value="" disabled>
-                Choose an email
-              </option>
-            )}
-            {options.map((name) => (
-              <option key={name} value={name}>
-                {name}
-              </option>
-            ))}
-          </select>
-          <ChevronDown className="absolute right-2 top-1.5 w-4 h-4 text-ink-gray-4 pointer-events-none" aria-hidden="true" />
+        <span className="flex flex-wrap items-center gap-1.5">
+          <span className="relative w-[220px] max-w-full">
+            <select
+              aria-label="Confirmation email"
+              value={template}
+              disabled={!templates || busy === "template"}
+              onChange={(e) => save("template", { response_email_template: e.target.value })}
+              className="w-full h-7 pl-2 pr-7 appearance-none truncate rounded-lg border border-transparent bg-surface-gray-2 text-es-base text-ink-gray-8 cursor-pointer hover:bg-surface-gray-3 focus:outline-none focus:border-outline-gray-4 focus:shadow-es-focus disabled:cursor-wait"
+            >
+              {!template && (
+                <option value="" disabled>
+                  Choose an email
+                </option>
+              )}
+              {options.map((name) => (
+                <option key={name} value={name}>
+                  {name}
+                </option>
+              ))}
+            </select>
+            <ChevronDown className="absolute right-2 top-1.5 w-4 h-4 text-ink-gray-4 pointer-events-none" aria-hidden="true" />
+          </span>
+          {template && (
+            <Button variant="ghost" onClick={() => setEditing(template)}>
+              {canEdit ? "Edit" : "Preview"}
+            </Button>
+          )}
+          {canCreate && (
+            <Button variant="ghost" onClick={() => setEditing("")}>
+              <Plus className="w-4 h-4" aria-hidden="true" />
+              New email
+            </Button>
+          )}
         </span>
       </Row>
+
+      {editing !== null && (
+        <EmailEditor
+          user={user}
+          name={editing || null}
+          onClose={() => setEditing(null)}
+          onSaved={async (saved) => {
+            await loadTemplates();
+            // A new email becomes this page's confirmation email; a renamed one is relinked by the rename.
+            if (!editing) await save("template", { response_email_template: saved });
+            else await onChanged();
+            setEditing(null);
+          }}
+        />
+      )}
 
       {error && (
         <Notice tone="red" title="Couldn't save your booking page">
@@ -336,7 +393,7 @@ const SettingsDialog = ({
   onChanged,
   onClose,
 }: {
-  user: string;
+  user: SessionUser;
   availability: Availability;
   calendar: CalendarInfo | null;
   zoomReady: boolean;
@@ -412,10 +469,10 @@ const SettingsDialog = ({
             </Button>
           </div>
           <div className="flex-1 overflow-y-auto px-6 pt-2 pb-8 max-sm:px-4 flex flex-col">
-            {tab === "booking" && <BookingTab availability={availability} onChanged={onChanged} />}
-            {tab === "calendar" && <CalendarTab user={user} calendar={calendar} onChanged={onChanged} />}
+            {tab === "booking" && <BookingTab user={user} availability={availability} onChanged={onChanged} />}
+            {tab === "calendar" && <CalendarTab user={user.name} calendar={calendar} onChanged={onChanged} />}
             {tab === "video" && (
-              <VideoTab user={user} availability={availability} calendar={calendar} zoomReady={zoomReady} onChanged={onChanged} />
+              <VideoTab user={user.name} availability={availability} calendar={calendar} zoomReady={zoomReady} onChanged={onChanged} />
             )}
           </div>
         </div>

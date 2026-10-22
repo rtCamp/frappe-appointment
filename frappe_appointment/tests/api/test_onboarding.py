@@ -3,7 +3,14 @@ from unittest.mock import patch
 import frappe
 from frappe.tests import IntegrationTestCase
 
-from frappe_appointment.api.onboarding import blocks_time_off, get_google_setup, get_onboarding_status
+from frappe_appointment.api.onboarding import (
+    SAMPLE_GUEST,
+    SAMPLE_MEET_LINK,
+    blocks_time_off,
+    get_google_setup,
+    get_onboarding_status,
+    preview_confirmation_email,
+)
 from frappe_appointment.tests import as_user, make_test_user, set_password_field, setup_appointment_settings
 
 DESK_USER = "test_fa_onb_desk@example.com"
@@ -171,3 +178,68 @@ class TestBlocksTimeOff(IntegrationTestCase):
             ):
                 self.assertEqual(blocks_time_off(DESK_USER), found)
                 exists.assert_called_once_with("Employee", {"company_email": DESK_USER})
+
+
+PREVIEW_TEMPLATE = "_Test FA Onboarding Preview"
+
+
+class TestPreviewConfirmationEmail(IntegrationTestCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        make_test_user(DESK_USER).add_roles("Desk User")
+        make_test_user(ADMIN_USER).add_roles("System Manager")
+        if not frappe.db.exists("Email Template", PREVIEW_TEMPLATE):
+            frappe.get_doc({"doctype": "Email Template", "name": PREVIEW_TEMPLATE, "subject": "-"}).insert(
+                ignore_permissions=True
+            )
+
+    def setUp(self):
+        frappe.db.set_value(
+            "Email Template",
+            PREVIEW_TEMPLATE,
+            {
+                "subject": "Booked: {{ event.subject }}",
+                "response": "<p>Join: {{ meet_link }}</p>"
+                "{% if event.reschedule_url %}<p>Move it: {{ event.reschedule_url }}</p>{% endif %}",
+                "use_html": 0,
+                "response_html": "",
+            },
+        )
+
+    def test_saved_template_renders_with_a_sample_booking(self):
+        """A Desk user can preview a saved template; every variable is filled in."""
+        with as_user(DESK_USER):
+            out = preview_confirmation_email(template=PREVIEW_TEMPLATE)
+        self.assertEqual(
+            out["subject"], f"Booked: Meet: {SAMPLE_GUEST} <> {frappe.utils.get_fullname(DESK_USER)} (15 min)"
+        )
+        self.assertIn(f"Join: {SAMPLE_MEET_LINK}", out["message"])
+        self.assertIn("Move it: http", out["message"])
+        self.assertTrue(out["starts_on"].endswith("11:00:00"))
+
+    def test_html_templates_render_their_html(self):
+        """With Use HTML on, the HTML response is what gets sent, so it's what's previewed."""
+        frappe.db.set_value(
+            "Email Template", PREVIEW_TEMPLATE, {"use_html": 1, "response_html": "<b>{{ meet_link }}</b>"}
+        )
+        with as_user(DESK_USER):
+            self.assertEqual(
+                preview_confirmation_email(template=PREVIEW_TEMPLATE)["message"], f"<b>{SAMPLE_MEET_LINK}</b>"
+            )
+
+    def test_drafts_need_write_access(self):
+        """An unsaved draft is only previewed for people who can edit templates."""
+        with as_user(DESK_USER), self.assertRaises(frappe.PermissionError):
+            preview_confirmation_email(subject="Hi", message="{{ meet_link }}")
+        with as_user(ADMIN_USER):
+            self.assertEqual(
+                preview_confirmation_email(subject="Hi", message="{{ meet_link }}")["message"], SAMPLE_MEET_LINK
+            )
+
+    def test_template_mistakes_come_back_as_a_message(self):
+        """A broken template returns a short error for the preview instead of failing the request."""
+        with as_user(ADMIN_USER):
+            out = preview_confirmation_email(subject="Hi", message="<p>{% if meet_link %}</p>")
+        self.assertIn("error", out)
+        self.assertTrue(out["error"].startswith("Line 1:"))

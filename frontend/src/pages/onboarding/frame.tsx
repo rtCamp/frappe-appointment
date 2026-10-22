@@ -185,7 +185,7 @@ export const Frame = ({
   openSections?: string[];
   current?: string;
   onOpen?: (section: string) => void;
-  /** Shows Settings in the app menu. */
+  /** Shows Settings in the app menu and at the bottom of the sidebar. */
   onSettings?: () => void;
   children: ReactNode;
 }) => (
@@ -224,6 +224,18 @@ export const Frame = ({
           );
         })}
       </div>
+      {onSettings && (
+        <div className="mt-auto p-2">
+          <button
+            type="button"
+            onClick={onSettings}
+            className="flex items-center gap-2 w-full h-7 px-2 rounded-lg border-0 bg-transparent text-es-base text-ink-gray-6 cursor-pointer hover:bg-surface-gray-3 focus-visible:outline-none focus-visible:shadow-es-focus"
+          >
+            <Settings className="w-4 h-4" aria-hidden="true" />
+            <span className="flex-1 text-left">Settings</span>
+          </button>
+        </div>
+      )}
     </nav>
 
     <main className="flex flex-col min-w-0" style={{ flex: "999 1 560px" }}>

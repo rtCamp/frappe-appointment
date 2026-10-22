@@ -76,3 +76,78 @@ def blocks_time_off(user: str) -> bool:
     if "erpnext" not in installed_apps or "hrms" not in installed_apps:
         return False
     return bool(frappe.db.exists("Employee", {"company_email": user}))
+
+
+SAMPLE_GUEST = "Ananya Sharma"
+SAMPLE_MEET_LINK = "https://meet.google.com/abc-defg-hij"
+
+
+class TemplateRenderError(Exception):
+    pass
+
+
+@frappe.whitelist()
+def preview_confirmation_email(template: str | None = None, subject: str | None = None, message: str | None = None):
+    """A confirmation email as a guest would get it, filled in with a sample booking.
+
+    A saved template needs read access to it. An unsaved draft (subject and message) needs write
+    access to Email Template, like saving one would. It's rendered as send_email_template_mail does:
+    Frappe's sandboxed Jinja, with the same context keys.
+    """
+    if subject is None and message is None:
+        frappe.has_permission("Email Template", "read", doc=template, throw=True)
+        doc = frappe.get_doc("Email Template", template)
+        subject, message = doc.subject, doc.response_html if doc.use_html else doc.response
+    else:
+        frappe.has_permission("Email Template", "write", throw=True)
+
+    context = sample_email_context(frappe.session.user)
+    try:
+        return {
+            "subject": render_for_preview(subject, context),
+            "message": render_for_preview(message, context),
+            "starts_on": str(context["event"].starts_on),
+            "guest": SAMPLE_GUEST,
+        }
+    except TemplateRenderError as e:
+        return {"error": str(e)}
+
+
+def render_for_preview(text: str | None, context: dict) -> str:
+    """Render one part of the email, turning template mistakes into a short message."""
+    from jinja2 import TemplateSyntaxError
+
+    try:
+        frappe.get_jenv().parse(text or "")
+    except TemplateSyntaxError as e:
+        raise TemplateRenderError(f"Line {e.lineno}: {e.message}") from e
+    try:
+        return frappe.render_template(text or "", context)
+    except Exception as e:
+        frappe.clear_messages()
+        raise TemplateRenderError(f"Couldn't fill in the template ({type(e).__name__}).") from e
+
+
+def sample_email_context(user: str) -> dict:
+    """The arguments send_meet_email passes to a confirmation email, for a made-up booking tomorrow at 11:00."""
+    availability = frappe.get_all("User Appointment Availability", filters={"user": user}, fields=["*"], limit=1)
+    availability = availability[0] if availability else frappe._dict()
+    slug = availability.get("slug") or "your-link"
+    host = frappe.utils.get_fullname(user)
+
+    starts_on = frappe.utils.add_days(frappe.utils.now_datetime(), 1).replace(
+        hour=11, minute=0, second=0, microsecond=0
+    )
+    event = frappe._dict(
+        subject=f"Meet: {SAMPLE_GUEST} <> {host} (15 min)",
+        starts_on=starts_on,
+        ends_on=frappe.utils.add_to_date(starts_on, minutes=15),
+        custom_meet_link=SAMPLE_MEET_LINK,
+        reschedule_url=frappe.utils.get_url(f"/schedule/in/{slug}?reschedule=1&event_token=sample"),
+    )
+    return {
+        "appointment_group": {**availability, "meet_link": SAMPLE_MEET_LINK},
+        "meet_link": SAMPLE_MEET_LINK,
+        "event": event,
+        "metadata": {"subject": event.subject, "personal": True, "user_slug": slug},
+    }

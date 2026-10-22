@@ -9,6 +9,8 @@ export const AUTHORIZE_GOOGLE_CALENDAR = "frappe.integrations.doctype.google_cal
 export const AVAILABILITY = "User Appointment Availability";
 export const IS_SLUG_AVAILABLE =
   "frappe_appointment.frappe_appointment.doctype.user_appointment_availability.user_appointment_availability.is_slug_available";
+export const EMAIL_TEMPLATE = "Email Template";
+export const PREVIEW_EMAIL = "frappe_appointment.api.onboarding.preview_confirmation_email";
 export const DEFAULT_EMAIL_TEMPLATES =
   "frappe_appointment.frappe_appointment.doctype.appointment_settings.appointment_settings.get_default_email_template";
 
@@ -142,6 +144,17 @@ export const durationLabel = (seconds: number) => {
 export const providerLabel = (provider: Availability["meeting_provider"]) =>
   provider === "Custom" ? "Your own link" : provider === "None" || !provider ? "No video link" : provider;
 
+/** An Email Template, as the confirmation email uses it. */
+export interface EmailTemplate {
+  name: string;
+  subject: string;
+  response: string | null;
+  use_html: 0 | 1;
+  response_html: string | null;
+  /** Added by Appointments: 0 sends right away, 1-24 at that hour of the day (24 is midnight). */
+  custom_time_to_send_email: number | null;
+}
+
 /** A personal booking: an Event linked to the host's availability. Times are in the site's time zone. */
 export interface Booking {
   name: string;
@@ -199,10 +212,13 @@ export interface SessionUser {
   timeZone: string;
   /** The site's time zone, which Datetime fields like Event.starts_on are written in. */
   siteTimeZone: string;
+  /** Doctypes the user may change or create, from the boot data. */
+  canWrite: string[];
+  canCreate: string[];
 }
 
 interface Boot {
-  user?: { name?: string };
+  user?: { name?: string; can_write?: string[]; can_create?: string[] };
   user_info?: Record<string, { fullname?: string }>;
   time_zone?: { system?: string; user?: string };
 }
@@ -218,6 +234,8 @@ export const getSessionUser = (): SessionUser | null => {
     fullName: boot.user_info?.[name]?.fullname || name,
     timeZone: boot.time_zone?.user || boot.time_zone?.system || Intl.DateTimeFormat().resolvedOptions().timeZone,
     siteTimeZone: boot.time_zone?.system || Intl.DateTimeFormat().resolvedOptions().timeZone,
+    canWrite: boot.user?.can_write ?? [],
+    canCreate: boot.user?.can_create ?? [],
   };
 };
 
