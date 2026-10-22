@@ -8,6 +8,7 @@ import MetaTags from "@/components/meta-tags";
 import { ONBOARDING_STATUS, OnboardingStatus, SessionUser, getSessionUser } from "./api";
 import { LoadErrorGate, LoginGate, NotReadyGate, WebsiteUserGate } from "./gate";
 import Setup from "./setup";
+import AdminSetup from "./admin";
 import "@/styles/espresso.css";
 
 const SignedIn = ({ user }: { user: SessionUser }) => {
@@ -18,7 +19,7 @@ const SignedIn = ({ user }: { user: SessionUser }) => {
 
   const status = data.message;
   if (status.user_type !== "System User") return <WebsiteUserGate />;
-  if (!status.google_ready) return <NotReadyGate />;
+  if (!status.google_ready) return status.is_admin ? <AdminSetup user={user} onDone={() => mutate()} /> : <NotReadyGate />;
   return <Setup user={user} zoomReady={!!status.zoom_ready} />;
 };
 

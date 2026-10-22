@@ -1,6 +1,8 @@
 import { getErrorMessages } from "@/lib/utils";
 
 export const ONBOARDING_STATUS = "frappe_appointment.api.onboarding.get_onboarding_status";
+export const GOOGLE_SETUP = "frappe_appointment.api.onboarding.get_google_setup";
+export const GOOGLE_SETTINGS = "Google Settings";
 export const GOOGLE_CALENDAR = "Google Calendar";
 export const AUTHORIZE_GOOGLE_CALENDAR = "frappe.integrations.doctype.google_calendar.google_calendar.authorize_access";
 export const AVAILABILITY = "User Appointment Availability";
@@ -12,11 +14,22 @@ export const DEFAULT_EMAIL_TEMPLATES =
 export const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"] as const;
 export type Day = (typeof DAYS)[number];
 
-/** google_ready is only sent to desk (System) users. */
+/** Everything but user_type is only sent to desk (System) users. */
 export interface OnboardingStatus {
   user_type: string;
+  is_admin?: boolean;
   google_ready?: boolean;
   zoom_ready?: boolean;
+}
+
+/** For System Managers: what to paste into Google Cloud, and what Google Settings already holds. */
+export interface GoogleSetup {
+  origin: string;
+  domain: string;
+  redirect_uri: string;
+  enabled: boolean;
+  client_id: string;
+  has_client_secret: boolean;
 }
 
 export interface CalendarInfo {

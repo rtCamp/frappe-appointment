@@ -1,10 +1,11 @@
 import frappe
 from frappe.tests import IntegrationTestCase
 
-from frappe_appointment.api.onboarding import get_onboarding_status
+from frappe_appointment.api.onboarding import get_google_setup, get_onboarding_status
 from frappe_appointment.tests import as_user, make_test_user, set_password_field, setup_appointment_settings
 
 DESK_USER = "test_fa_onb_desk@example.com"
+ADMIN_USER = "test_fa_onb_admin@example.com"
 WEBSITE_USER = "test_fa_onb_website@example.com"
 CLIENT_ID = "fa-onb.apps.googleusercontent.com"
 CLIENT_SECRET = "fa-onb-secret"
@@ -29,6 +30,7 @@ class TestGetOnboardingStatus(IntegrationTestCase):
         super().setUpClass()
         # A user without a desk role is saved as a Website User.
         make_test_user(DESK_USER).add_roles("Desk User")
+        make_test_user(ADMIN_USER).add_roles("System Manager")
         make_test_user(WEBSITE_USER)
 
     def status_for(self, user):
@@ -40,8 +42,13 @@ class TestGetOnboardingStatus(IntegrationTestCase):
         set_google_settings()
         set_zoom_settings(enable=0)
         self.assertEqual(
-            self.status_for(DESK_USER), {"user_type": "System User", "google_ready": True, "zoom_ready": False}
+            self.status_for(DESK_USER),
+            {"user_type": "System User", "is_admin": False, "google_ready": True, "zoom_ready": False},
         )
+
+    def test_system_manager_is_admin(self):
+        """System Managers are told they're admins, so they get the Google setup guide."""
+        self.assertTrue(self.status_for(ADMIN_USER)["is_admin"])
 
     def test_desk_user_google_disabled(self):
         """Google Settings turned off reports not ready."""
@@ -83,3 +90,50 @@ class TestGetOnboardingStatus(IntegrationTestCase):
         payload = frappe.as_json(self.status_for(DESK_USER))
         for secret in (CLIENT_ID, CLIENT_SECRET, "fa-zoom-acc", "fa-zoom-cid", "fa-zoom-sec"):
             self.assertNotIn(secret, payload)
+
+
+class TestGetGoogleSetup(IntegrationTestCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        make_test_user(DESK_USER).add_roles("Desk User")
+        make_test_user(ADMIN_USER).add_roles("System Manager")
+
+    def setUp(self):
+        # The redirect URI is built from the current request, which only exists over HTTP.
+        frappe.utils.set_request(path="/")
+
+    def tearDown(self):
+        frappe.local.request = None
+
+    def test_only_system_managers(self):
+        """Other desk users can't read the Google setup."""
+        with as_user(DESK_USER):
+            self.assertRaises(frappe.PermissionError, get_google_setup)
+
+    def test_redirect_uri_matches_authorize_access(self):
+        """The redirect URI is the site address plus the Google Calendar callback, as authorize_access sends it."""
+        with as_user(ADMIN_USER):
+            setup = get_google_setup()
+        self.assertEqual(
+            setup["redirect_uri"],
+            f"{frappe.utils.get_request_site_address(full_address=True)}"
+            "?cmd=frappe.integrations.doctype.google_calendar.google_calendar.google_callback",
+        )
+        self.assertTrue(setup["redirect_uri"].startswith(setup["origin"]))
+        self.assertIn(setup["domain"], setup["origin"])
+
+    def test_reports_saved_settings_without_the_secret(self):
+        """The saved client ID and whether a secret exists come back; the secret never does."""
+        set_google_settings(enable=0)
+        with as_user(ADMIN_USER):
+            setup = get_google_setup()
+        self.assertEqual((setup["enabled"], setup["client_id"], setup["has_client_secret"]), (False, CLIENT_ID, True))
+        self.assertNotIn(CLIENT_SECRET, frappe.as_json(setup))
+
+    def test_nothing_saved_yet(self):
+        """A site with no Google credentials reports none."""
+        set_google_settings(enable=0, client_id="", client_secret="")
+        with as_user(ADMIN_USER):
+            setup = get_google_setup()
+        self.assertEqual((setup["enabled"], setup["client_id"], setup["has_client_secret"]), (False, "", False))

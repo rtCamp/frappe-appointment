@@ -133,11 +133,16 @@ const LOCKED_SECTIONS: { label: string; icon: ComponentType<{ className?: string
 
 export const Frame = ({
   user,
+  title = "Getting started",
   stepLabel,
+  wide,
   children,
 }: {
   user: SessionUser;
+  title?: string;
   stepLabel?: string;
+  /** 960px instead of 640px, for pages with a side list like the admin guide. */
+  wide?: boolean;
   children: ReactNode;
 }) => (
   <div className="espresso font-espresso min-h-screen flex flex-wrap bg-surface-base text-ink-gray-8">
@@ -168,10 +173,17 @@ export const Frame = ({
 
     <main className="flex flex-col min-w-0" style={{ flex: "999 1 560px" }}>
       <header className="min-h-12 flex items-center justify-between gap-2 px-5 border-b border-outline-gray-1">
-        <h1 className="m-0 text-es-lg font-semibold text-ink-gray-9">Getting started</h1>
+        <h1 className="m-0 text-es-lg font-semibold text-ink-gray-9">{title}</h1>
         {stepLabel && <span className="text-es-sm tabular-nums text-ink-gray-5">{stepLabel}</span>}
       </header>
-      <div className="w-full max-w-[640px] mx-auto px-5 pt-10 pb-12 box-border flex flex-col gap-8">{children}</div>
+      <div
+        className={cn(
+          "w-full mx-auto px-5 pb-12 box-border flex flex-col",
+          wide ? "max-w-[960px] pt-8 gap-7" : "max-w-[640px] pt-10 gap-8"
+        )}
+      >
+        {children}
+      </div>
     </main>
   </div>
 );

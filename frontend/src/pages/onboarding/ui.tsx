@@ -1,8 +1,8 @@
 /**
  * Espresso building blocks for the /schedule screens.
  */
-import { ButtonHTMLAttributes, Fragment, ReactNode } from "react";
-import { Check, CircleAlert, CircleCheck, Info, TriangleAlert } from "lucide-react";
+import { ButtonHTMLAttributes, Fragment, ReactNode, useEffect, useRef, useState } from "react";
+import { Check, CircleAlert, CircleCheck, Copy, Info, TriangleAlert } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { buttonClass, buttonVariants } from "./styles";
@@ -139,3 +139,47 @@ export const Stepper = ({ steps, current, done }: { steps: string[]; current: nu
     })}
   </ol>
 );
+
+/** A value to paste somewhere else (a scope, a redirect URI), with a Copy button. */
+export const CopyValue = ({ value, wrap, boxed }: { value: string; wrap?: boolean; boxed?: boolean }) => {
+  const [copied, setCopied] = useState(false);
+  const timer = useRef<number>();
+  useEffect(() => () => window.clearTimeout(timer.current), []);
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(value);
+    } catch {
+      return;
+    }
+    setCopied(true);
+    window.clearTimeout(timer.current);
+    timer.current = window.setTimeout(() => setCopied(false), 1600);
+  };
+  return (
+    <div
+      className={cn(
+        "flex gap-2 py-1 pr-1 pl-2.5 rounded-[10px]",
+        wrap ? "items-start py-1.5" : "items-center",
+        boxed ? "border border-outline-gray-2 bg-surface-base" : "bg-surface-gray-1"
+      )}
+    >
+      <code
+        className={cn(
+          "flex-1 min-w-0 font-mono text-es-sm text-ink-gray-8",
+          wrap ? "break-all" : "truncate"
+        )}
+        title={value}
+      >
+        {value}
+      </code>
+      <button
+        type="button"
+        onClick={copy}
+        className="shrink-0 inline-flex items-center gap-1.5 h-7 px-2 rounded-lg border border-outline-gray-2 bg-surface-base text-es-base text-ink-gray-8 shadow-es-sm cursor-pointer hover:bg-surface-gray-2 focus-visible:outline-none focus-visible:shadow-es-focus"
+      >
+        {copied ? <Check className="w-3.5 h-3.5" aria-hidden="true" /> : <Copy className="w-3.5 h-3.5" aria-hidden="true" />}
+        <span aria-live="polite">{copied ? "Copied" : "Copy"}</span>
+      </button>
+    </div>
+  );
+};
