@@ -130,6 +130,12 @@ export const slotsAsText = (availability: Availability) =>
     end_time: toServerTime(toInputTime(s.end_time)),
   }));
 
+/** A length in seconds, in words: "30 min", "1 hr", "1 hr 30 min". */
+export const durationLabel = (seconds: number) => {
+  const m = Math.round(seconds / 60);
+  return m < 60 ? `${m} min` : m % 60 === 0 ? `${m / 60} hr` : `${Math.floor(m / 60)} hr ${m % 60} min`;
+};
+
 /** What a booking page offers for video calls, in words. */
 export const providerLabel = (provider: Availability["meeting_provider"]) =>
   provider === "Custom" ? "Your own link" : provider === "None" || !provider ? "No video link" : provider;

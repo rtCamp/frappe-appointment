@@ -54,6 +54,7 @@ export default {
         surface: {
           base: "var(--surface-base)",
           sidebar: "var(--surface-sidebar)",
+          "elevation-1": "var(--surface-elevation-1)",
           "elevation-2": "var(--surface-elevation-2)",
           "elevation-3": "var(--surface-elevation-3)",
           "gray-1": "var(--surface-gray-1)",
@@ -63,6 +64,7 @@ export default {
           "gray-9": "var(--surface-gray-9)",
           "gray-10": "var(--surface-gray-10)",
           "red-2": "var(--surface-red-2)",
+          "red-3": "var(--surface-red-3)",
           "green-2": "var(--surface-green-2)",
           "amber-2": "var(--surface-amber-2)",
           "blue-2": "var(--surface-blue-2)",
@@ -105,6 +107,7 @@ export default {
       },
       boxShadow: {
         "es-sm": "var(--elevation-sm)",
+        "es-lg": "var(--elevation-lg)",
         "es-2xl": "var(--elevation-2xl)",
         "es-focus": "var(--focus-ring)",
       },

@@ -14,6 +14,7 @@
 .espresso {
   --surface-base: oklch(1 0 0);
   --surface-sidebar: oklch(0.979 0 0);
+  --surface-elevation-1: oklch(1 0 0);
   --surface-elevation-2: oklch(1 0 0);
   --surface-elevation-3: oklch(1 0 0);
   --surface-gray-1: oklch(0.979 0 0);
@@ -23,6 +24,7 @@
   --surface-gray-9: oklch(0.341 0 0);
   --surface-gray-10: oklch(0.205 0 0);
   --surface-red-2: oklch(0.947 0.026 17.626);
+  --surface-red-3: oklch(0.915 0.044 17.978);
   --surface-green-2: oklch(0.965 0.03 155.987);
   --surface-amber-2: oklch(0.967 0.045 91.733);
   --surface-blue-2: oklch(0.96 0.021 241.348);
@@ -45,6 +47,7 @@
   --outline-gray-4: oklch(0.683 0 0);
   --outline-gray-5: oklch(0.586 0 0);
   --elevation-sm: inset 0px 0.25px 1.5px 0px #ffffff29, 0px 0px 1px 0px #00000033, 0px 1px 3px 0px #00000024;
+  --elevation-lg: inset 0px 0.25px 1.5px 0px #ffffff29, 0px 0px 1.5px 0px #0000002e, 0px 0px 6px 3px #00000008, 0px 18px 22px -6px #0000001a;
   --elevation-2xl: 0px 0px 1px 0px #00000059, 0px 24px 48px -12px #0000003d;
   --focus-ring: 0px 0px 0px 2px #ffffff, 0px 0px 0px 4px #c7c7c7;
 }
@@ -52,6 +55,7 @@
 .dark .espresso {
   --surface-base: oklch(0.205 0 0);
   --surface-sidebar: oklch(1 0 0 / 0);
+  --surface-elevation-1: oklch(0.239 0 0);
   --surface-elevation-2: oklch(0.281 0 0);
   --surface-elevation-3: oklch(0.341 0 0);
   --surface-gray-1: oklch(0.239 0 0);
@@ -61,6 +65,7 @@
   --surface-gray-9: oklch(0.885 0 0);
   --surface-gray-10: oklch(0.979 0 0);
   --surface-red-2: oklch(0.333 0.082 22.544);
+  --surface-red-3: oklch(0.394 0.105 23.193);
   --surface-green-2: oklch(0.295 0.057 157.43);
   --surface-amber-2: oklch(0.303 0.062 60.12);
   --surface-blue-2: oklch(0.305 0.092 256.675);
@@ -83,6 +88,7 @@
   --outline-gray-4: oklch(0.457 0 0);
   --outline-gray-5: oklch(0.58 0 0);
   --elevation-sm: inset 0px 0.5px 0.5px 0.5px #ffffff08, 0px 0px 14px 0px #0000002e, 0px 1px 3px 0px #000000b2;
+  --elevation-lg: 0px 0px 1px 0px #ffffff40, 0px 18px 22px -6px #00000099;
   --elevation-2xl: 0px 0px 1px 0px #ffffff40, 0px 24px 48px -12px #000000b2;
   --focus-ring: 0px 0px 0px 3px #464646cc;
 }

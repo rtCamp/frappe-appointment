@@ -17,6 +17,7 @@ import {
   IS_SLUG_AVAILABLE,
   MeetingType,
   SLUG_PATTERN,
+  durationLabel,
   errorText,
   isNotYours,
   slotsAsText,
@@ -34,7 +35,7 @@ const PROVIDERS: { id: Provider; title: string; description: string }[] = [
 ];
 
 const LENGTHS = [15, 30, 45, 60, 90, 120];
-const minutesLabel = (m: number) => (m < 60 ? `${m} min` : m % 60 === 0 ? `${m / 60} hr` : `${Math.floor(m / 60)} hr ${m % 60} min`);
+const minutesLabel = (m: number) => durationLabel(m * 60);
 
 /** Values a new meeting type starts with: the doctype's defaults. */
 const NEW_TYPE_DEFAULTS = {

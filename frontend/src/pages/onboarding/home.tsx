@@ -12,34 +12,13 @@ import {
   Booking,
   EVENT,
   SessionUser,
+  durationLabel,
   fromSiteTime,
   providerLabel,
   siteNow,
 } from "./api";
 import { buttonClass } from "./styles";
-
-const minutesLabel = (seconds: number) => {
-  const m = Math.round(seconds / 60);
-  return m < 60 ? `${m} min` : m % 60 === 0 ? `${m / 60} hr` : `${Math.floor(m / 60)} hr ${m % 60} min`;
-};
-
-const useCopied = () => {
-  const [copied, setCopied] = useState<string | null>(null);
-  useEffect(() => {
-    if (!copied) return;
-    const id = window.setTimeout(() => setCopied(null), 1600);
-    return () => window.clearTimeout(id);
-  }, [copied]);
-  const copy = async (key: string, text: string) => {
-    try {
-      await navigator.clipboard.writeText(text);
-      setCopied(key);
-    } catch {
-      // Clipboard blocked: the link is still on screen to copy by hand.
-    }
-  };
-  return { copied, copy };
-};
+import { useCopied } from "./use-copied";
 
 const Home = ({
   user,
@@ -143,7 +122,7 @@ const Home = ({
                   <span className="text-es-base font-medium text-ink-gray-8">{type.title}</span>
                   <span className="flex items-center gap-1.5 text-es-sm text-ink-gray-5">
                     <Clock className="w-3.5 h-3.5" aria-hidden="true" />
-                    {minutesLabel(type.duration)}
+                    {durationLabel(type.duration)}
                     <span aria-hidden="true">·</span>
                     <Video className="w-3.5 h-3.5" aria-hidden="true" />
                     {providerLabel(availability.meeting_provider)}

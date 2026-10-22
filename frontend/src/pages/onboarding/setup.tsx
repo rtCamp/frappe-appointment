@@ -18,19 +18,22 @@ import {
   pickCalendar,
   slotsAsText,
 } from "./api";
-import { Frame } from "./frame";
+import { Frame, FrameNav } from "./frame";
 import { Button, Notice, Stepper, Switch } from "./ui";
 import CalendarStep from "./steps/calendar";
 import HoursStep from "./steps/hours";
 import BookingStep from "./steps/booking";
 import DoneStep from "./steps/done";
 import Home from "./home";
+import MeetingTypes from "./meeting-types";
 
 const STEPS = ["Calendar", "Hours", "Booking page"];
 const DONE = 3;
 
-/** A setup step (0-2), the done screen (3), or Home once setup is finished. */
-type View = number | "home";
+/** A setup step (0-2), the done screen (3), or an app section once setup is finished. */
+type View = number | "home" | "types";
+
+const SECTION_VIEWS: Record<string, View> = { Home: "home", "Meeting types": "types" };
 
 const Setup = ({ user, zoomReady }: { user: SessionUser; zoomReady: boolean }) => {
   const { db } = useContext(FrappeContext) as FrappeConfig;
@@ -86,6 +89,17 @@ const Setup = ({ user, zoomReady }: { user: SessionUser; zoomReady: boolean }) =
   const done = [isConnected(calendar), !!availability?.appointment_time_slot.length, isSetUp(availability)];
   const setUp = isSetUp(availability);
   const step = typeof view === "number" ? view : null;
+
+  /** The sidebar once setup is finished. Until the Settings dialog exists, Settings walks back through the setup steps. */
+  const appNav = (current?: string): FrameNav =>
+    setUp
+      ? {
+          openSections: Object.keys(SECTION_VIEWS),
+          current,
+          onOpen: (section) => setView(SECTION_VIEWS[section]),
+          onSettings: () => setView(0),
+        }
+      : {};
 
   /** The Accepting bookings switch: the booking page's enable_scheduling. */
   const setAccepting = async (on: boolean) => {
@@ -190,16 +204,17 @@ const Setup = ({ user, zoomReady }: { user: SessionUser; zoomReady: boolean }) =
     );
   }
 
+  if (view === "types" && availability && !loadError) {
+    return <MeetingTypes user={user} availability={availability} nav={appNav("Meeting types")} onChanged={load} />;
+  }
+
   if (view === "home" && availability) {
     return (
       <Frame
         user={user}
         title="Home"
         width="home"
-        openSections={["Home"]}
-        current="Home"
-        // Until the Settings dialog exists, Settings walks back through the setup steps.
-        onSettings={() => setView(0)}
+        {...appNav("Home")}
         headerAction={
           <label className="inline-flex items-center gap-2.5 cursor-pointer">
             <span className="text-es-base text-ink-gray-7">Accepting bookings</span>
@@ -222,9 +237,7 @@ const Setup = ({ user, zoomReady }: { user: SessionUser; zoomReady: boolean }) =
     <Frame
       user={user}
       stepLabel={step !== null && step < DONE ? `Step ${step + 1} of ${STEPS.length}` : undefined}
-      openSections={setUp ? ["Home"] : []}
-      onOpen={() => setView("home")}
-      onSettings={setUp ? () => setView(0) : undefined}
+      {...appNav()}
     >
       {content}
     </Frame>

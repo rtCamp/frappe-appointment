@@ -145,6 +145,76 @@ export const Stepper = ({ steps, current, done }: { steps: string[]; current: nu
   </ol>
 );
 
+/** A small modal asking to confirm something destructive. Escape or the backdrop cancels. */
+export const ConfirmDialog = ({
+  title,
+  children,
+  confirmLabel,
+  busy,
+  error,
+  onConfirm,
+  onCancel,
+}: {
+  title: string;
+  children: ReactNode;
+  confirmLabel: string;
+  busy?: boolean;
+  error?: string | null;
+  onConfirm: () => void;
+  onCancel: () => void;
+}) => {
+  const cancelRef = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    cancelRef.current?.focus();
+  }, []);
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.stopPropagation();
+        onCancel();
+      }
+    };
+    document.addEventListener("keydown", onKey, true);
+    return () => document.removeEventListener("keydown", onKey, true);
+  }, [onCancel]);
+
+  return (
+    <div className="fixed inset-0 z-50 grid place-items-center p-4 bg-black/30" onMouseDown={(e) => e.target === e.currentTarget && onCancel()}>
+      <div
+        role="alertdialog"
+        aria-modal="true"
+        aria-labelledby="confirm-title"
+        className="w-[400px] max-w-full flex flex-col gap-4 p-5 rounded-xl bg-surface-elevation-2 shadow-es-2xl"
+      >
+        <div className="flex flex-col gap-2">
+          <h2 id="confirm-title" className="m-0 text-es-lg font-semibold text-ink-gray-9">
+            {title}
+          </h2>
+          <div className="text-es-p-base text-ink-gray-6">{children}</div>
+        </div>
+        {error && (
+          <p role="alert" className="m-0 text-es-p-sm text-ink-red-7">
+            {error}
+          </p>
+        )}
+        <div className="flex justify-end gap-2">
+          <button ref={cancelRef} type="button" onClick={onCancel} className={buttonClass("subtle")}>
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={onConfirm}
+            disabled={busy}
+            className={cn(buttonClass("subtle"), "bg-surface-red-2 text-ink-red-7 hover:bg-surface-red-3")}
+          >
+            {confirmLabel}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 /** A value to paste somewhere else (a scope, a redirect URI), with a Copy button. */
 export const CopyValue = ({ value, wrap, boxed }: { value: string; wrap?: boolean; boxed?: boolean }) => {
   const [copied, setCopied] = useState(false);
