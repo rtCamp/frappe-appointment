@@ -145,6 +145,17 @@ export const Stepper = ({ steps, current, done }: { steps: string[]; current: nu
   </ol>
 );
 
+/** A setting: what it is on the left, its control on the right. */
+export const SettingRow = ({ title, description, children, last }: { title: ReactNode; description?: string; children?: ReactNode; last?: boolean }) => (
+  <div className={cn("flex flex-wrap items-center justify-between gap-x-6 gap-y-3 py-4", !last && "border-b border-outline-gray-1")}>
+    <span className="flex flex-col gap-1 flex-[1_1_200px] min-w-0">
+      <span className="text-es-base font-medium text-ink-gray-8">{title}</span>
+      {description && <span className="text-es-p-sm text-ink-gray-6">{description}</span>}
+    </span>
+    {children}
+  </div>
+);
+
 /** A small modal asking to confirm something destructive. Escape or the backdrop cancels. */
 export const ConfirmDialog = ({
   title,

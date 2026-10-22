@@ -6,16 +6,27 @@ import { useState } from "react";
 import { useFrappeGetCall } from "frappe-react-sdk";
 
 import { GOOGLE_SETUP, GoogleSetup, SessionUser } from "../api";
-import { Frame } from "../frame";
+import { Frame, FrameNav } from "../frame";
 import { LoadErrorGate } from "../gate";
 import Guide from "./guide";
 import Credentials from "./credentials";
 
-const AdminSetup = ({ user, onDone }: { user: SessionUser; onDone: () => void }) => {
+const AdminSetup = ({
+  user,
+  onDone,
+  startAt,
+  nav,
+}: {
+  user: SessionUser;
+  onDone: () => void;
+  /** Open on the guide even when credentials are saved (from Settings, Google). */
+  startAt?: "guide";
+  nav?: FrameNav;
+}) => {
   const { data, error, isLoading, mutate } = useFrappeGetCall<{ message: GoogleSetup }>(GOOGLE_SETUP);
   const setup = data?.message;
   // Credentials already saved (say, for Gmail) but Google turned off: go straight to them.
-  const [view, setView] = useState<"guide" | "credentials" | null>(null);
+  const [view, setView] = useState<"guide" | "credentials" | null>(startAt ?? null);
 
   if (isLoading) return null;
   if (error || !setup) return <LoadErrorGate onRetry={() => mutate()} />;
@@ -23,7 +34,7 @@ const AdminSetup = ({ user, onDone }: { user: SessionUser; onDone: () => void })
   const current = view ?? (setup.client_id && setup.has_client_secret ? "credentials" : "guide");
 
   return (
-    <Frame user={user} title="Set up Appointments for your site" width={current === "guide" ? "wide" : "narrow"}>
+    <Frame user={user} title="Set up Appointments for your site" width={current === "guide" ? "wide" : "narrow"} {...nav}>
       {current === "guide" ? (
         <Guide setup={setup} onCredentials={() => setView("credentials")} />
       ) : (

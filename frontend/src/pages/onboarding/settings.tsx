@@ -3,17 +3,19 @@
  * Calendar it reads and writes, and video calls. Switches and pickers save straight away; typed values
  * have a Save button.
  */
-import { ReactNode, useCallback, useContext, useEffect, useRef, useState } from "react";
+import { useCallback, useContext, useEffect, useRef, useState } from "react";
 import { CalendarDays, ChevronDown, LoaderCircle, Plus, X } from "lucide-react";
 import { FrappeConfig, FrappeContext } from "frappe-react-sdk";
 
 import { cn } from "@/lib/utils";
 import {
+  APPOINTMENT_SETTINGS,
   AVAILABILITY,
   Availability,
   CalendarInfo,
   EMAIL_TEMPLATE,
   GOOGLE_CALENDAR,
+  GOOGLE_SETTINGS,
   SessionUser,
   errorText,
   isConnected,
@@ -23,13 +25,14 @@ import EmailEditor from "./email-editor";
 import GoogleConnectNotices from "./google-connect-notices";
 import OtherCalendar from "./other-calendar";
 import SlugField from "./slug-field";
-import { Button, Notice, Pill, Switch } from "./ui";
+import { DefaultEmailsTab, GoogleTab, ZoomTab } from "./settings-site";
+import { Button, Notice, Pill, SettingRow, Switch } from "./ui";
 import { useGoogleConnect } from "./use-google-connect";
 import { useSlugCheck } from "./use-slug-check";
 import VideoPicker from "./video-picker";
 import { isEmail, isMeetingLink, providersFor, savedProviderOf } from "./video";
 
-export type SettingsTab = "booking" | "calendar" | "video";
+export type SettingsTab = "booking" | "calendar" | "video" | "google" | "zoom" | "emails";
 
 const TABS: { id: SettingsTab; label: string }[] = [
   { id: "booking", label: "Booking page" },
@@ -37,16 +40,12 @@ const TABS: { id: SettingsTab; label: string }[] = [
   { id: "video", label: "Video calls" },
 ];
 
-/** A setting: what it is on the left, its control on the right. */
-const Row = ({ title, description, children, last }: { title: ReactNode; description?: string; children?: ReactNode; last?: boolean }) => (
-  <div className={cn("flex flex-wrap items-center justify-between gap-x-6 gap-y-3 py-4", !last && "border-b border-outline-gray-1")}>
-    <span className="flex flex-col gap-1 flex-[1_1_200px] min-w-0">
-      <span className="text-es-base font-medium text-ink-gray-8">{title}</span>
-      {description && <span className="text-es-p-sm text-ink-gray-6">{description}</span>}
-    </span>
-    {children}
-  </div>
-);
+/** Settings for the whole site, shown to people who can change the record behind each. */
+const SITE_TABS: { id: SettingsTab; label: string; doctype: string }[] = [
+  { id: "google", label: "Google", doctype: GOOGLE_SETTINGS },
+  { id: "zoom", label: "Zoom", doctype: APPOINTMENT_SETTINGS },
+  { id: "emails", label: "Default emails", doctype: APPOINTMENT_SETTINGS },
+];
 
 /** Saves part of the booking page. Every save sends the time slots back as text (see slotsAsText). */
 const useAvailabilitySave = (availability: Availability, onChanged: () => Promise<void>) => {
@@ -109,14 +108,14 @@ const BookingTab = ({
 
   return (
     <>
-      <Row title="Accept bookings" description="Turn off to hide your booking page. Group meetings you're part of still work.">
+      <SettingRow title="Accept bookings" description="Turn off to hide your booking page. Group meetings you're part of still work.">
         <Switch
           checked={!!availability.enable_scheduling}
           onChange={(on) => save("accepting", { enable_scheduling: on ? 1 : 0 })}
           label="Accept bookings"
           disabled={busy === "accepting"}
         />
-      </Row>
+      </SettingRow>
 
       <div className="flex flex-col gap-1.5 py-4 border-b border-outline-gray-1">
         <label htmlFor="settings-slug" className="text-es-base font-medium text-ink-gray-8">
@@ -143,7 +142,7 @@ const BookingTab = ({
         </div>
       </div>
 
-      <Row title="Confirmation email" description="The email people get after they book." last>
+      <SettingRow title="Confirmation email" description="The email people get after they book." last>
         <span className="flex flex-wrap items-center gap-1.5">
           <span className="relative w-[220px] max-w-full">
             <select
@@ -178,7 +177,7 @@ const BookingTab = ({
             </Button>
           )}
         </span>
-      </Row>
+      </SettingRow>
 
       {editing !== null && (
         <EmailEditor
@@ -270,14 +269,14 @@ const CalendarTab = ({
         </Button>
       </div>
 
-      <Row title="Ignore all-day events" description="Holidays and reminders on your calendar won't hide your free time.">
+      <SettingRow title="Ignore all-day events" description="Holidays and reminders on your calendar won't hide your free time.">
         <Switch
           checked={ignoreAllDay}
           onChange={(on) => saveCalendar("all-day", { custom_ignore_all_day_events: on ? 1 : 0 })}
           label="Ignore all-day events"
           disabled={!calendar || busy === "all-day"}
         />
-      </Row>
+      </SettingRow>
 
       <div className="flex flex-col gap-3 py-3">
         <OtherCalendar
@@ -391,6 +390,8 @@ const SettingsDialog = ({
   tab,
   onTab,
   onChanged,
+  onSiteChanged,
+  onOpenGuide,
   onClose,
 }: {
   user: SessionUser;
@@ -400,6 +401,9 @@ const SettingsDialog = ({
   tab: SettingsTab;
   onTab: (tab: SettingsTab) => void;
   onChanged: () => Promise<void>;
+  /** After a site setting that the page's status depends on (Zoom) changes. */
+  onSiteChanged: () => void;
+  onOpenGuide: () => void;
   onClose: () => void;
 }) => {
   const ref = useRef<HTMLDivElement>(null);
@@ -419,7 +423,24 @@ const SettingsDialog = ({
     return () => document.removeEventListener("keydown", onKey, true);
   }, [onClose]);
 
-  const title = TABS.find((t) => t.id === tab)?.label;
+  const siteTabs = SITE_TABS.filter((t) => user.canWrite.includes(t.doctype));
+  const title = [...TABS, ...siteTabs].find((t) => t.id === tab)?.label;
+
+  const tabButton = (t: { id: SettingsTab; label: string }) => (
+    <button
+      key={t.id}
+      type="button"
+      aria-current={t.id === tab ? "page" : undefined}
+      onClick={() => onTab(t.id)}
+      className={cn(
+        "flex items-center h-7 px-2 rounded-lg border-0 text-es-base text-left whitespace-nowrap cursor-pointer",
+        "focus-visible:outline-none focus-visible:shadow-es-focus",
+        t.id === tab ? "bg-surface-elevation-3 shadow-es-sm text-ink-gray-8" : "bg-transparent text-ink-gray-6 hover:bg-surface-gray-3"
+      )}
+    >
+      {t.label}
+    </button>
+  );
 
   return (
     <div
@@ -442,23 +463,14 @@ const SettingsDialog = ({
             Settings
           </h2>
           <span className="flex items-center h-7 px-2 text-es-sm text-ink-gray-5 max-sm:hidden">Your booking page</span>
-          {TABS.map((t) => (
-            <button
-              key={t.id}
-              type="button"
-              aria-current={t.id === tab ? "page" : undefined}
-              onClick={() => onTab(t.id)}
-              className={cn(
-                "flex items-center h-7 px-2 rounded-lg border-0 text-es-base text-left whitespace-nowrap cursor-pointer",
-                "focus-visible:outline-none focus-visible:shadow-es-focus",
-                t.id === tab
-                  ? "bg-surface-elevation-3 shadow-es-sm text-ink-gray-8"
-                  : "bg-transparent text-ink-gray-6 hover:bg-surface-gray-3"
-              )}
-            >
-              {t.label}
-            </button>
-          ))}
+          {TABS.map(tabButton)}
+          {siteTabs.length > 0 && (
+            <>
+              <span className="flex items-center h-7 px-2 mt-3 text-es-sm text-ink-gray-5 max-sm:hidden">Site</span>
+              <span aria-hidden="true" className="hidden max-sm:block shrink-0 w-px h-4 mx-1 bg-outline-gray-2" />
+              {siteTabs.map(tabButton)}
+            </>
+          )}
         </nav>
 
         <div className="flex-1 min-w-0 min-h-0 flex flex-col">
@@ -472,8 +484,18 @@ const SettingsDialog = ({
             {tab === "booking" && <BookingTab user={user} availability={availability} onChanged={onChanged} />}
             {tab === "calendar" && <CalendarTab user={user.name} calendar={calendar} onChanged={onChanged} />}
             {tab === "video" && (
-              <VideoTab user={user.name} availability={availability} calendar={calendar} zoomReady={zoomReady} onChanged={onChanged} />
+              <VideoTab
+                key={String(zoomReady)}
+                user={user.name}
+                availability={availability}
+                calendar={calendar}
+                zoomReady={zoomReady}
+                onChanged={onChanged}
+              />
             )}
+            {tab === "google" && siteTabs.some((t) => t.id === "google") && <GoogleTab onOpenGuide={onOpenGuide} />}
+            {tab === "zoom" && siteTabs.some((t) => t.id === "zoom") && <ZoomTab onChanged={onSiteChanged} />}
+            {tab === "emails" && siteTabs.some((t) => t.id === "emails") && <DefaultEmailsTab />}
           </div>
         </div>
       </div>

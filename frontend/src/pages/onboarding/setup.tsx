@@ -28,12 +28,13 @@ import Home from "./home";
 import MeetingTypes from "./meeting-types";
 import AvailabilityPage from "./availability";
 import SettingsDialog, { SettingsTab } from "./settings";
+import AdminSetup from "./admin";
 
 const STEPS = ["Calendar", "Hours", "Booking page"];
 const DONE = 3;
 
 /** A setup step (0-2), the done screen (3), or an app section once setup is finished. */
-type View = number | "home" | "types" | "availability";
+type View = number | "home" | "types" | "availability" | "guide";
 
 const SECTION_VIEWS: Record<string, View> = { Home: "home", "Meeting types": "types", Availability: "availability" };
 
@@ -41,10 +42,13 @@ const Setup = ({
   user: sessionUser,
   zoomReady,
   blocksTimeOff,
+  onStatusChanged,
 }: {
   user: SessionUser;
   zoomReady: boolean;
   blocksTimeOff: boolean;
+  /** Reloads the onboarding status, e.g. once an admin turns Zoom on. */
+  onStatusChanged: () => void;
 }) => {
   const { db } = useContext(FrappeContext) as FrappeConfig;
   const [calendars, setCalendars] = useState<CalendarInfo[] | null>(null);
@@ -211,7 +215,9 @@ const Setup = ({
   }
 
   let page;
-  if (view === "types" && availability && !loadError) {
+  if (view === "guide") {
+    page = <AdminSetup user={user} startAt="guide" nav={appNav()} onDone={() => setView("home")} />;
+  } else if (view === "types" && availability && !loadError) {
     page = <MeetingTypes user={user} availability={availability} nav={appNav("Meeting types")} onChanged={load} />;
   } else if (view === "availability" && availability && !loadError) {
     page = (
@@ -274,6 +280,11 @@ const Setup = ({
           tab={settingsTab}
           onTab={setSettingsTab}
           onChanged={load}
+          onSiteChanged={onStatusChanged}
+          onOpenGuide={() => {
+            setSettingsTab(null);
+            setView("guide");
+          }}
           onClose={() => setSettingsTab(null)}
         />
       )}

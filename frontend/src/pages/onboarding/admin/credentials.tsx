@@ -7,10 +7,8 @@ import { Check, Eye, EyeOff, LoaderCircle } from "lucide-react";
 import { FrappeConfig, FrappeContext } from "frappe-react-sdk";
 
 import { cn } from "@/lib/utils";
-import { GOOGLE_SETTINGS, GoogleSetup, errorText } from "../api";
+import { CLIENT_ID_PATTERN, GOOGLE_SETTINGS, GoogleSetup, errorText } from "../api";
 import { Button, Notice, Switch } from "../ui";
-
-const CLIENT_ID_PATTERN = /\.apps\.googleusercontent\.com$/;
 
 const inputClass =
   "h-8 px-2.5 rounded-lg border bg-surface-base font-mono text-[13px] text-ink-gray-8 placeholder:text-ink-gray-4 focus:outline-none focus:border-outline-gray-4 focus:shadow-es-focus";

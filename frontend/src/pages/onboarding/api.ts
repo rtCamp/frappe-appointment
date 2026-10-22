@@ -3,6 +3,9 @@ import { getErrorMessages } from "@/lib/utils";
 export const ONBOARDING_STATUS = "frappe_appointment.api.onboarding.get_onboarding_status";
 export const GOOGLE_SETUP = "frappe_appointment.api.onboarding.get_google_setup";
 export const GOOGLE_SETTINGS = "Google Settings";
+export const APPOINTMENT_SETTINGS = "Appointment Settings";
+/** What a Google OAuth Client ID looks like. */
+export const CLIENT_ID_PATTERN = /\.apps\.googleusercontent\.com$/;
 export const EVENT = "Event";
 export const GOOGLE_CALENDAR = "Google Calendar";
 export const AUTHORIZE_GOOGLE_CALENDAR = "frappe.integrations.doctype.google_calendar.google_calendar.authorize_access";
