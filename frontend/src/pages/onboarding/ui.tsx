@@ -22,11 +22,14 @@ export const Switch = ({
   onChange,
   label,
   disabled,
+  size = "sm",
 }: {
   checked: boolean;
   onChange: (checked: boolean) => void;
   label: string;
   disabled?: boolean;
+  /** "md" is the larger switch Home uses in its header. */
+  size?: "sm" | "md";
 }) => (
   <button
     type="button"
@@ -36,15 +39,17 @@ export const Switch = ({
     disabled={disabled}
     onClick={() => onChange(!checked)}
     className={cn(
-      "relative shrink-0 w-[26px] h-4 rounded-full border-2 border-transparent p-0 box-border cursor-pointer",
+      "relative shrink-0 rounded-full border-2 border-transparent p-0 box-border cursor-pointer",
+      size === "md" ? "w-8 h-5" : "w-[26px] h-4",
       "focus-visible:outline-none focus-visible:shadow-es-focus disabled:cursor-not-allowed disabled:opacity-50",
       checked ? "bg-surface-gray-10" : "bg-surface-gray-4"
     )}
   >
     <span
       className={cn(
-        "block w-3 h-3 rounded-full bg-surface-base shadow-[0_1px_2px_rgba(0,0,0,0.2)] transition-transform",
-        checked && "translate-x-2.5"
+        "block rounded-full bg-surface-base shadow-[0_1px_2px_rgba(0,0,0,0.2)] transition-transform",
+        size === "md" ? "w-4 h-4" : "w-3 h-3",
+        checked && (size === "md" ? "translate-x-3" : "translate-x-2.5")
       )}
     />
   </button>

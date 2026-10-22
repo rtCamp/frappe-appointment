@@ -15,7 +15,7 @@ const copyText = async (text: string) => {
   }
 };
 
-const DoneStep = ({ slug, onEdit }: { slug: string; onEdit: () => void }) => {
+const DoneStep = ({ slug, onHome }: { slug: string; onHome: () => void }) => {
   const link = `${window.location.origin}/schedule/in/${slug}`;
   const [copied, setCopied] = useState(false);
   const timer = useRef<number>();
@@ -66,9 +66,8 @@ const DoneStep = ({ slug, onEdit }: { slug: string; onEdit: () => void }) => {
 
       <p className="m-0 text-es-p-sm text-ink-gray-5">Tip: open your link in a private window to see exactly what people see.</p>
 
-      {/* Takes the place of "Go to Home" until Home exists. */}
-      <Button size="md" onClick={onEdit}>
-        Edit setup
+      <Button variant="solid" size="md" onClick={onHome}>
+        Go to Home
       </Button>
     </div>
   );

@@ -19,9 +19,8 @@ import {
   SLUG_PATTERN,
   errorText,
   isNotYours,
+  slotsAsText,
   slugify,
-  toInputTime,
-  toServerTime,
 } from "../api";
 import { Button, Notice, StepHeader } from "../ui";
 
@@ -170,12 +169,7 @@ const BookingStep = ({
             : NEW_TYPE_DEFAULTS;
           return { ...kept, title: t.title.trim(), duration: t.minutes * 60 };
         }),
-        // Every slot goes back as text: the server's check parses them with strptime.
-        appointment_time_slot: availability.appointment_time_slot.map((s) => ({
-          day: s.day,
-          start_time: toServerTime(toInputTime(s.start_time)),
-          end_time: toServerTime(toInputTime(s.end_time)),
-        })),
+        appointment_time_slot: slotsAsText(availability),
       });
       await onSaved();
     } catch (err) {

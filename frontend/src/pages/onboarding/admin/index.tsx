@@ -23,7 +23,7 @@ const AdminSetup = ({ user, onDone }: { user: SessionUser; onDone: () => void })
   const current = view ?? (setup.client_id && setup.has_client_secret ? "credentials" : "guide");
 
   return (
-    <Frame user={user} title="Set up Appointments for your site" wide={current === "guide"}>
+    <Frame user={user} title="Set up Appointments for your site" width={current === "guide" ? "wide" : "narrow"}>
       {current === "guide" ? (
         <Guide setup={setup} onCredentials={() => setView("credentials")} />
       ) : (

@@ -12,19 +12,25 @@ import {
   GOOGLE_CALENDAR,
   SessionUser,
   errorText,
-  isBookingLive,
+  isSetUp,
   isConnected,
   isNotYours,
   pickCalendar,
+  slotsAsText,
 } from "./api";
 import { Frame } from "./frame";
-import { Button, Notice, Stepper } from "./ui";
+import { Button, Notice, Stepper, Switch } from "./ui";
 import CalendarStep from "./steps/calendar";
 import HoursStep from "./steps/hours";
 import BookingStep from "./steps/booking";
 import DoneStep from "./steps/done";
+import Home from "./home";
 
 const STEPS = ["Calendar", "Hours", "Booking page"];
+const DONE = 3;
+
+/** A setup step (0-2), the done screen (3), or Home once setup is finished. */
+type View = number | "home";
 
 const Setup = ({ user, zoomReady }: { user: SessionUser; zoomReady: boolean }) => {
   const { db } = useContext(FrappeContext) as FrappeConfig;
@@ -33,7 +39,11 @@ const Setup = ({ user, zoomReady }: { user: SessionUser; zoomReady: boolean }) =
   const [availabilityNotYours, setAvailabilityNotYours] = useState(false);
   const [timeZone, setTimeZone] = useState(user.timeZone);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [step, setStep] = useState<number | null>(null);
+  const [view, setView] = useState<View | null>(null);
+  // Set when Home sends someone to reconnect their calendar, so the Calendar step leads back to Home.
+  const [returnHome, setReturnHome] = useState(false);
+  const [toggling, setToggling] = useState(false);
+  const [homeError, setHomeError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoadError(null);
@@ -57,11 +67,11 @@ const Setup = ({ user, zoomReady }: { user: SessionUser; zoomReady: boolean }) =
       setCalendars(list);
       setAvailability(saved);
       setAvailabilityNotYours(notYours);
-      // Start at the first unfinished step the first time the page loads.
-      setStep(
+      // The first time the page loads: Home once setup is finished, else the first unfinished step.
+      setView(
         (current) =>
           current ??
-          (!isConnected(pickCalendar(list)) ? 0 : !saved?.appointment_time_slot.length ? 1 : isBookingLive(saved) ? 3 : 2)
+          (isSetUp(saved) ? "home" : !isConnected(pickCalendar(list)) ? 0 : !saved?.appointment_time_slot.length ? 1 : 2)
       );
     } catch (err) {
       setLoadError(errorText(err));
@@ -73,7 +83,27 @@ const Setup = ({ user, zoomReady }: { user: SessionUser; zoomReady: boolean }) =
   }, [load]);
 
   const calendar = calendars ? pickCalendar(calendars) : null;
-  const done = [isConnected(calendar), !!availability?.appointment_time_slot.length, isBookingLive(availability)];
+  const done = [isConnected(calendar), !!availability?.appointment_time_slot.length, isSetUp(availability)];
+  const setUp = isSetUp(availability);
+  const step = typeof view === "number" ? view : null;
+
+  /** The Accepting bookings switch: the booking page's enable_scheduling. */
+  const setAccepting = async (on: boolean) => {
+    if (!availability) return;
+    setHomeError(null);
+    setToggling(true);
+    try {
+      await db.updateDoc(AVAILABILITY, availability.name, {
+        enable_scheduling: on ? 1 : 0,
+        appointment_time_slot: slotsAsText(availability),
+      });
+      await load();
+    } catch (err) {
+      setHomeError(errorText(err));
+    } finally {
+      setToggling(false);
+    }
+  };
 
   let content = null;
   if (loadError) {
@@ -90,17 +120,39 @@ const Setup = ({ user, zoomReady }: { user: SessionUser; zoomReady: boolean }) =
         {loadError}
       </Notice>
     );
+  } else if (calendars && view === "home" && availability) {
+    content = (
+      <>
+        {homeError && (
+          <Notice tone="red" title="Couldn't change your booking page">
+            {homeError}
+          </Notice>
+        )}
+        <Home
+          user={user}
+          availability={availability}
+          calendarConnected={isConnected(calendar)}
+          onReconnect={() => {
+            setReturnHome(true);
+            setView(0);
+          }}
+        />
+      </>
+    );
   } else if (calendars && step !== null) {
     content = (
       <>
-        {step < STEPS.length && <Stepper steps={STEPS} current={step} done={done} />}
+        {step < DONE && <Stepper steps={STEPS} current={step} done={done} />}
         {step === 0 && (
           <CalendarStep
             key={calendar?.name ?? "new"}
             user={user.name}
             calendar={calendar}
             onChanged={load}
-            onContinue={() => setStep(1)}
+            onContinue={() => {
+              setView(returnHome ? "home" : 1);
+              setReturnHome(false);
+            }}
           />
         )}
         {step === 1 && calendar && (
@@ -114,9 +166,9 @@ const Setup = ({ user, zoomReady }: { user: SessionUser; zoomReady: boolean }) =
             onSaved={async (saved) => {
               setTimeZone(saved);
               await load();
-              setStep(2);
+              setView(2);
             }}
-            onBack={() => setStep(0)}
+            onBack={() => setView(0)}
           />
         )}
         {step === 2 && calendar && availability && (
@@ -128,18 +180,52 @@ const Setup = ({ user, zoomReady }: { user: SessionUser; zoomReady: boolean }) =
             zoomReady={zoomReady}
             onSaved={async () => {
               await load();
-              setStep(3);
+              setView(DONE);
             }}
-            onBack={() => setStep(1)}
+            onBack={() => setView(1)}
           />
         )}
-        {step === 3 && availability?.slug && <DoneStep slug={availability.slug} onEdit={() => setStep(0)} />}
+        {step === DONE && availability?.slug && <DoneStep slug={availability.slug} onHome={() => setView("home")} />}
       </>
     );
   }
 
+  if (view === "home" && availability) {
+    return (
+      <Frame
+        user={user}
+        title="Home"
+        width="home"
+        openSections={["Home"]}
+        current="Home"
+        // Until the Settings dialog exists, Settings walks back through the setup steps.
+        onSettings={() => setView(0)}
+        headerAction={
+          <label className="inline-flex items-center gap-2.5 cursor-pointer">
+            <span className="text-es-base text-ink-gray-7">Accepting bookings</span>
+            <Switch
+              size="md"
+              checked={!!availability.enable_scheduling}
+              onChange={setAccepting}
+              label="Accepting bookings"
+              disabled={toggling}
+            />
+          </label>
+        }
+      >
+        {content}
+      </Frame>
+    );
+  }
+
   return (
-    <Frame user={user} stepLabel={step !== null && step < STEPS.length ? `Step ${step + 1} of ${STEPS.length}` : undefined}>
+    <Frame
+      user={user}
+      stepLabel={step !== null && step < DONE ? `Step ${step + 1} of ${STEPS.length}` : undefined}
+      openSections={setUp ? ["Home"] : []}
+      onOpen={() => setView("home")}
+      onSettings={setUp ? () => setView(0) : undefined}
+    >
       {content}
     </Frame>
   );

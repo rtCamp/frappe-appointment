@@ -3,6 +3,7 @@ import { getErrorMessages } from "@/lib/utils";
 export const ONBOARDING_STATUS = "frappe_appointment.api.onboarding.get_onboarding_status";
 export const GOOGLE_SETUP = "frappe_appointment.api.onboarding.get_google_setup";
 export const GOOGLE_SETTINGS = "Google Settings";
+export const EVENT = "Event";
 export const GOOGLE_CALENDAR = "Google Calendar";
 export const AUTHORIZE_GOOGLE_CALENDAR = "frappe.integrations.doctype.google_calendar.google_calendar.authorize_access";
 export const AVAILABILITY = "User Appointment Availability";
@@ -90,9 +91,12 @@ export interface Availability {
   available_durations: MeetingType[];
 }
 
-/** The booking page is on, has a link and offers at least one meeting type. */
-export const isBookingLive = (availability: Availability | null) =>
-  !!availability?.enable_scheduling && !!availability.slug && availability.available_durations.length > 0;
+/**
+ * Setup is finished: the booking page has a link and meeting types. It can still be turned off
+ * (enable_scheduling); that pauses bookings without sending anyone back through setup.
+ */
+export const isSetUp = (availability: Availability | null) =>
+  !!availability?.slug && availability.available_durations.length > 0 && availability.appointment_time_slot.length > 0;
 
 /** Same rule as the server's SLUG_REGEX. */
 export const SLUG_PATTERN = /^[a-z0-9_]+(?:-[a-z0-9_]+)*$/;
@@ -115,6 +119,65 @@ export const toInputTime = (value: string) => {
 /** "09:00" -> "09:00:00"; the availability check only accepts times written out like this. */
 export const toServerTime = (value: string) => `${value}:00`;
 
+/**
+ * The saved time slots as text. Every save of the availability record has to send them: the server
+ * parses them with strptime, and rows it loads itself come back as timedelta and fail.
+ */
+export const slotsAsText = (availability: Availability) =>
+  availability.appointment_time_slot.map((s) => ({
+    day: s.day,
+    start_time: toServerTime(toInputTime(s.start_time)),
+    end_time: toServerTime(toInputTime(s.end_time)),
+  }));
+
+/** What a booking page offers for video calls, in words. */
+export const providerLabel = (provider: Availability["meeting_provider"]) =>
+  provider === "Custom" ? "Your own link" : provider === "None" || !provider ? "No video link" : provider;
+
+/** A personal booking: an Event linked to the host's availability. Times are in the site's time zone. */
+export interface Booking {
+  name: string;
+  subject: string;
+  starts_on: string;
+  ends_on: string | null;
+  custom_meeting_provider: Availability["meeting_provider"];
+}
+
+/** Minutes a time zone is ahead of UTC at a given moment. */
+const zoneOffset = (timeZone: string, at: Date) => {
+  const parts = Object.fromEntries(
+    new Intl.DateTimeFormat("en-US", {
+      timeZone,
+      hourCycle: "h23",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+    })
+      .formatToParts(at)
+      .map((p) => [p.type, p.value])
+  );
+  const asUtc = Date.UTC(+parts.year, +parts.month - 1, +parts.day, +parts.hour, +parts.minute, +parts.second);
+  return (asUtc - at.getTime()) / 60000;
+};
+
+/** "2026-10-14 02:00:00" as written in the site's time zone -> the moment it means. */
+export const fromSiteTime = (value: string, siteTimeZone: string) => {
+  const [date, time = "00:00:00"] = value.split(" ");
+  const [y, m, d] = date.split("-").map(Number);
+  const [h, mi, s] = time.split(":").map(Number);
+  const wall = Date.UTC(y, m - 1, d, h, mi, Math.floor(s || 0));
+  return new Date(wall - zoneOffset(siteTimeZone, new Date(wall)) * 60000);
+};
+
+/** The current moment written in the site's time zone, for filtering Events. */
+export const siteNow = (siteTimeZone: string) => {
+  const shifted = new Date(Date.now() + zoneOffset(siteTimeZone, new Date()) * 60000);
+  return shifted.toISOString().slice(0, 19).replace("T", " ");
+};
+
 /** Errors from a document the user isn't allowed to open: someone else created it in Desk. */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const isNotYours = (err: any) => err?.exc_type === "PermissionError" || err?.httpStatus === 403;
@@ -123,6 +186,8 @@ export interface SessionUser {
   name: string;
   fullName: string;
   timeZone: string;
+  /** The site's time zone, which Datetime fields like Event.starts_on are written in. */
+  siteTimeZone: string;
 }
 
 interface Boot {
@@ -141,6 +206,7 @@ export const getSessionUser = (): SessionUser | null => {
     name,
     fullName: boot.user_info?.[name]?.fullname || name,
     timeZone: boot.time_zone?.user || boot.time_zone?.system || Intl.DateTimeFormat().resolvedOptions().timeZone,
+    siteTimeZone: boot.time_zone?.system || Intl.DateTimeFormat().resolvedOptions().timeZone,
   };
 };
 
