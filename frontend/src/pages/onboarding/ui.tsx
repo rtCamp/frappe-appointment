@@ -2,7 +2,7 @@
  * Espresso building blocks for the /schedule screens.
  */
 import { ButtonHTMLAttributes, Fragment, ReactNode, useEffect, useRef, useState } from "react";
-import { Check, CircleAlert, CircleCheck, Copy, Info, TriangleAlert } from "lucide-react";
+import { Check, CircleAlert, CircleCheck, Copy, Info, TriangleAlert, X } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { buttonClass, buttonVariants } from "./styles";
@@ -221,6 +221,67 @@ export const ConfirmDialog = ({
             {confirmLabel}
           </button>
         </div>
+      </div>
+    </div>
+  );
+};
+
+/**
+ * A form in a dialog over the page. Escape and the close button close it; a click outside doesn't, so
+ * nothing typed is lost by accident. On a phone it fills the screen.
+ */
+export const Modal = ({
+  title,
+  titleId,
+  aside,
+  footer,
+  className,
+  onClose,
+  children,
+}: {
+  title: ReactNode;
+  titleId: string;
+  /** Shown before the close button, like "Step 1 of 3". */
+  aside?: ReactNode;
+  footer: ReactNode;
+  className?: string;
+  onClose: () => void;
+  children: ReactNode;
+}) => {
+  // A confirm dialog on top stops Escape before it gets here.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  return (
+    <div className="fixed inset-0 z-40 flex items-center justify-center p-6 max-sm:p-0 bg-black/30">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        // "espresso" brings the colour tokens, for a dialog rendered outside the page's frame.
+        className={cn(
+          "espresso font-espresso w-[560px] max-w-full max-h-full max-sm:h-full flex flex-col overflow-hidden rounded-2xl max-sm:rounded-none bg-surface-elevation-1 text-ink-gray-8 shadow-es-2xl",
+          className
+        )}
+      >
+        <div className="min-h-[52px] flex items-center justify-between gap-2 pl-5 pr-3 border-b border-outline-gray-1">
+          <h2 id={titleId} className="m-0 min-w-0 truncate text-es-lg font-semibold text-ink-gray-9">
+            {title}
+          </h2>
+          <span className="shrink-0 flex items-center gap-2">
+            {aside}
+            <Button variant="ghost" className="w-7 px-0" aria-label="Close" onClick={onClose}>
+              <X className="w-4 h-4" aria-hidden="true" />
+            </Button>
+          </span>
+        </div>
+        <div className="flex-1 min-h-0 overflow-y-auto p-5 flex flex-col gap-7">{children}</div>
+        <div className="flex items-center justify-between gap-2 px-5 py-3 border-t border-outline-gray-1">{footer}</div>
       </div>
     </div>
   );
