@@ -147,6 +147,79 @@ export const durationLabel = (seconds: number) => {
 export const providerLabel = (provider: Availability["meeting_provider"]) =>
   provider === "Custom" ? "Your own link" : provider === "None" || !provider ? "No video link" : provider;
 
+export const APPOINTMENT_GROUP = "Appointment Group";
+const GROUPS_API = "frappe_appointment.api.groups";
+export const GET_GROUPS = `${GROUPS_API}.get_groups`;
+export const GET_GROUP = `${GROUPS_API}.get_group`;
+export const GET_GROUP_BOOKINGS = `${GROUPS_API}.get_group_bookings`;
+export const SEARCH_PEOPLE = `${GROUPS_API}.search_people`;
+
+/** Someone in a group. `availability` is their User Appointment Availability, named after them. */
+export interface GroupPerson {
+  availability: string;
+  user: string;
+  full_name: string;
+  is_mandatory: 0 | 1;
+}
+
+export interface GroupSummary {
+  name: string;
+  group_name: string;
+  owner: string;
+  owner_name: string;
+  duration_for_event: number;
+  meet_provider: Availability["meeting_provider"];
+  members: GroupPerson[];
+  upcoming: number;
+}
+
+/** The Appointment Group fields the group screens read and write. */
+export interface AppointmentGroup {
+  name: string;
+  group_name: string;
+  owner: string;
+  event_creator: string;
+  event_organizer: string | null;
+  members: { user: string; is_mandatory: 0 | 1 }[];
+  duration_for_event: number;
+  minimum_buffer_time: number | null;
+  minimum_notice_before_event: number | null;
+  /** A Data field: days as text, "0" or blank for no limit. */
+  event_availability_window: string | null;
+  limit_booking_frequency: number | null;
+  allow_rescheduling: 0 | 1;
+  minimum_notice_for_reschedule: number | null;
+  meet_provider: Availability["meeting_provider"];
+  meet_link: string | null;
+  response_email_template: string | null;
+  send_email_alerts: 0 | 1;
+  min_slot_threshold: number | null;
+  email_address_to_send: string | null;
+  availability_email_template: string | null;
+}
+
+export interface GroupDetail {
+  doc: AppointmentGroup;
+  people: GroupPerson[];
+  owner_name: string;
+  is_owner: boolean;
+  can_edit: boolean;
+}
+
+/** A booking made through a group. Times are in the site's time zone. */
+export interface GroupBooking {
+  name: string;
+  subject: string;
+  starts_on: string;
+  ends_on: string | null;
+  status: string;
+  guests: string[];
+  members: string[];
+}
+
+/** The public link of a group. */
+export const groupLink = (name: string) => `${window.location.origin}/schedule/gr/${encodeURIComponent(name)}`;
+
 /** An Email Template, as the confirmation email uses it. */
 export interface EmailTemplate {
   name: string;

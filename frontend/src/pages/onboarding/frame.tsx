@@ -16,6 +16,7 @@ import {
   Moon,
   Settings,
   Sun,
+  Users,
 } from "lucide-react";
 import { FrappeConfig, FrappeContext } from "frappe-react-sdk";
 
@@ -144,6 +145,7 @@ const SECTIONS: { label: string; icon: ComponentType<{ className?: string }> }[]
   { label: "Home", icon: House },
   { label: "Meeting types", icon: List },
   { label: "Availability", icon: Clock },
+  { label: "Group meetings", icon: Users },
 ];
 
 /** Content widths: the setup steps, the admin guide (with its side list), Home, settings pages, and full-width tables. */
@@ -176,7 +178,8 @@ export const Frame = ({
   children,
 }: {
   user: SessionUser;
-  title?: string;
+  /** Text, or a breadcrumb like Group meetings / Design review. */
+  title?: ReactNode;
   stepLabel?: string;
   /** Shown at the right of the header, like Home's Accepting bookings switch. */
   headerAction?: ReactNode;
@@ -240,7 +243,7 @@ export const Frame = ({
 
     <main className="flex flex-col min-w-0" style={{ flex: "999 1 560px" }}>
       <header className="min-h-12 flex flex-wrap items-center justify-between gap-2 px-5 border-b border-outline-gray-1">
-        <h1 className="m-0 text-es-lg font-semibold text-ink-gray-9">{title}</h1>
+        <h1 className="m-0 min-w-0 flex items-center gap-1.5 text-es-lg font-semibold text-ink-gray-9">{title}</h1>
         {stepLabel && <span className="text-es-sm tabular-nums text-ink-gray-5">{stepLabel}</span>}
         {headerAction}
       </header>

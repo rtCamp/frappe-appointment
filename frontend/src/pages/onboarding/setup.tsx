@@ -29,14 +29,25 @@ import MeetingTypes from "./meeting-types";
 import AvailabilityPage from "./availability";
 import SettingsDialog, { SettingsTab } from "./settings";
 import AdminSetup from "./admin";
+import GroupsPage from "./groups";
+import GroupPage from "./group-detail";
+import GroupForm from "./group-form";
 
 const STEPS = ["Calendar", "Hours", "Booking page"];
 const DONE = 3;
 
-/** A setup step (0-2), the done screen (3), or an app section once setup is finished. */
-type View = number | "home" | "types" | "availability" | "guide";
+/**
+ * A setup step (0-2), the done screen (3), or an app section once setup is finished. Group screens carry
+ * the group: "group:<name>", "group-edit:<name>".
+ */
+type View = number | "home" | "types" | "availability" | "guide" | "groups" | "group-new" | `group:${string}` | `group-edit:${string}`;
 
-const SECTION_VIEWS: Record<string, View> = { Home: "home", "Meeting types": "types", Availability: "availability" };
+const SECTION_VIEWS: Record<string, View> = {
+  Home: "home",
+  "Meeting types": "types",
+  Availability: "availability",
+  "Group meetings": "groups",
+};
 
 const Setup = ({
   user: sessionUser,
@@ -215,7 +226,51 @@ const Setup = ({
   }
 
   let page;
-  if (view === "guide") {
+  const groupView = typeof view === "string" && view.startsWith("group");
+  if (setUp && (view === "groups" || view === "group-new")) {
+    // A new group is made in a dialog over the list.
+    page = (
+      <>
+        <GroupsPage user={user} nav={appNav("Group meetings")} onOpen={(name) => setView(`group:${name}`)} onNew={() => setView("group-new")} />
+        {view === "group-new" && (
+          <GroupForm
+            user={user}
+            name={null}
+            zoomReady={zoomReady}
+            onSaved={(saved) => setView(`group:${saved}`)}
+            onCancel={() => setView("groups")}
+            onDeleted={() => setView("groups")}
+          />
+        )}
+      </>
+    );
+  } else if (setUp && groupView && (view.startsWith("group:") || view.startsWith("group-edit:"))) {
+    // A group is changed in a dialog over its page.
+    const editing = view.startsWith("group-edit:");
+    const name = view.slice(view.indexOf(":") + 1);
+    page = (
+      <>
+        <GroupPage
+          key={name}
+          user={user}
+          name={name}
+          nav={appNav("Group meetings")}
+          onBack={() => setView("groups")}
+          onEdit={() => setView(`group-edit:${name}`)}
+        />
+        {editing && (
+          <GroupForm
+            user={user}
+            name={name}
+            zoomReady={zoomReady}
+            onSaved={() => setView(`group:${name}`)}
+            onCancel={() => setView(`group:${name}`)}
+            onDeleted={() => setView("groups")}
+          />
+        )}
+      </>
+    );
+  } else if (view === "guide") {
     page = <AdminSetup user={user} startAt="guide" nav={appNav()} onDone={() => setView("home")} />;
   } else if (view === "types" && availability && !loadError) {
     page = <MeetingTypes user={user} availability={availability} nav={appNav("Meeting types")} onChanged={load} />;
