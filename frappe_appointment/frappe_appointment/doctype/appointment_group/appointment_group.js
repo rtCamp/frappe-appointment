@@ -36,9 +36,12 @@ frappe.ui.form.on("Appointment Group", {
         $(".available-slots-section").remove();
       }
       addAvailableSlotsInfo(frm);
-      frm.add_custom_button(__("Update Slots Availability"), function () {
-        update_slots_availability(frm);
-      });
+      // Updating saves the group, so only people who can edit it get the button.
+      if (frm.has_perm("write")) {
+        frm.add_custom_button(__("Update Slots Availability"), function () {
+          update_slots_availability(frm);
+        });
+      }
     }
     frm.sidebar
       .add_user_action(__("See on Website"))

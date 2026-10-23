@@ -13,6 +13,8 @@ from frappe_appointment.helpers.email import send_email_template_mail
 @frappe.whitelist()
 def update_availability_status_for_appointment_group(appointment_group: str):
     if isinstance(appointment_group, str):
+        # The job saves the group, so it's for people who can edit it.
+        frappe.has_permission("Appointment Group", "write", doc=appointment_group, throw=True)
         appointment_group = frappe.get_doc("Appointment Group", appointment_group)
     frappe.enqueue(
         "frappe_appointment.tasks.verify_availability.get_availability_status_for_appointment_group",
