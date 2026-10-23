@@ -9,9 +9,16 @@ from frappe_appointment.api.onboarding import (
     blocks_time_off,
     get_google_setup,
     get_onboarding_status,
+    is_calendar_connected,
     preview_confirmation_email,
 )
-from frappe_appointment.tests import as_user, make_test_user, set_password_field, setup_appointment_settings
+from frappe_appointment.tests import (
+    as_user,
+    make_google_calendar,
+    make_test_user,
+    set_password_field,
+    setup_appointment_settings,
+)
 
 DESK_USER = "test_fa_onb_desk@example.com"
 ADMIN_USER = "test_fa_onb_admin@example.com"
@@ -243,3 +250,19 @@ class TestPreviewConfirmationEmail(IntegrationTestCase):
             out = preview_confirmation_email(subject="Hi", message="<p>{% if meet_link %}</p>")
         self.assertIn("error", out)
         self.assertTrue(out["error"].startswith("Line 1:"))
+
+
+class TestIsCalendarConnected(IntegrationTestCase):
+    def test_people_can_check_only_their_own_calendar(self):
+        owner = "test_fa_onb_calowner@example.com"
+        other = "test_fa_onb_calother@example.com"
+        calendar = make_google_calendar(owner, calendar_name="GCal FA Onb Owner")
+        for email in (owner, other):
+            make_test_user(email).add_roles("Desk User")
+
+        with patch("frappe_appointment.api.onboarding.calendar_is_connected", return_value=False) as check:
+            with as_user(owner):
+                self.assertFalse(is_calendar_connected(calendar.name))
+            with as_user(other), self.assertRaises(frappe.PermissionError):
+                is_calendar_connected(calendar.name)
+        check.assert_called_once_with(calendar.name)

@@ -4,9 +4,12 @@ import frappe
 from frappe.tests import IntegrationTestCase
 
 from frappe_appointment.api.group_meet import book_time_slot, get_time_slots
+from frappe_appointment.frappe_appointment.doctype.appointment_group.appointment_group import CalendarUnavailableError
+from frappe_appointment.frappe_appointment.doctype.appointment_time_slot.appointment_time_slot import GoogleBadRequest
 from frappe_appointment.tests import make_appointment_group, make_google_calendar, make_user_availability
 
 GM = "frappe_appointment.api.group_meet"
+APPOINTMENT_GROUP_MODULE = "frappe_appointment.frappe_appointment.doctype.appointment_group.appointment_group"
 
 
 class TestGroupMeetGetTimeSlots(IntegrationTestCase):
@@ -37,6 +40,16 @@ class TestGroupMeetGetTimeSlots(IntegrationTestCase):
         self.assertEqual(result["title"], self.group.group_name)
         self.assertTrue(result["rescheduling_allowed"])
 
+
+    def test_unreadable_calendar_tells_guests_why(self):
+        """A calendar Google no longer accepts gives guests a clear reason, as its own error type."""
+        with (
+            patch(f"{APPOINTMENT_GROUP_MODULE}.get_time_slots_for_given_date", side_effect=GoogleBadRequest("expired")),
+            patch("frappe.log_error"),
+        ):
+            with self.assertRaises(CalendarUnavailableError) as raised:
+                get_time_slots(self.group.name, "2027-01-15", "0")
+        self.assertIn("can't check the calendars for this meeting", str(raised.exception))
 
 class TestGroupMeetBookTimeSlot(IntegrationTestCase):
     @classmethod

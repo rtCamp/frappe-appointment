@@ -218,6 +218,11 @@ def member_users(members) -> set:
     return set(users)
 
 
+class CalendarUnavailableError(frappe.ValidationError):
+    """A calendar the booking page needs for free times can't be read, so there are no times to offer.
+    Booking pages tell guests this instead of showing a generic error."""
+
+
 def _get_time_slots_for_day(
     appointment_group: object, date: str, user_timezone_offset: str, time_slot_cache_dict: dict = None
 ) -> object:
@@ -262,7 +267,14 @@ def _get_time_slots_for_day(
         return time_slots_today_object
     except GoogleBadRequest as e:
         frappe.log_error(e)
-        frappe.throw(frappe._("Something went wrong while fetching time slots. Please try again later."))
+        frappe.throw(
+            frappe._(
+                "We can't check the calendars for this meeting right now, so there are no times to offer. Please"
+                " try again later, or let the person who sent you this link know."
+            ),
+            exc=CalendarUnavailableError,
+            title=frappe._("No times available right now"),
+        )
     except Exception:
         frappe.log_error()
         return None

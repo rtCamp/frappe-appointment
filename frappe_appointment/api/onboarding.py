@@ -4,6 +4,8 @@ import frappe
 from frappe.integrations.doctype.google_calendar.google_calendar import google_callback
 from frappe.utils import get_request_site_address
 
+from frappe_appointment.helpers.google_calendar import calendar_is_connected
+
 
 @frappe.whitelist()
 def get_onboarding_status():
@@ -22,6 +24,16 @@ def get_onboarding_status():
         "zoom_ready": is_zoom_ready(),
         "blocks_time_off": blocks_time_off(frappe.session.user),
     }
+
+
+@frappe.whitelist()
+def is_calendar_connected(calendar: str) -> bool:
+    """Whether Google still accepts the calendar's sign-in. Its fields can say it's connected after Google
+    stopped accepting it, for example when the sign-in expired or was revoked. For the calendar's own user,
+    or anyone who can read it."""
+    if frappe.db.get_value("Google Calendar", calendar, "user") != frappe.session.user:
+        frappe.has_permission("Google Calendar", "read", doc=calendar, throw=True)
+    return calendar_is_connected(calendar)
 
 
 @frappe.whitelist()

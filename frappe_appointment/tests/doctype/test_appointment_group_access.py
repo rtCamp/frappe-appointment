@@ -6,7 +6,13 @@ import frappe
 from frappe.share import add_docshare, get_share_name
 from frappe.tests import IntegrationTestCase
 
-from frappe_appointment.api.groups import get_group, get_group_bookings, get_groups, search_people
+from frappe_appointment.api.groups import (
+    get_calendar_problems,
+    get_group,
+    get_group_bookings,
+    get_groups,
+    search_people,
+)
 from frappe_appointment.patches.v0_1 import add_desk_user_group_permission
 from frappe_appointment.tasks.verify_availability import update_availability_status_for_appointment_group
 from frappe_appointment.tests import (
@@ -268,6 +274,31 @@ class TestGroupsApi(GroupAccessCase):
             self.assertEqual((get_group(group.name)["is_owner"], get_group(group.name)["can_edit"]), (False, False))
         with as_user(OUTSIDER), self.assertRaises(frappe.PermissionError):
             get_group(group.name)
+
+    def test_calendar_problems_name_broken_required_calendars(self):
+        group = self.make_group("FA Grp Api Calendars")
+        broken = {self.member_calendar}
+        with patch("frappe_appointment.api.groups.calendar_is_connected", side_effect=lambda c: c not in broken):
+            with as_user(OWNER):
+                problems = get_calendar_problems(group.name)
+            found = [(p["calendar"], p["user"], p["is_me"]) for p in problems]
+            self.assertEqual(found, [(self.member_calendar, MEMBER, False)])
+            with as_user(MEMBER):
+                self.assertTrue(get_calendar_problems(group.name)[0]["is_me"])
+
+            # An optional member's calendar isn't read for free times, so it doesn't stop bookings.
+            group.reload()
+            group.members[1].is_mandatory = 0
+            group.save(ignore_permissions=True)
+            with as_user(OWNER):
+                self.assertEqual(get_calendar_problems(group.name), [])
+
+            # The calendar bookings are made in counts too.
+            broken.add(self.owner_calendar)
+            with as_user(OWNER):
+                self.assertEqual([p["is_me"] for p in get_calendar_problems(group.name)], [True])
+            with as_user(OUTSIDER), self.assertRaises(frappe.PermissionError):
+                get_calendar_problems(group.name)
 
     def test_bookings_come_from_the_group_field(self):
         """Bookings are found by custom_appointment_group, with guests apart from members; outsiders get nothing."""

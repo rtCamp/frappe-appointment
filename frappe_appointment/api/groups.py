@@ -6,6 +6,7 @@ from frappe.utils import get_fullname, now_datetime
 
 from frappe_appointment.constants import APPOINTMENT_GROUP, USER_APPOINTMENT_AVAILABILITY
 from frappe_appointment.frappe_appointment.doctype.appointment_group.appointment_group import member_users
+from frappe_appointment.helpers.google_calendar import calendar_is_connected
 
 
 def only_desk_users():
@@ -135,6 +136,31 @@ def get_group(group: str) -> dict:
         "is_owner": doc.owner == frappe.session.user,
         "can_edit": bool(can_edit),
     }
+
+
+@frappe.whitelist()
+def get_calendar_problems(group: str) -> list[dict]:
+    """The group's calendars Google no longer accepts: its required members' calendars, which its booking
+    page reads for free times, and the calendar bookings are made in. While any is broken, guests can't book."""
+    only_desk_users()
+    frappe.has_permission(APPOINTMENT_GROUP, "read", doc=group, throw=True)
+
+    doc = frappe.get_doc(APPOINTMENT_GROUP, group)
+    calendars = []
+    for member in doc.members:
+        if member.is_mandatory:
+            calendars.append(frappe.db.get_value(USER_APPOINTMENT_AVAILABILITY, member.user, "google_calendar"))
+    calendars.append(doc.event_creator)
+
+    problems = []
+    for calendar in dict.fromkeys(c for c in calendars if c):
+        if calendar_is_connected(calendar):
+            continue
+        user = frappe.db.get_value("Google Calendar", calendar, "user")
+        problems.append(
+            {"calendar": calendar, "user": user, "full_name": get_fullname(user), "is_me": user == frappe.session.user}
+        )
+    return problems
 
 
 @frappe.whitelist()
