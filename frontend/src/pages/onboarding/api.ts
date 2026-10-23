@@ -2,6 +2,7 @@ import { getErrorMessages } from "@/lib/utils";
 
 export const ONBOARDING_STATUS = "frappe_appointment.api.onboarding.get_onboarding_status";
 export const GOOGLE_SETUP = "frappe_appointment.api.onboarding.get_google_setup";
+export const IS_CALENDAR_CONNECTED = "frappe_appointment.api.onboarding.is_calendar_connected";
 export const GOOGLE_SETTINGS = "Google Settings";
 export const APPOINTMENT_SETTINGS = "Appointment Settings";
 /** What a Google OAuth Client ID looks like. */
@@ -152,6 +153,7 @@ const GROUPS_API = "frappe_appointment.api.groups";
 export const GET_GROUPS = `${GROUPS_API}.get_groups`;
 export const GET_GROUP = `${GROUPS_API}.get_group`;
 export const GET_GROUP_BOOKINGS = `${GROUPS_API}.get_group_bookings`;
+export const GET_CALENDAR_PROBLEMS = `${GROUPS_API}.get_calendar_problems`;
 export const SEARCH_PEOPLE = `${GROUPS_API}.search_people`;
 
 /** Someone in a group. `availability` is their User Appointment Availability, named after them. */
@@ -204,6 +206,14 @@ export interface GroupDetail {
   owner_name: string;
   is_owner: boolean;
   can_edit: boolean;
+}
+
+/** A calendar in a group that Google no longer accepts, so the group's booking page can't offer times. */
+export interface CalendarProblem {
+  calendar: string;
+  user: string;
+  full_name: string;
+  is_me: boolean;
 }
 
 /** A booking made through a group. Times are in the site's time zone. */

@@ -3,7 +3,7 @@
  * and upcoming bookings. Notices cover a disconnected calendar and a booking page that's turned off.
  */
 import { useContext, useEffect, useState } from "react";
-import { Check, Clock, Copy, ExternalLink, Info, TriangleAlert, Video } from "lucide-react";
+import { Check, Clock, Copy, Info, TriangleAlert, Video } from "lucide-react";
 import { FrappeConfig, FrappeContext } from "frappe-react-sdk";
 
 import { cn } from "@/lib/utils";
@@ -18,6 +18,7 @@ import {
   siteNow,
 } from "./api";
 import { buttonClass } from "./styles";
+import { LinkBar } from "./ui";
 import { useCopied } from "./use-copied";
 
 const Home = ({
@@ -92,23 +93,7 @@ const Home = ({
 
       <section className="flex flex-col gap-3">
         <h2 className="m-0 text-es-lg font-semibold text-ink-gray-8">Your booking link</h2>
-        <div className={cn("flex items-center gap-2 py-1.5 pr-1.5 pl-3 rounded-xl bg-surface-gray-1", !on && "opacity-[0.55]")}>
-          <span className="flex-1 min-w-0 truncate text-es-base text-ink-gray-8" title={link}>
-            {link.replace(/^https?:\/\//, "")}
-          </span>
-          <a href={link} target="_blank" rel="noreferrer" className={buttonClass("ghost")}>
-            <ExternalLink className="w-3.5 h-3.5" aria-hidden="true" />
-            Open
-          </a>
-          <button
-            type="button"
-            onClick={() => copy("link", link)}
-            className="inline-flex items-center gap-1.5 h-7 px-2 rounded-lg border border-outline-gray-2 bg-surface-base text-es-base text-ink-gray-8 shadow-es-sm cursor-pointer hover:bg-surface-gray-2 focus-visible:outline-none focus-visible:shadow-es-focus"
-          >
-            {copied === "link" ? <Check className="w-3.5 h-3.5" aria-hidden="true" /> : <Copy className="w-3.5 h-3.5" aria-hidden="true" />}
-            <span aria-live="polite">{copied === "link" ? "Copied" : "Copy link"}</span>
-          </button>
-        </div>
+        <LinkBar link={link} dimmed={!on} />
       </section>
 
       <section className="flex flex-col gap-3">

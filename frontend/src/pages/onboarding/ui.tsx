@@ -2,10 +2,11 @@
  * Espresso building blocks for the /schedule screens.
  */
 import { ButtonHTMLAttributes, Fragment, ReactNode, useEffect, useRef, useState } from "react";
-import { Check, CircleAlert, CircleCheck, Copy, Info, TriangleAlert, X } from "lucide-react";
+import { Check, CircleAlert, CircleCheck, Copy, ExternalLink, Info, TriangleAlert, X } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { buttonClass, buttonVariants } from "./styles";
+import { useCopied } from "./use-copied";
 
 export const Button = ({
   variant,
@@ -326,6 +327,30 @@ export const CopyValue = ({ value, wrap, boxed }: { value: string; wrap?: boolea
       >
         {copied ? <Check className="w-3.5 h-3.5" aria-hidden="true" /> : <Copy className="w-3.5 h-3.5" aria-hidden="true" />}
         <span aria-live="polite">{copied ? "Copied" : "Copy"}</span>
+      </button>
+    </div>
+  );
+};
+
+/** A booking link with Open and Copy link, as on Home and a group's page. */
+export const LinkBar = ({ link, dimmed }: { link: string; dimmed?: boolean }) => {
+  const { copied, copy } = useCopied();
+  return (
+    <div className={cn("flex items-center gap-2 py-1.5 pr-1.5 pl-3 rounded-xl bg-surface-gray-1", dimmed && "opacity-[0.55]")}>
+      <span className="flex-1 min-w-0 truncate text-es-base text-ink-gray-8" title={link}>
+        {link.replace(/^https?:\/\//, "")}
+      </span>
+      <a href={link} target="_blank" rel="noreferrer" className={buttonClass("ghost")}>
+        <ExternalLink className="w-3.5 h-3.5" aria-hidden="true" />
+        Open
+      </a>
+      <button
+        type="button"
+        onClick={() => copy("link", link)}
+        className="inline-flex items-center gap-1.5 h-7 px-2 rounded-lg border border-outline-gray-2 bg-surface-base text-es-base text-ink-gray-8 shadow-es-sm cursor-pointer hover:bg-surface-gray-2 focus-visible:outline-none focus-visible:shadow-es-focus"
+      >
+        {copied === "link" ? <Check className="w-3.5 h-3.5" aria-hidden="true" /> : <Copy className="w-3.5 h-3.5" aria-hidden="true" />}
+        <span aria-live="polite">{copied === "link" ? "Copied" : "Copy link"}</span>
       </button>
     </div>
   );

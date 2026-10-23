@@ -2,7 +2,7 @@
  * The setup steps inside the page frame: Calendar, then Hours, then Booking page.
  */
 import { useCallback, useContext, useEffect, useState } from "react";
-import { FrappeConfig, FrappeContext } from "frappe-react-sdk";
+import { FrappeConfig, FrappeContext, useFrappeGetCall } from "frappe-react-sdk";
 
 import {
   AVAILABILITY,
@@ -10,6 +10,7 @@ import {
   CALENDAR_FIELDS,
   CalendarInfo,
   GOOGLE_CALENDAR,
+  IS_CALENDAR_CONNECTED,
   SessionUser,
   errorText,
   isSetUp,
@@ -112,6 +113,13 @@ const Setup = ({
   }, [load]);
 
   const calendar = calendars ? pickCalendar(calendars) : null;
+  // A calendar can look connected after Google stopped accepting its sign-in, so Home asks the server.
+  const { data: googleAccepts } = useFrappeGetCall<{ message: boolean }>(
+    IS_CALENDAR_CONNECTED,
+    { calendar: calendar?.name },
+    view === "home" && isConnected(calendar) ? undefined : null,
+    { revalidateOnFocus: false }
+  );
   const done = [isConnected(calendar), !!availability?.appointment_time_slot.length, isSetUp(availability)];
   const setUp = isSetUp(availability);
   const step = typeof view === "number" ? view : null;
@@ -171,7 +179,7 @@ const Setup = ({
         <Home
           user={user}
           availability={availability}
-          calendarConnected={isConnected(calendar)}
+          calendarConnected={isConnected(calendar) && googleAccepts?.message !== false}
           onReconnect={() => setSettingsTab("calendar")}
         />
       </>
@@ -257,6 +265,7 @@ const Setup = ({
           nav={appNav("Group meetings")}
           onBack={() => setView("groups")}
           onEdit={() => setView(`group-edit:${name}`)}
+          onReconnect={() => setSettingsTab("calendar")}
         />
         {editing && (
           <GroupForm

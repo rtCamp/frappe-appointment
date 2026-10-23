@@ -4,7 +4,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { format } from "date-fns";
-import { ArrowLeft, CircleAlert, Clock } from "lucide-react";
+import { ArrowLeft, CalendarX, CircleAlert, Clock } from "lucide-react";
 import { toast } from "sonner";
 
 /**
@@ -56,6 +56,8 @@ const GroupAppointment = () => {
   const [state, dispatch] = useMeetingReducer();
   // A plain group link asks who's booking before it books.
   const [askingDetails, setAskingDetails] = useState(false);
+  // Set when a calendar the page needs can't be read: guests see why instead of a 404.
+  const [unavailable, setUnavailable] = useState<string | null>(null);
 
   const {
     data,
@@ -98,7 +100,10 @@ const GroupAppointment = () => {
       dispatch({ type: "SET_DISPLAY_MONTH", payload: validData });
       updateDateQuery(validData);
     }
-    if (fetchError) {
+    if (data) setUnavailable(null);
+    if (fetchError?.exc_type === "CalendarUnavailableError") {
+      setUnavailable(parseFrappeErrorMsg(fetchError));
+    } else if (fetchError) {
       navigate("/not-found", { replace: true });
     }
   }, [data, fetchError, mutate, navigate, dispatch]);
@@ -225,6 +230,20 @@ const GroupAppointment = () => {
         });
       });
   };
+
+  if (unavailable) {
+    return (
+      <div className="flex items-center justify-center min-h-screen px-4 py-12">
+        <div className="max-w-md flex flex-col items-center gap-3 text-center">
+          <CalendarX className="h-8 w-8 text-gray-500 dark:text-gray-400" />
+          <Typography variant="h2" className="text-2xl font-semibold">
+            No times available right now
+          </Typography>
+          <Typography className="text-gray-600 dark:text-gray-400">{unavailable}</Typography>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>

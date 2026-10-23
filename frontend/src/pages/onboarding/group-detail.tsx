@@ -3,14 +3,16 @@
  * change who's in it and its availability alerts here; everyone else sees it read-only.
  */
 import { ReactNode, useContext, useEffect, useState } from "react";
-import { Check, ChevronDown, Copy, ExternalLink, Info, LoaderCircle } from "lucide-react";
+import { ChevronDown, Info, LoaderCircle } from "lucide-react";
 import { FrappeConfig, FrappeContext, useFrappeGetCall } from "frappe-react-sdk";
 
 import { cn } from "@/lib/utils";
 import {
   APPOINTMENT_GROUP,
+  CalendarProblem,
   DEFAULT_EMAIL_TEMPLATES,
   EMAIL_TEMPLATE,
+  GET_CALENDAR_PROBLEMS,
   GET_GROUP,
   GET_GROUP_BOOKINGS,
   GroupBooking,
@@ -27,8 +29,7 @@ import { WHOLE_NUMBER, daysLabel } from "./booking-rules";
 import { fieldClass } from "./form-fields";
 import { Frame, FrameNav } from "./frame";
 import { Initial, PeopleList } from "./group-people";
-import { Button, Notice, Switch } from "./ui";
-import { useCopied } from "./use-copied";
+import { Button, LinkBar, Notice, Switch } from "./ui";
 
 const Section = ({ title, children, action }: { title: string; children: ReactNode; action?: ReactNode }) => (
   <section className="flex flex-col gap-2">
@@ -256,22 +257,53 @@ const Alerts = ({ detail, onSaved }: { detail: GroupDetail; onSaved: () => Promi
   );
 };
 
+/** "you", "Ana Lima (ana@example.com)", joined as "you and Ana Lima (...)". */
+const problemNames = (problems: CalendarProblem[]) => {
+  const names = problems.map((p) => (p.is_me ? "you" : `${p.full_name} (${p.user})`));
+  if (names.length < 2) return names.join("");
+  return `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`;
+};
+
+/** Warns when a calendar the group's booking page needs no longer works, so guests can't book. */
+const CalendarProblems = ({ group, onReconnect }: { group: string; onReconnect: () => void }) => {
+  const { data } = useFrappeGetCall<{ message: CalendarProblem[] }>(GET_CALENDAR_PROBLEMS, { group }, undefined, { revalidateOnFocus: false });
+  const problems = data?.message ?? [];
+  if (!problems.length) return null;
+
+  const mine = problems.some((p) => p.is_me);
+  const others = problems.some((p) => !p.is_me);
+  let fix = "Reconnect it to let guests book again.";
+  if (others) fix = mine ? "Each of you needs to reconnect it in Settings → Calendar." : "They need to reconnect it in Settings → Calendar.";
+
+  return (
+    <Notice
+      tone="amber"
+      title="Guests can't book this group right now"
+      actions={mine && <Button onClick={onReconnect}>Reconnect your calendar</Button>}
+    >
+      Google no longer accepts the calendar sign-in for {problemNames(problems)}, so the booking page can't show free times. {fix}
+    </Notice>
+  );
+};
+
 const GroupPage = ({
   user,
   name,
   nav,
   onBack,
   onEdit,
+  onReconnect,
 }: {
   user: SessionUser;
   name: string;
   nav: FrameNav;
   onBack: () => void;
   onEdit: () => void;
+  /** Opens Settings at the calendar, to reconnect your own Google Calendar. */
+  onReconnect: () => void;
 }) => {
   const { db } = useContext(FrappeContext) as FrappeConfig;
   const { data, error, mutate } = useFrappeGetCall<{ message: GroupDetail }>(GET_GROUP, { group: name }, undefined, { revalidateOnFocus: false });
-  const { copied, copy } = useCopied();
   const [saving, setSaving] = useState(false);
   const [peopleError, setPeopleError] = useState<string | null>(null);
   const detail = data?.message;
@@ -314,19 +346,7 @@ const GroupPage = ({
       title={title}
       width="home"
       {...nav}
-      headerAction={
-        <span className="flex items-center gap-2">
-          <a href={link} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 h-7 px-2 rounded-lg text-es-base text-ink-gray-8 no-underline hover:bg-surface-gray-3">
-            <ExternalLink className="w-3.5 h-3.5" aria-hidden="true" />
-            Open
-          </a>
-          {detail?.can_edit && <Button onClick={onEdit}>Edit</Button>}
-          <Button variant="solid" onClick={() => copy("group", link)}>
-            {copied === "group" ? <Check className="w-4 h-4" aria-hidden="true" /> : <Copy className="w-4 h-4" aria-hidden="true" />}
-            {copied === "group" ? "Copied" : "Copy link"}
-          </Button>
-        </span>
-      }
+      headerAction={detail?.can_edit && <Button onClick={onEdit}>Edit</Button>}
     >
       {error && (
         <Notice tone="red" title="Couldn't open this group" actions={<Button onClick={onBack}>Back to groups</Button>}>
@@ -335,6 +355,7 @@ const GroupPage = ({
       )}
       {detail && doc && (
         <>
+          <CalendarProblems group={name} onReconnect={onReconnect} />
           {!detail.can_edit && (
             <Notice tone="blue" icon={<Info className="w-4 h-4 shrink-0 mt-px text-ink-blue-5" aria-hidden="true" />} title="You're in this group">
               {detail.owner_name} made it, so only they can change it. You can share its link and see its bookings.
@@ -342,12 +363,7 @@ const GroupPage = ({
           )}
           <div className="flex flex-wrap items-start gap-8">
             <div className="flex-[999_1_480px] min-w-0 flex flex-col gap-7">
-              <div className="flex flex-wrap items-center gap-x-3 gap-y-2 px-3 py-2.5 rounded-xl bg-surface-gray-1">
-                <span className="flex-1 min-w-0 truncate text-es-base text-ink-gray-8">{link.replace(/^https?:\/\//, "")}</span>
-                <span className="text-es-sm text-ink-gray-5">
-                  {durationLabel(doc.duration_for_event)} · {providerLabel(doc.meet_provider)}
-                </span>
-              </div>
+              <LinkBar link={link} />
               <Bookings user={user} group={name} people={detail.people} />
             </div>
 
