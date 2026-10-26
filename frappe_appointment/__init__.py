@@ -1,4 +1,4 @@
-__version__ = "1.1.5"
+__version__ = "1.2.0"
 
 from frappe_appointment import monkey_patch
 
