@@ -23,6 +23,11 @@ def get_meeting_windows(slug: str):
         "User Appointment Availability", filters={"slug": slug, "enable_scheduling": 1}, fields=["*"]
     )
     if not user_availability:
+        # A page that exists but is switched off says so, with whose it is, instead of looking like a broken link.
+        paused_user = frappe.db.get_value("User Appointment Availability", {"slug": slug}, "user")
+        if paused_user:
+            full_name = frappe.db.get_value("User", paused_user, "full_name")
+            return {"error": "Not accepting bookings", "not_accepting": True, "full_name": full_name}, 404
         return {"error": "No user found"}, 404
     user_availability = user_availability[0]
     user = user_availability.get("user")

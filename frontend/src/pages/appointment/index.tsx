@@ -1,7 +1,7 @@
 /**
  * External dependencies
  */
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useFrappeGetCall } from "frappe-react-sdk";
 
@@ -20,7 +20,7 @@ import PoweredBy from "@/components/powered-by";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/tooltip";
 import Typography from "@/components/typography";
 import MetaTags from "@/components/meta-tags";
-import { Info } from "lucide-react";
+import { CalendarX, Info } from "lucide-react";
 
 const Appointment = () => {
   const { meetId } = useParams();
@@ -42,6 +42,8 @@ const Appointment = () => {
     meetingDurationCards,
     setMeetingDurationCards,
   } = useAppContext();
+  // The owner's name when their booking page is switched off.
+  const [notAccepting, setNotAccepting] = useState<string | null>(null);
 
   const { data, isLoading, error } = useFrappeGetCall(
     "frappe_appointment.api.personal_meet.get_meeting_windows",
@@ -76,10 +78,33 @@ const Appointment = () => {
       });
       setMeetingDurationCards(data?.message?.durations);
     }
-    if (error) {
-      navigate("/");
+    // A page that exists but is switched off says so instead of showing a 404. The SDK types `message` as text, but
+    // this endpoint's error reply is an object.
+    const reply = error?.message as unknown as { not_accepting?: boolean; full_name?: string } | undefined;
+    if (reply?.not_accepting) {
+      setNotAccepting(reply.full_name || "This person");
+    } else if (error) {
+      navigate("/not-found", { replace: true });
     }
   }, [data, error]);
+
+  if (notAccepting) {
+    return (
+      <div className="flex items-center justify-center min-h-screen px-4 py-12">
+        <MetaTags title={`${notAccepting} | Appointment`} description={`${notAccepting} isn't taking bookings right now`} />
+        <div className="max-w-md flex flex-col items-center gap-3 text-center">
+          <CalendarX className="h-8 w-8 text-gray-500 dark:text-gray-400" />
+          <Typography variant="h2" className="text-2xl font-semibold">
+            Not taking bookings right now
+          </Typography>
+          <Typography className="text-gray-600 dark:text-gray-400">
+            {notAccepting} isn't accepting bookings at the moment. Please check back later, or get in touch with them
+            directly.
+          </Typography>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>

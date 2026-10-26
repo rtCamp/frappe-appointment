@@ -2,8 +2,19 @@
  * External dependencies.
  */
 import { clsx, type ClassValue } from "clsx";
-import { twMerge } from "tailwind-merge";
+import { extendTailwindMerge } from "tailwind-merge";
 import { Error } from "frappe-js-sdk/lib/frappe_app/types";
+
+// Espresso font sizes and shadows from tailwind.config.js; without them tailwind-merge reads text-es-* as a
+// text color (and shadow-es-* as a shadow color) and drops it when a color class sits next to it.
+const twMerge = extendTailwindMerge({
+  extend: {
+    classGroups: {
+      "font-size": [{ text: ["es-xs", "es-sm", "es-base", "es-lg", "es-p-sm", "es-p-base", "es-title"] }],
+      shadow: [{ shadow: ["es-sm", "es-lg", "es-2xl", "es-focus"] }],
+    },
+  },
+});
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));

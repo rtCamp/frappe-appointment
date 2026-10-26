@@ -19,7 +19,6 @@ import { getSiteName } from "./lib/utils";
 import { TooltipProvider } from "@/components/tooltip";
 import { AppProvider } from "./context/app";
 import { Toaster } from "./components/sonner";
-import ModeToggle from "./components/theme-provider/components/modeToggle";
 
 const App = () => {
   const router = createBrowserRouter(createRoutesFromElements(Router()), {
@@ -41,7 +40,6 @@ const App = () => {
               <Suspense fallback={<></>}>
                 <RouterProvider router={router} />
                 <Toaster />
-                <ModeToggle/>
               </Suspense>
             </TooltipProvider>
           </FrappeProvider>

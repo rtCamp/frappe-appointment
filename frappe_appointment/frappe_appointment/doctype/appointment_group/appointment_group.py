@@ -7,6 +7,8 @@ from urllib.parse import quote_plus
 import frappe
 import frappe.utils
 from frappe.model.document import Document
+from frappe.share import add_docshare, get_share_name
+from frappe.share import remove as remove_share
 from frappe.utils import (
     add_days,
     add_to_date,
@@ -16,7 +18,10 @@ from frappe.utils import (
     get_time_str,
 )
 
-from frappe_appointment.constants import APPOINTMENT_GROUP, APPOINTMENT_TIME_SLOT
+from frappe_appointment.constants import APPOINTMENT_GROUP, APPOINTMENT_TIME_SLOT, USER_APPOINTMENT_AVAILABILITY
+from frappe_appointment.frappe_appointment.doctype.appointment_settings.appointment_settings import (
+    validate_email_template_choice,
+)
 from frappe_appointment.frappe_appointment.doctype.appointment_time_slot.appointment_time_slot import (
     GoogleBadRequest,
     get_all_unavailable_google_calendar_slots_for_day,
@@ -58,14 +63,179 @@ class AppointmentGroup(Document):
                 g_calendar_link = frappe.utils.get_link_to_form("Google Calendar", self.event_creator)
                 return frappe.throw(frappe._(f"Please set Zoom User Email in {g_calendar_link}."))
 
+    def before_validate(self):
+        if not self.is_new():
+            return
+        if not is_group_admin():
+            self.set_owner_defaults()
+        elif not self.event_creator:
+            # Admins pick any calendar in Desk, where it's required. The app's form sends none, so a group an admin
+            # makes there books into their own calendar like anyone else's.
+            self.set_owner_calendar()
+
     def validate(self):
         self.validate_zoom()
+        validate_email_template_choice(self, "response_email_template", "group")
+        validate_email_template_choice(self, "availability_email_template", "availability")
+        if not is_group_admin():
+            self.validate_admin_only_fields()
+            self.validate_owner_calendar_and_organizer()
         self.validate_members_list()
+
+    def on_update(self):
+        self.share_with_members()
+
+    def set_owner_defaults(self):
+        """A group someone makes for themselves books into their own calendar, names them as organizer,
+        and always includes them as a required member."""
+        if not frappe.db.exists(USER_APPOINTMENT_AVAILABILITY, self.owner):
+            frappe.throw(frappe._("Set up your booking page in Appointments before making a group."))
+        self.set_owner_calendar()
+
+        owner_is_listed = False
+        for member in self.members:
+            if member.user == self.owner:
+                member.is_mandatory = 1
+                owner_is_listed = True
+
+        if not owner_is_listed:
+            self.add_owner_as_first_member()
+
+    def set_owner_calendar(self):
+        """Book into the owner's own connected calendar, with them as organizer, unless those are already set."""
+        calendar = get_connected_calendar(self.owner)
+        if not calendar:
+            frappe.throw(frappe._("Connect your Google Calendar in Appointments before making a group."))
+
+        if not self.event_creator:
+            self.event_creator = calendar
+        if not self.event_organizer:
+            self.event_organizer = self.owner
+
+    def add_owner_as_first_member(self):
+        """Put the owner at the top of the members, as a required member."""
+        other_members = list(self.members)
+        self.set("members", [])
+        self.append("members", {"user": self.owner, "is_mandatory": 1})
+        for member in other_members:
+            self.append("members", member)
+
+        # The other rows keep the position they had, so number every row again.
+        for position, member in enumerate(self.members, start=1):
+            member.idx = position
+
+    def field_changed(self, fieldname):
+        """Whether this save sets or changes a field. Blank and unset count as the same."""
+        if self.is_new():
+            return bool(self.get(fieldname))
+
+        value_before = self.get_value_before_save(fieldname) or None
+        value_now = self.get(fieldname) or None
+        return value_before != value_now
+
+    def validate_admin_only_fields(self):
+        """The webhook runs server code on every booking and the linked doctype adds a Schedule button to
+        everyone's forms, so only System Managers set them."""
+        for fieldname in ("webhook", "linked_doctype"):
+            if self.field_changed(fieldname):
+                frappe.throw(
+                    frappe._("Only a System Manager can set {0}.").format(frappe._(self.meta.get_label(fieldname))),
+                    frappe.PermissionError,
+                )
+
+    def validate_owner_calendar_and_organizer(self):
+        """Bookings are created with the event creator's Google sign-in, and the organizer is shown in every
+        invite, so they can only be the group owner's own."""
+        if self.field_changed("event_creator"):
+            calendar_owner = frappe.db.get_value("Google Calendar", self.event_creator, "user")
+            if calendar_owner != self.owner:
+                frappe.throw(
+                    frappe._("A group's bookings can only go to its owner's own Google Calendar."),
+                    frappe.PermissionError,
+                )
+
+        if self.field_changed("event_organizer"):
+            if self.event_organizer != self.owner:
+                frappe.throw(frappe._("Only the group's owner can be its organizer."), frappe.PermissionError)
+
+    def share_with_members(self):
+        """Members can see the groups they're in: share the group read-only with each member, and stop
+        sharing it with people who were taken out. Shares with more access than read are left alone."""
+        flags = {"ignore_share_permission": True, "ignore_permissions": True}
+
+        users_now = member_users(self.members)
+        users_before = set()
+        doc_before_save = self.get_doc_before_save()
+        if doc_before_save:
+            users_before = member_users(doc_before_save.members)
+
+        for user in users_now:
+            if user == self.owner:
+                continue
+            already_shared = get_share_name(self.doctype, self.name, user, 0)
+            if not already_shared:
+                add_docshare(self.doctype, self.name, user, read=1, flags=flags)
+
+        for user in users_before:
+            was_removed = user not in users_now
+            if not was_removed or user == self.owner:
+                continue
+            share_name = get_share_name(self.doctype, self.name, user, 0)
+            if share_name and is_read_only_share(share_name):
+                remove_share(self.doctype, self.name, user, flags=flags)
 
     def validate_members_list(self):
         is_valid_list = [member for member in self.members if member.is_mandatory]
         if not is_valid_list or len(is_valid_list) == 0:
             return frappe.throw(frappe._("Please add at least one mandatory member to the appointment group."))
+
+
+GROUP_ADMIN_ROLES = ("System Manager", "Appointment Manager")
+
+
+def is_group_admin(user: str | None = None) -> bool:
+    """System Managers and Appointment Managers manage every group, including Careers-style plumbing
+    (webhook, linked doctype, any calendar or organizer); everyone else only their own."""
+    roles = frappe.get_roles(user)
+    for role in GROUP_ADMIN_ROLES:
+        if role in roles:
+            return True
+    return False
+
+
+def get_connected_calendar(user: str) -> str | None:
+    """The user's Google Calendar that's connected and authorized, newest first."""
+    return frappe.db.get_value(
+        "Google Calendar",
+        {"user": user, "enable": 1, "custom_is_google_calendar_authorized": 1},
+        "name",
+        order_by="modified desc",
+    )
+
+
+def is_read_only_share(share_name: str) -> bool:
+    """Whether a share gives read access only, as the ones made for members do."""
+    share = frappe.db.get_value("DocShare", share_name, ["write", "share", "submit"], as_dict=True)
+    return not share.write and not share.share and not share.submit
+
+
+def member_users(members) -> set:
+    """The users behind a group's members (each member is a User Appointment Availability)."""
+    availability_names = []
+    for member in members:
+        if member.user:
+            availability_names.append(member.user)
+
+    if not availability_names:
+        return set()
+
+    users = frappe.get_all(USER_APPOINTMENT_AVAILABILITY, filters={"name": ["in", availability_names]}, pluck="user")
+    return set(users)
+
+
+class CalendarUnavailableError(frappe.ValidationError):
+    """A calendar the booking page needs for free times can't be read, so there are no times to offer.
+    Booking pages tell guests this instead of showing a generic error."""
 
 
 def _get_time_slots_for_day(
@@ -112,7 +282,14 @@ def _get_time_slots_for_day(
         return time_slots_today_object
     except GoogleBadRequest as e:
         frappe.log_error(e)
-        frappe.throw(frappe._("Something went wrong while fetching time slots. Please try again later."))
+        frappe.throw(
+            frappe._(
+                "We can't check the calendars for this meeting right now, so there are no times to offer. Please"
+                " try again later, or let the person who sent you this link know."
+            ),
+            exc=CalendarUnavailableError,
+            title=frappe._("No times available right now"),
+        )
     except Exception:
         frappe.log_error()
         return None

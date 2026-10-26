@@ -6,6 +6,12 @@ var og_slug = null;
 frappe.ui.form.on("User Appointment Availability", {
   refresh(frm) {
     og_slug = frm.doc.slug;
+    // Only System Managers choose which email goes out; the server checks it too.
+    frm.set_df_property(
+      "response_email_template",
+      "read_only",
+      !frappe.user.has_role("System Manager"),
+    );
     if (frm.doc.__islocal) {
       frm.set_value("user", frappe.session.user);
       frappe.call({

@@ -4,11 +4,11 @@ on:
   push:
     branches:
       - version-16
-      - version-16-hotfix
+      - develop
   pull_request:
     branches:
       - version-16
-      - version-16-hotfix
+      - develop
 
 jobs:
   gitleaks:

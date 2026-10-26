@@ -4,7 +4,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { format } from "date-fns";
-import { ArrowLeft, CircleAlert, Clock } from "lucide-react";
+import { ArrowLeft, CalendarX, CircleAlert, Clock } from "lucide-react";
 import { toast } from "sonner";
 
 /**
@@ -40,6 +40,10 @@ import SuccessAlert from "@/components/success-alert";
 import MetaTags from "@/components/meta-tags";
 import { CalendarWrapper } from "@/components/calendar-wrapper";
 import { useMeetingReducer } from "./reducer";
+import GuestDetails, { GuestDetailsValue } from "./components/guestDetails";
+
+/** Links that already say who's booking: Desk's Schedule links, Careers candidate links and reschedule links. */
+const GUEST_PARAMS = ["event_participants", "interview_token", "event_token", "reschedule"];
 
 const GroupAppointment = () => {
   const { groupId } = useParams();
@@ -50,6 +54,10 @@ const GroupAppointment = () => {
   const event_token = searchParams.get("event_token") || "";
   const [timeFormat, setTimeFormat] = useState<TimeFormat>("12h");
   const [state, dispatch] = useMeetingReducer();
+  // A plain group link asks who's booking before it books.
+  const [askingDetails, setAskingDetails] = useState(false);
+  // Set when a calendar the page needs can't be read: guests see why instead of a 404.
+  const [unavailable, setUnavailable] = useState<string | null>(null);
 
   const {
     data,
@@ -92,8 +100,11 @@ const GroupAppointment = () => {
       dispatch({ type: "SET_DISPLAY_MONTH", payload: validData });
       updateDateQuery(validData);
     }
-    if (fetchError) {
-      navigate("/");
+    if (data) setUnavailable(null);
+    if (fetchError?.exc_type === "CalendarUnavailableError") {
+      setUnavailable(parseFrappeErrorMsg(fetchError));
+    } else if (fetchError) {
+      navigate("/not-found", { replace: true });
     }
   }, [data, fetchError, mutate, navigate, dispatch]);
 
@@ -162,9 +173,27 @@ const GroupAppointment = () => {
     }).format(date);
   };
 
-  const scheduleMeeting = () => {
+  const carriesGuest =
+    GUEST_PARAMS.some((key) => searchParams.has(key)) ||
+    Object.keys(state.meetingData.meeting_details ?? {}).length > 0;
+
+  const groupTitle = validTitle(state.meetingData.title || state.meetingData.appointment_group_id);
+
+  const onSchedule = () => (carriesGuest ? scheduleMeeting() : setAskingDetails(true));
+
+  /** The guest's details as the booking endpoint already takes them, and the booking linked to its group
+   * so the group's confirmation email goes out (personal bookings link to the host's availability). */
+  const bookAsGuest = ({ fullName, email, guests }: GuestDetailsValue) =>
+    scheduleMeeting({
+      subject: `${groupTitle} with ${fullName}`,
+      event_participants: JSON.stringify([email, ...guests].map((address) => ({ email: address }))),
+      custom_doctype_link_with_event: JSON.stringify([{ reference_doctype: "Appointment Group", reference_docname: groupId }]),
+    });
+
+  const scheduleMeeting = (guest: Record<string, string> = {}) => {
     const meetingData = {
       ...Object.fromEntries(searchParams),
+      ...guest,
       appointment_group_id: groupId,
       date: new Intl.DateTimeFormat("en-CA", {
         year: "numeric",
@@ -180,6 +209,7 @@ const GroupAppointment = () => {
 
     bookMeeting(meetingData)
       .then((data) => {
+        setAskingDetails(false);
         dispatch({ type: "SET_BOOKING_RESPONSE", payload: data.message });
         dispatch({ type: "SET_APPOINTMENT_SCHEDULED", payload: true });
         mutate();
@@ -200,6 +230,20 @@ const GroupAppointment = () => {
         });
       });
   };
+
+  if (unavailable) {
+    return (
+      <div className="flex items-center justify-center min-h-screen px-4 py-12">
+        <div className="max-w-md flex flex-col items-center gap-3 text-center">
+          <CalendarX className="h-8 w-8 text-gray-500 dark:text-gray-400" />
+          <Typography variant="h2" className="text-2xl font-semibold">
+            No times available right now
+          </Typography>
+          <Typography className="text-gray-600 dark:text-gray-400">{unavailable}</Typography>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -378,7 +422,7 @@ const GroupAppointment = () => {
                 </div>
               </div>
             )}
-            {state.isMobileView && state.expanded && (
+            {state.isMobileView && state.expanded && !askingDetails && (
               <div className="h-14 fixed bottom-0 left-0 w-screen border z-10 bg-background border-top flex items-center justify-between px-4">
                 <Button
                   variant="link"
@@ -402,7 +446,7 @@ const GroupAppointment = () => {
                     "bg-blue-500 dark:bg-blue-400 flex hover:bg-blue-500 dark:hover:bg-blue-400 w-fit px-10",
                     "md:hidden"
                   )}
-                  onClick={scheduleMeeting}
+                  onClick={onSchedule}
                 >
                   {loading && <Spinner />}
                   {reschedule && event_token ? "Reschedule" : "Schedule"}
@@ -416,6 +460,17 @@ const GroupAppointment = () => {
                 !state.expanded && "max-md:hidden"
               )}
             >
+              {askingDetails ? (
+                <GuestDetails
+                  dateLabel={`${format(state.selectedDate, "d MMM, yyyy")} · ${
+                    state.selectedSlot?.start_time ? formatTimeSlot(new Date(state.selectedSlot.start_time)) : ""
+                  }`}
+                  loading={loading}
+                  onBack={() => setAskingDetails(false)}
+                  onSubmit={bookAsGuest}
+                />
+              ) : (
+              <>
               <Typography
                 variant="h3"
                 className="text-sm font-semibold lg:w-full truncate"
@@ -479,12 +534,14 @@ const GroupAppointment = () => {
                         "flex",
                       "max-md:hidden"
                     )}
-                    onClick={scheduleMeeting}
+                    onClick={onSchedule}
                   >
                     {loading && <Spinner />}
                     {reschedule && event_token ? "Reschedule" : "Schedule"}
                   </Button>
                 </>
+              )}
+              </>
               )}
             </div>
           </div>

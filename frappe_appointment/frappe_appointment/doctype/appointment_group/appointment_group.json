@@ -250,7 +250,7 @@
   }
  ],
  "links": [],
- "modified": "2025-04-23 11:11:22.130701",
+ "modified": "2026-10-24 10:00:00.000000",
  "modified_by": "Administrator",
  "module": "Frappe Appointment",
  "name": "Appointment Group",
@@ -265,6 +265,18 @@
    "read": 1,
    "report": 1,
    "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "if_owner": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Desk User",
    "share": 1,
    "write": 1
   }

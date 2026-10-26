@@ -15,6 +15,14 @@ frappe.ui.form.on("Appointment Group", {
     );
   },
   refresh: function (frm) {
+    // Only System Managers choose which emails go out; the server checks it too.
+    const picksEmails = frappe.user.has_role("System Manager");
+    frm.set_df_property("response_email_template", "read_only", !picksEmails);
+    frm.set_df_property(
+      "availability_email_template",
+      "read_only",
+      !picksEmails,
+    );
     if (frm.doc.__islocal) {
       frappe.call({
         method:
@@ -36,9 +44,12 @@ frappe.ui.form.on("Appointment Group", {
         $(".available-slots-section").remove();
       }
       addAvailableSlotsInfo(frm);
-      frm.add_custom_button(__("Update Slots Availability"), function () {
-        update_slots_availability(frm);
-      });
+      // Updating saves the group, so only people who can edit it get the button.
+      if (frm.has_perm("write")) {
+        frm.add_custom_button(__("Update Slots Availability"), function () {
+          update_slots_availability(frm);
+        });
+      }
     }
     frm.sidebar
       .add_user_action(__("See on Website"))
