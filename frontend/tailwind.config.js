@@ -93,17 +93,44 @@ export default {
         },
       },
       fontFamily: {
-        espresso: ["InterVar", "Inter", "ui-sans-serif", "system-ui", "sans-serif"],
+        espresso: [
+          "InterVar",
+          "Inter",
+          "ui-sans-serif",
+          "system-ui",
+          "sans-serif",
+        ],
       },
       // Espresso type scale, prefixed so it doesn't clash with Tailwind's text-sm/base/lg.
       fontSize: {
-        "es-xs": ["12px", { lineHeight: "1.15", letterSpacing: "0.02em", fontWeight: "420" }],
-        "es-sm": ["13px", { lineHeight: "1.15", letterSpacing: "0.02em", fontWeight: "420" }],
-        "es-base": ["14px", { lineHeight: "1.15", letterSpacing: "0.02em", fontWeight: "420" }],
-        "es-lg": ["16px", { lineHeight: "1.15", letterSpacing: "0.015em", fontWeight: "420" }],
-        "es-p-sm": ["13px", { lineHeight: "1.5", letterSpacing: "0.015em", fontWeight: "420" }],
-        "es-p-base": ["14px", { lineHeight: "1.5", letterSpacing: "0.02em", fontWeight: "420" }],
-        "es-title": ["24px", { lineHeight: "1.2", letterSpacing: "-0.01em", fontWeight: "600" }],
+        "es-xs": [
+          "12px",
+          { lineHeight: "1.15", letterSpacing: "0.02em", fontWeight: "420" },
+        ],
+        "es-sm": [
+          "13px",
+          { lineHeight: "1.15", letterSpacing: "0.02em", fontWeight: "420" },
+        ],
+        "es-base": [
+          "14px",
+          { lineHeight: "1.15", letterSpacing: "0.02em", fontWeight: "420" },
+        ],
+        "es-lg": [
+          "16px",
+          { lineHeight: "1.15", letterSpacing: "0.015em", fontWeight: "420" },
+        ],
+        "es-p-sm": [
+          "13px",
+          { lineHeight: "1.5", letterSpacing: "0.015em", fontWeight: "420" },
+        ],
+        "es-p-base": [
+          "14px",
+          { lineHeight: "1.5", letterSpacing: "0.02em", fontWeight: "420" },
+        ],
+        "es-title": [
+          "24px",
+          { lineHeight: "1.2", letterSpacing: "-0.01em", fontWeight: "600" },
+        ],
       },
       boxShadow: {
         "es-sm": "var(--elevation-sm)",

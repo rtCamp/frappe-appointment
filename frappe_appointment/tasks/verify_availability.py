@@ -10,7 +10,7 @@ from frappe_appointment.frappe_appointment.doctype.appointment_group.appointment
 from frappe_appointment.helpers.email import send_email_template_mail
 
 
-@frappe.whitelist()
+@frappe.whitelist(methods=["POST"])
 def update_availability_status_for_appointment_group(appointment_group: str):
     if isinstance(appointment_group, str):
         # The job saves the group, so it's for people who can edit it.

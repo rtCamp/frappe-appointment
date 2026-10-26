@@ -134,7 +134,8 @@ def render_for_preview(text: str | None, context: dict) -> str:
     except TemplateSyntaxError as e:
         raise TemplateRenderError(f"Line {e.lineno}: {e.message}") from e
     try:
-        return frappe.render_template(text or "", context)
+        # Saved templates or drafts from people who can write Email Templates, rendered in Frappe's sandbox.
+        return frappe.render_template(text or "", context)  # nosemgrep
     except Exception as e:
         frappe.clear_messages()
         raise TemplateRenderError(f"Couldn't fill in the template ({type(e).__name__}).") from e

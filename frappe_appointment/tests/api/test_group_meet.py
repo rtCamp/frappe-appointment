@@ -40,7 +40,6 @@ class TestGroupMeetGetTimeSlots(IntegrationTestCase):
         self.assertEqual(result["title"], self.group.group_name)
         self.assertTrue(result["rescheduling_allowed"])
 
-
     def test_unreadable_calendar_tells_guests_why(self):
         """A calendar Google no longer accepts gives guests a clear reason, as its own error type."""
         with (
@@ -50,6 +49,7 @@ class TestGroupMeetGetTimeSlots(IntegrationTestCase):
             with self.assertRaises(CalendarUnavailableError) as raised:
                 get_time_slots(self.group.name, "2027-01-15", "0")
         self.assertIn("can't check the calendars for this meeting", str(raised.exception))
+
 
 class TestGroupMeetBookTimeSlot(IntegrationTestCase):
     @classmethod
