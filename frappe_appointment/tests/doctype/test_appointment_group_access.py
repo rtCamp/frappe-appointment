@@ -154,6 +154,15 @@ class TestAdminOnlyFields(GroupAccessCase):
         group.save()
         self.assertEqual(frappe.db.get_value(GROUP, group.name, "event_creator"), self.member_calendar)
 
+    def test_admins_making_a_group_in_the_app_use_their_own_calendar(self):
+        """The app's form sends no calendar or organizer. An admin's group then books into their own calendar
+        with them as organizer, instead of failing on the required calendar."""
+        calendar = make_google_calendar(MANAGER, calendar_name=f"GCal {MANAGER}").name
+        group = self.make_group("FA Grp Manager App", members=(MEMBER,), user=MANAGER)
+        self.assertEqual(
+            frappe.db.get_value(GROUP, group.name, ["event_creator", "event_organizer"]), (calendar, MANAGER)
+        )
+
     def test_appointment_managers_set_anything(self):
         """Appointment Managers run groups like System Managers: any calendar, organizer, webhook and
         doctype, and they aren't put into the group themselves."""

@@ -64,8 +64,14 @@ class AppointmentGroup(Document):
                 return frappe.throw(frappe._(f"Please set Zoom User Email in {g_calendar_link}."))
 
     def before_validate(self):
-        if self.is_new() and not is_group_admin():
+        if not self.is_new():
+            return
+        if not is_group_admin():
             self.set_owner_defaults()
+        elif not self.event_creator:
+            # Admins pick any calendar in Desk, where it's required. The app's form sends none, so a group an admin
+            # makes there books into their own calendar like anyone else's.
+            self.set_owner_calendar()
 
     def validate(self):
         self.validate_zoom()
@@ -82,16 +88,9 @@ class AppointmentGroup(Document):
     def set_owner_defaults(self):
         """A group someone makes for themselves books into their own calendar, names them as organizer,
         and always includes them as a required member."""
-        calendar = get_connected_calendar(self.owner)
-        if not calendar:
-            frappe.throw(frappe._("Connect your Google Calendar in Appointments before making a group."))
         if not frappe.db.exists(USER_APPOINTMENT_AVAILABILITY, self.owner):
             frappe.throw(frappe._("Set up your booking page in Appointments before making a group."))
-
-        if not self.event_creator:
-            self.event_creator = calendar
-        if not self.event_organizer:
-            self.event_organizer = self.owner
+        self.set_owner_calendar()
 
         owner_is_listed = False
         for member in self.members:
@@ -101,6 +100,17 @@ class AppointmentGroup(Document):
 
         if not owner_is_listed:
             self.add_owner_as_first_member()
+
+    def set_owner_calendar(self):
+        """Book into the owner's own connected calendar, with them as organizer, unless those are already set."""
+        calendar = get_connected_calendar(self.owner)
+        if not calendar:
+            frappe.throw(frappe._("Connect your Google Calendar in Appointments before making a group."))
+
+        if not self.event_creator:
+            self.event_creator = calendar
+        if not self.event_organizer:
+            self.event_organizer = self.owner
 
     def add_owner_as_first_member(self):
         """Put the owner at the top of the members, as a required member."""
