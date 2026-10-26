@@ -1,11 +1,20 @@
 import frappe
 from frappe.tests import IntegrationTestCase
 
+from frappe_appointment.frappe_appointment.doctype.appointment_settings.appointment_settings import (
+    get_default_email_template,
+)
 from frappe_appointment.frappe_appointment.doctype.user_appointment_availability.user_appointment_availability import (
     is_slug_available,
     suggest_slug,
 )
-from frappe_appointment.tests import make_google_calendar, make_test_user, make_user_availability
+from frappe_appointment.tests import (
+    as_user,
+    make_email_template,
+    make_google_calendar,
+    make_test_user,
+    make_user_availability,
+)
 
 
 class TestUserAvailabilityValidate(IntegrationTestCase):
@@ -101,3 +110,45 @@ class TestSlugHelpers(IntegrationTestCase):
 # 13.9 (get_user_appointment_availability_slots) is not tested: the function has no callers and
 # always raises. It builds a tz-aware datetime (convert_utc_datetime_to_timezone) then passes it to
 # convert_datetime_to_utc, whose pytz.localize rejects an already-tz-aware datetime. SOURCE BUG.
+
+
+class TestConfirmationEmailChoice(IntegrationTestCase):
+    USER = "test_fa_uaav_email@example.com"
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        make_test_user(cls.USER).add_roles("Desk User")
+        # No hours: re-saving loaded hours trips over their time format, which isn't what's tested here.
+        make_user_availability(cls.USER, slug="fa-uaav-email", days=[])
+        cls.default = get_default_email_template()["personal"]
+        cls.other = make_email_template("FA Test Other Confirmation").name
+
+    def saved_email(self):
+        return frappe.db.get_value("User Appointment Availability", self.USER, "response_email_template")
+
+    def save_as_user(self, template):
+        doc = frappe.get_doc("User Appointment Availability", self.USER)
+        doc.response_email_template = template
+        with as_user(self.USER):
+            doc.save(ignore_permissions=True)
+
+    def test_desk_users_can_only_start_on_the_default(self):
+        """A page with no email gets the site's default; picking another one is refused."""
+        frappe.db.set_value("User Appointment Availability", self.USER, "response_email_template", None)
+        self.save_as_user(None)
+        self.assertEqual(self.saved_email(), self.default)
+        with self.assertRaises(frappe.PermissionError):
+            self.save_as_user(self.other)
+
+    def test_clearing_the_email_brings_back_the_default(self):
+        doc = frappe.get_doc("User Appointment Availability", self.USER)
+        doc.response_email_template = None
+        doc.save(ignore_permissions=True)
+        self.assertEqual(self.saved_email(), self.default)
+
+    def test_system_managers_choose_any_email(self):
+        doc = frappe.get_doc("User Appointment Availability", self.USER)
+        doc.response_email_template = self.other
+        doc.save(ignore_permissions=True)
+        self.assertEqual(self.saved_email(), self.other)

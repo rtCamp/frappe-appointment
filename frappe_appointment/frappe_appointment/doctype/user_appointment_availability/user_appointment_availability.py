@@ -10,6 +10,9 @@ from frappe.model.document import Document
 from frappe.utils.data import add_to_date
 
 from frappe_appointment.constants import APPOINTMENT_TIME_SLOT
+from frappe_appointment.frappe_appointment.doctype.appointment_settings.appointment_settings import (
+    validate_email_template_choice,
+)
 from frappe_appointment.helpers.intervals import find_intersection_interval
 from frappe_appointment.helpers.utils import (
     convert_datetime_to_utc,
@@ -38,6 +41,7 @@ class UserAppointmentAvailability(Document):
                         )
                     )
                 weekdays.append(slot.day)
+        validate_email_template_choice(self, "response_email_template", "personal")
         calendar = frappe.get_doc("Google Calendar", self.google_calendar)
         if not calendar.custom_is_google_calendar_authorized:
             frappe.throw(frappe._("Please authorize Google Calendar before creating appointment availability."))

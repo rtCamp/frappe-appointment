@@ -153,3 +153,23 @@ def insert_event_in_google_calendar_override(
                 account.name, err.resp.status
             )
         )
+
+
+def calendar_is_connected(calendar: str) -> bool:
+    """Whether Google still accepts the calendar's sign-in. Remembered for ten minutes, or until the
+    calendar is reconnected, which changes its modified time."""
+    modified = frappe.db.get_value("Google Calendar", calendar, "modified")
+    if not modified:
+        return False
+
+    key = f"frappe_appointment:calendar_connected:{calendar}:{modified}"
+    connected = frappe.cache.get_value(key)
+    if connected is not None:
+        return connected
+
+    try:
+        connected = bool(frappe.get_doc("Google Calendar", calendar).get_access_token())
+    except Exception:
+        connected = False
+    frappe.cache.set_value(key, connected, expires_in_sec=600)
+    return connected

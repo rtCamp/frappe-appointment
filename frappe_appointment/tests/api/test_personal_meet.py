@@ -41,6 +41,18 @@ class TestGetMeetingWindows(IntegrationTestCase):
         self.assertEqual(result["error"], "No user found")
         self.assertEqual(frappe.local.response.http_status_code, 404)
 
+    def test_switched_off_page_says_it_is_not_accepting_bookings(self):
+        """A page whose owner turned off bookings says so, with their name, and still offers no times."""
+        frappe.db.set_value("User Appointment Availability", self.user, "enable_scheduling", 0)
+        try:
+            result = get_meeting_windows("fa-pmwin")
+        finally:
+            frappe.db.set_value("User Appointment Availability", self.user, "enable_scheduling", 1)
+        self.assertEqual(
+            result, {"error": "Not accepting bookings", "not_accepting": True, "full_name": "test_fa_pmwin"}
+        )
+        self.assertEqual(frappe.local.response.http_status_code, 404)
+
 
 class TestGetTimeSlots(IntegrationTestCase):
     @classmethod

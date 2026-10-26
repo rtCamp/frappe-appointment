@@ -226,6 +226,13 @@ def make_appointment_group(
     return doc
 
 
+def make_email_template(name, subject="-"):
+    """Insert or return an Email Template."""
+    if not frappe.db.exists("Email Template", name):
+        frappe.get_doc({"doctype": "Email Template", "name": name, "subject": subject}).insert(ignore_permissions=True)
+    return frappe.get_doc("Email Template", name)
+
+
 def setup_appointment_settings(
     enable_zoom=0,
     zoom_client_id="",

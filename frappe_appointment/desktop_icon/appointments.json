@@ -1,0 +1,21 @@
+{
+	"app": "frappe_appointment",
+	"creation": "2026-10-22 12:00:00.000000",
+	"docstatus": 0,
+	"doctype": "Desktop Icon",
+	"hidden": 0,
+	"icon_type": "App",
+	"idx": 0,
+	"label": "Appointments",
+	"link": "/schedule",
+	"link_type": "External",
+	"logo_url": "/assets/frappe_appointment/frappe-appointment-logo.png",
+	"modified": "2026-10-22 12:00:00.000000",
+	"modified_by": "Administrator",
+	"name": "Appointments",
+	"owner": "Administrator",
+	"parent_icon": "",
+	"roles": [],
+	"sidebar": "",
+	"standard": 1
+}

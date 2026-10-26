@@ -9,3 +9,6 @@ frappe_appointment.patches.v0_1.add_appointment_manager_role
 frappe_appointment.patches.v0_1.add_event_creator
 frappe_appointment.patches.v0_1.update_route_appointment
 frappe_appointment.patches.v0_1.remove_stale_field_order_property_setters
+frappe_appointment.patches.v0_1.share_groups_with_members
+frappe_appointment.patches.v0_1.add_desk_user_group_permission
+frappe_appointment.patches.v0_1.fill_empty_email_templates

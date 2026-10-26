@@ -1,10 +1,10 @@
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 import frappe
 from frappe.tests import IntegrationTestCase
 from frappe.utils import get_datetime
 
-from frappe_appointment.helpers.google_calendar import insert_event_in_google_calendar_override
+from frappe_appointment.helpers.google_calendar import calendar_is_connected, insert_event_in_google_calendar_override
 from frappe_appointment.tests import GCAL_HELPER, make_google_calendar, mock_gcal_object
 
 
@@ -55,3 +55,41 @@ class TestInsertEventInGoogleCalendarOverride(IntegrationTestCase):
         self.assertEqual(event_id, "g-1")
         self.assertEqual(updates["google_calendar_event_id"], "g-1")
         self.assertEqual(updates["custom_google_calendar_event_url"], "http://x")
+
+
+class TestCalendarIsConnected(IntegrationTestCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.gcal = make_google_calendar("test_fa_gcalok@example.com", calendar_name="GCal FA Connected")
+
+    def setUp(self):
+        frappe.cache.delete_keys("frappe_appointment:calendar_connected:")
+
+    def token(self, value):
+        return patch(
+            "frappe.integrations.doctype.google_calendar.google_calendar.GoogleCalendar.get_access_token",
+            **({"side_effect": value} if isinstance(value, Exception) else {"return_value": value}),
+        )
+
+    def test_google_refusing_the_sign_in_means_not_connected(self):
+        with self.token(None):
+            self.assertFalse(calendar_is_connected(self.gcal.name))
+        frappe.cache.delete_keys("frappe_appointment:calendar_connected:")
+        with self.token(frappe.ValidationError("no refresh token")):
+            self.assertFalse(calendar_is_connected(self.gcal.name))
+        frappe.cache.delete_keys("frappe_appointment:calendar_connected:")
+        with self.token("access-token"):
+            self.assertTrue(calendar_is_connected(self.gcal.name))
+        self.assertFalse(calendar_is_connected("No Such Calendar"))
+
+    def test_remembered_until_the_calendar_is_reconnected(self):
+        with self.token(None) as get_token:
+            self.assertFalse(calendar_is_connected(self.gcal.name))
+            self.assertFalse(calendar_is_connected(self.gcal.name))
+        self.assertEqual(get_token.call_count, 1)
+
+        # Reconnecting saves a new sign-in, which changes the calendar's modified time.
+        frappe.db.set_value("Google Calendar", self.gcal.name, "modified", frappe.utils.add_to_date(None, seconds=5))
+        with self.token("access-token"):
+            self.assertTrue(calendar_is_connected(self.gcal.name))
