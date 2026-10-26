@@ -64,8 +64,12 @@ export const CALENDAR_FIELDS = [
 export const isConnected = (calendar: CalendarInfo | null) =>
   !!calendar?.enable && !!calendar?.custom_is_google_calendar_authorized;
 
-/** The calendar Appointments uses: a connected one if there is one, else the newest. */
-export const pickCalendar = (calendars: CalendarInfo[]) => calendars.find(isConnected) ?? calendars[0] ?? null;
+/**
+ * The calendar Appointments uses: the one the booking page books into, else a connected one, else the newest. Saving
+ * hours writes this one back to the booking page, so another calendar mustn't take its place.
+ */
+export const pickCalendar = (calendars: CalendarInfo[], availability?: { google_calendar?: string | null } | null) =>
+  calendars.find((c) => c.name === availability?.google_calendar) ?? calendars.find(isConnected) ?? calendars[0] ?? null;
 
 export interface TimeSlot {
   day: Day;
@@ -276,7 +280,10 @@ export const fromSiteTime = (value: string, siteTimeZone: string) => {
   const [y, m, d] = date.split("-").map(Number);
   const [h, mi, s] = time.split(":").map(Number);
   const wall = Date.UTC(y, m - 1, d, h, mi, Math.floor(s || 0));
-  return new Date(wall - zoneOffset(siteTimeZone, new Date(wall)) * 60000);
+  // The offset at the wall time read as UTC can be the one from the other side of a daylight-saving change, so take
+  // the offset again at the moment that first guess points to.
+  const guess = wall - zoneOffset(siteTimeZone, new Date(wall)) * 60000;
+  return new Date(wall - zoneOffset(siteTimeZone, new Date(guess)) * 60000);
 };
 
 /** The current moment written in the site's time zone, for filtering Events. */

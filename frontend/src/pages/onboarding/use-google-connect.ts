@@ -1,18 +1,20 @@
 /**
  * Connecting (or reconnecting) the user's Google Calendar: creates their Google Calendar record if
  * needed, sends them through Google's sign-in in a popup (the same authorize_access call as Desk),
- * and polls the record until the callback marks it authorized.
+ * and polls the record until the callback saves a sign-in that Google accepts.
  */
 import { useContext, useEffect, useRef, useState } from "react";
 import { FrappeConfig, FrappeContext } from "frappe-react-sdk";
 
-import { AUTHORIZE_GOOGLE_CALENDAR, CalendarInfo, GOOGLE_CALENDAR, errorText } from "./api";
+import { AUTHORIZE_GOOGLE_CALENDAR, CalendarInfo, GOOGLE_CALENDAR, IS_CALENDAR_CONNECTED, errorText } from "./api";
 
 const POLL_MS = 2000;
 const POLL_TIMEOUT_MS = 10 * 60 * 1000;
 
 interface Waiting {
   calendar: string;
+  /** The record's modified time before sign-in. A dead sign-in stays saved and authorized, so only a newer save counts. */
+  since: string;
   startedAt: number;
   closedAt?: number;
 }
@@ -23,6 +25,18 @@ export interface ConnectOptions {
   calendarId: string;
   savedCalendarId: string;
 }
+
+const getCalendarState = async (
+  call: FrappeConfig["call"],
+  name: string
+): Promise<{ custom_is_google_calendar_authorized: 0 | 1; modified: string }> =>
+  (
+    await call.get("frappe.client.get_value", {
+      doctype: GOOGLE_CALENDAR,
+      filters: name,
+      fieldname: JSON.stringify(["custom_is_google_calendar_authorized", "modified"]),
+    })
+  ).message;
 
 export const useGoogleConnect = ({
   user,
@@ -40,6 +54,8 @@ export const useGoogleConnect = ({
   const [didNotFinish, setDidNotFinish] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const popupRef = useRef<Window | null>(null);
+  // A record made by a sign-in that didn't finish. The page only loads it once sign-in works, so a retry reuses it.
+  const createdRef = useRef<string | null>(null);
 
   const createCalendar = async ({ ignoreAllDay, calendarId }: ConnectOptions): Promise<string> => {
     const values = {
@@ -71,12 +87,19 @@ export const useGoogleConnect = ({
     popupRef.current = popup;
     setBusy(true);
     try {
-      let name = calendar?.name;
+      let name = calendar?.name ?? createdRef.current;
       if (!name) {
         name = await createCalendar(options);
-      } else if (!calendar?.enable || options.calendarId.trim() !== options.savedCalendarId) {
+        createdRef.current = name;
+      } else if (!calendar) {
+        await db.updateDoc(GOOGLE_CALENDAR, name, {
+          custom_ignore_all_day_events: options.ignoreAllDay ? 1 : 0,
+          google_calendar_id: options.calendarId.trim(),
+        });
+      } else if (!calendar.enable || options.calendarId.trim() !== options.savedCalendarId) {
         await db.updateDoc(GOOGLE_CALENDAR, name, { enable: 1, google_calendar_id: options.calendarId.trim() });
       }
+      const since = (await getCalendarState(call, name)).modified;
       const url = (await call.post(AUTHORIZE_GOOGLE_CALENDAR, { g_calendar: name, reauthorize: 1 })).message?.url;
       if (!url) throw new Error("Google sign-in isn't available. Ask your admin to check Google Settings.");
       if (popup && !popup.closed) {
@@ -89,7 +112,7 @@ export const useGoogleConnect = ({
         // The browser blocked the window, so offer the link instead.
         setManualUrl(url);
       }
-      setWaiting({ calendar: name, startedAt: Date.now() });
+      setWaiting({ calendar: name, since, startedAt: Date.now() });
     } catch (err) {
       popup?.close();
       setError(err instanceof Error && !("exc_type" in err) ? err.message : errorText(err));
@@ -103,22 +126,22 @@ export const useGoogleConnect = ({
     setWaiting(null);
   };
 
-  // Poll until Google's callback marks the record authorized, or the window closes without it.
+  // Poll until Google's callback saves a sign-in Google accepts, or the window closes without it.
   useEffect(() => {
     if (!waiting) return;
     let stopped = false;
     const tick = async () => {
       if (stopped) return;
       try {
-        const state = (
-          await call.get("frappe.client.get_value", {
-            doctype: GOOGLE_CALENDAR,
-            filters: waiting.calendar,
-            fieldname: JSON.stringify(["custom_is_google_calendar_authorized"]),
-          })
-        ).message;
+        const state = await getCalendarState(call, waiting.calendar);
         if (stopped) return;
-        if (state?.custom_is_google_calendar_authorized) {
+        // The callback saves the code before swapping it for a sign-in, so also ask Google that it works.
+        const signedIn =
+          !!state.custom_is_google_calendar_authorized &&
+          state.modified !== waiting.since &&
+          !!(await call.get(IS_CALENDAR_CONNECTED, { calendar: waiting.calendar })).message;
+        if (stopped) return;
+        if (signedIn) {
           stopped = true;
           popupRef.current?.close();
           setWaiting(null);

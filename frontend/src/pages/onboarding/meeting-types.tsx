@@ -158,7 +158,7 @@ const Editor = ({
   );
 
   return (
-    <Modal titleId="mt-title" title={saved ? saved.title : "New meeting type"} footer={footer} onClose={onClose}>
+    <Modal title={saved ? saved.title : "New meeting type"} footer={footer} onClose={onClose}>
       <div className="flex flex-col gap-4">
         <Field id="mt-name" label="Name" error={errors.title}>
           <input

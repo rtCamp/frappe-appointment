@@ -2,6 +2,7 @@
  * Espresso building blocks for the /schedule screens.
  */
 import { ButtonHTMLAttributes, Fragment, ReactNode, useEffect, useRef, useState } from "react";
+import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { Check, CircleAlert, CircleCheck, Copy, ExternalLink, Info, TriangleAlert, X } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -157,6 +158,71 @@ export const SettingRow = ({ title, description, children, last }: { title: Reac
   </div>
 );
 
+/** Labels a dialog: put it on the dialog's heading. */
+export const DialogTitle = DialogPrimitive.Title;
+
+/** The first field a dialog's form starts on, skipping anything disabled. */
+const firstField = (content: HTMLElement) =>
+  content.querySelector<HTMLElement>(
+    "input:not([type=hidden]):not([disabled]), select:not([disabled]), textarea:not([disabled]), [contenteditable=true]"
+  );
+
+/**
+ * The frame every dialog sits in. Radix keeps focus inside it, hides the page behind it from screen readers, lets
+ * Escape close only the top dialog, and puts focus back where it was once it closes. It stays where it's rendered
+ * rather than moving to a portal, so it keeps the page's theme.
+ */
+export const DialogFrame = ({
+  onClose,
+  closeOnClickOutside,
+  alert,
+  initialFocus,
+  overlayClassName,
+  className,
+  children,
+}: {
+  onClose: () => void;
+  /** Off for forms, so nothing typed is lost by a stray click. */
+  closeOnClickOutside?: boolean;
+  /** Asks to confirm something, so screen readers announce it straight away. */
+  alert?: boolean;
+  /** Where focus starts; the first thing you can tab to otherwise. */
+  initialFocus?: (content: HTMLElement) => HTMLElement | null | undefined;
+  overlayClassName?: string;
+  className?: string;
+  children: ReactNode;
+}) => {
+  // Radix only gives focus back to a Dialog.Trigger, and these open from ordinary buttons, so remember what had focus.
+  const returnFocusTo = useRef(document.activeElement as HTMLElement | null);
+
+  return (
+    <DialogPrimitive.Root open onOpenChange={(open) => !open && onClose()}>
+      <DialogPrimitive.Overlay
+        className={cn("fixed inset-0 z-40 flex items-center justify-center p-6 max-sm:p-0 bg-black/30", overlayClassName)}
+      >
+        <DialogPrimitive.Content
+          {...(alert ? { role: "alertdialog" } : {})}
+          aria-describedby={undefined}
+          onPointerDownOutside={(e) => !closeOnClickOutside && e.preventDefault()}
+          onOpenAutoFocus={(e) => {
+            const target = initialFocus?.(e.currentTarget as HTMLElement);
+            if (!target) return;
+            e.preventDefault();
+            target.focus();
+          }}
+          onCloseAutoFocus={(e) => {
+            e.preventDefault();
+            returnFocusTo.current?.focus();
+          }}
+          className={cn("outline-none", className)}
+        >
+          {children}
+        </DialogPrimitive.Content>
+      </DialogPrimitive.Overlay>
+    </DialogPrimitive.Root>
+  );
+};
+
 /** A small modal asking to confirm something destructive. Escape or the backdrop cancels. */
 export const ConfirmDialog = ({
   title,
@@ -176,54 +242,39 @@ export const ConfirmDialog = ({
   onCancel: () => void;
 }) => {
   const cancelRef = useRef<HTMLButtonElement>(null);
-  useEffect(() => {
-    cancelRef.current?.focus();
-  }, []);
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        e.stopPropagation();
-        onCancel();
-      }
-    };
-    document.addEventListener("keydown", onKey, true);
-    return () => document.removeEventListener("keydown", onKey, true);
-  }, [onCancel]);
 
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center p-4 bg-black/30" onMouseDown={(e) => e.target === e.currentTarget && onCancel()}>
-      <div
-        role="alertdialog"
-        aria-modal="true"
-        aria-labelledby="confirm-title"
-        className="w-[400px] max-w-full flex flex-col gap-4 p-5 rounded-xl bg-surface-elevation-2 shadow-es-2xl"
-      >
-        <div className="flex flex-col gap-2">
-          <h2 id="confirm-title" className="m-0 text-es-lg font-semibold text-ink-gray-9">
-            {title}
-          </h2>
-          <div className="text-es-p-base text-ink-gray-6">{children}</div>
-        </div>
-        {error && (
-          <p role="alert" className="m-0 text-es-p-sm text-ink-red-7">
-            {error}
-          </p>
-        )}
-        <div className="flex justify-end gap-2">
-          <button ref={cancelRef} type="button" onClick={onCancel} className={buttonClass("subtle")}>
-            Cancel
-          </button>
-          <button
-            type="button"
-            onClick={onConfirm}
-            disabled={busy}
-            className={cn(buttonClass("subtle"), "bg-surface-red-2 text-ink-red-7 hover:bg-surface-red-3")}
-          >
-            {confirmLabel}
-          </button>
-        </div>
+    <DialogFrame
+      onClose={onCancel}
+      closeOnClickOutside
+      alert
+      initialFocus={() => cancelRef.current}
+      overlayClassName="z-50 p-4 max-sm:p-4"
+      className="w-[400px] max-w-full flex flex-col gap-4 p-5 rounded-xl bg-surface-elevation-2 shadow-es-2xl"
+    >
+      <div className="flex flex-col gap-2">
+        <DialogTitle className="m-0 text-es-lg font-semibold text-ink-gray-9">{title}</DialogTitle>
+        <div className="text-es-p-base text-ink-gray-6">{children}</div>
       </div>
-    </div>
+      {error && (
+        <p role="alert" className="m-0 text-es-p-sm text-ink-red-7">
+          {error}
+        </p>
+      )}
+      <div className="flex justify-end gap-2">
+        <button ref={cancelRef} type="button" onClick={onCancel} className={buttonClass("subtle")}>
+          Cancel
+        </button>
+        <button
+          type="button"
+          onClick={onConfirm}
+          disabled={busy}
+          className={cn(buttonClass("subtle"), "bg-surface-red-2 text-ink-red-7 hover:bg-surface-red-3")}
+        >
+          {confirmLabel}
+        </button>
+      </div>
+    </DialogFrame>
   );
 };
 
@@ -233,7 +284,6 @@ export const ConfirmDialog = ({
  */
 export const Modal = ({
   title,
-  titleId,
   aside,
   footer,
   className,
@@ -241,52 +291,35 @@ export const Modal = ({
   children,
 }: {
   title: ReactNode;
-  titleId: string;
   /** Shown before the close button, like "Step 1 of 3". */
   aside?: ReactNode;
   footer: ReactNode;
   className?: string;
   onClose: () => void;
   children: ReactNode;
-}) => {
-  // A confirm dialog on top stops Escape before it gets here.
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [onClose]);
-
-  return (
-    <div className="fixed inset-0 z-40 flex items-center justify-center p-6 max-sm:p-0 bg-black/30">
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={titleId}
-        // "espresso" brings the colour tokens, for a dialog rendered outside the page's frame.
-        className={cn(
-          "espresso font-espresso w-[560px] max-w-full max-h-full max-sm:h-full flex flex-col overflow-hidden rounded-2xl max-sm:rounded-none bg-surface-elevation-1 text-ink-gray-8 shadow-es-2xl",
-          className
-        )}
-      >
-        <div className="min-h-[52px] flex items-center justify-between gap-2 pl-5 pr-3 border-b border-outline-gray-1">
-          <h2 id={titleId} className="m-0 min-w-0 truncate text-es-lg font-semibold text-ink-gray-9">
-            {title}
-          </h2>
-          <span className="shrink-0 flex items-center gap-2">
-            {aside}
-            <Button variant="ghost" className="w-7 px-0" aria-label="Close" onClick={onClose}>
-              <X className="w-4 h-4" aria-hidden="true" />
-            </Button>
-          </span>
-        </div>
-        <div className="flex-1 min-h-0 overflow-y-auto p-5 flex flex-col gap-7">{children}</div>
-        <div className="flex items-center justify-between gap-2 px-5 py-3 border-t border-outline-gray-1">{footer}</div>
-      </div>
+}) => (
+  <DialogFrame
+    onClose={onClose}
+    initialFocus={firstField}
+    // "espresso" brings the colour tokens, for a dialog rendered outside the page's frame.
+    className={cn(
+      "espresso font-espresso w-[560px] max-w-full max-h-full max-sm:h-full flex flex-col overflow-hidden rounded-2xl max-sm:rounded-none bg-surface-elevation-1 text-ink-gray-8 shadow-es-2xl",
+      className
+    )}
+  >
+    <div className="min-h-[52px] flex items-center justify-between gap-2 pl-5 pr-3 border-b border-outline-gray-1">
+      <DialogTitle className="m-0 min-w-0 truncate text-es-lg font-semibold text-ink-gray-9">{title}</DialogTitle>
+      <span className="shrink-0 flex items-center gap-2">
+        {aside}
+        <Button variant="ghost" className="w-7 px-0" aria-label="Close" onClick={onClose}>
+          <X className="w-4 h-4" aria-hidden="true" />
+        </Button>
+      </span>
     </div>
-  );
-};
+    <div className="flex-1 min-h-0 overflow-y-auto p-5 flex flex-col gap-7">{children}</div>
+    <div className="flex items-center justify-between gap-2 px-5 py-3 border-t border-outline-gray-1">{footer}</div>
+  </DialogFrame>
+);
 
 /** A value to paste somewhere else (a scope, a redirect URI), with a Copy button. */
 export const CopyValue = ({ value, wrap, boxed }: { value: string; wrap?: boolean; boxed?: boolean }) => {

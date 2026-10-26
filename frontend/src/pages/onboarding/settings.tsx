@@ -3,7 +3,7 @@
  * Calendar it reads and writes, and video calls. Switches and pickers save straight away; typed values
  * have a Save button.
  */
-import { useCallback, useContext, useEffect, useRef, useState } from "react";
+import { useCallback, useContext, useEffect, useState } from "react";
 import { CalendarDays, ChevronDown, LoaderCircle, Plus, X } from "lucide-react";
 import { FrappeConfig, FrappeContext } from "frappe-react-sdk";
 
@@ -26,7 +26,7 @@ import GoogleConnectNotices from "./google-connect-notices";
 import OtherCalendar from "./other-calendar";
 import SlugField from "./slug-field";
 import { DefaultEmailsTab, GoogleTab, ZoomTab } from "./settings-site";
-import { Button, Notice, Pill, SettingRow, Switch } from "./ui";
+import { Button, DialogFrame, DialogTitle, Notice, Pill, SettingRow, Switch } from "./ui";
 import { useGoogleConnect } from "./use-google-connect";
 import { useSlugCheck } from "./use-slug-check";
 import VideoPicker from "./video-picker";
@@ -419,23 +419,6 @@ const SettingsDialog = ({
   onOpenGuide: () => void;
   onClose: () => void;
 }) => {
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    ref.current?.focus();
-  }, []);
-
-  // Escape closes Settings before anything open underneath it, like the Meeting types drawer.
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key !== "Escape") return;
-      e.stopPropagation();
-      onClose();
-    };
-    document.addEventListener("keydown", onKey, true);
-    return () => document.removeEventListener("keydown", onKey, true);
-  }, [onClose]);
-
   const siteTabs = SITE_TABS.filter((t) => user.canWrite.includes(t.doctype));
   const title = [...TABS, ...siteTabs].find((t) => t.id === tab)?.label;
 
@@ -456,63 +439,55 @@ const SettingsDialog = ({
   );
 
   return (
-    <div
-      className="fixed inset-0 z-40 flex items-center justify-center p-6 max-sm:p-0 bg-black/30"
-      onMouseDown={(e) => e.target === e.currentTarget && onClose()}
+    <DialogFrame
+      onClose={onClose}
+      closeOnClickOutside
+      // Start on the open tab, so keyboard users begin where they are.
+      initialFocus={(content) => content.querySelector<HTMLElement>('[aria-current="page"]')}
+      className="espresso font-espresso w-[860px] max-w-full h-[600px] max-sm:h-full max-h-full flex max-sm:flex-col overflow-hidden rounded-2xl max-sm:rounded-none bg-surface-elevation-1 text-ink-gray-8 shadow-es-2xl"
     >
-      <div
-        ref={ref}
-        tabIndex={-1}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="settings-title"
-        className="espresso font-espresso w-[860px] max-w-full h-[600px] max-sm:h-full max-h-full flex max-sm:flex-col overflow-hidden rounded-2xl max-sm:rounded-none bg-surface-elevation-1 text-ink-gray-8 shadow-es-2xl outline-none"
+      <nav
+        aria-label="Settings"
+        className="w-[220px] max-sm:w-full shrink-0 flex flex-col max-sm:flex-row max-sm:items-center gap-0.5 px-2 py-3 max-sm:py-2 max-sm:overflow-x-auto bg-surface-sidebar border-r max-sm:border-r-0 max-sm:border-b border-outline-gray-1 box-border"
       >
-        <nav
-          aria-label="Settings"
-          className="w-[220px] max-sm:w-full shrink-0 flex flex-col max-sm:flex-row max-sm:items-center gap-0.5 px-2 py-3 max-sm:py-2 max-sm:overflow-x-auto bg-surface-sidebar border-r max-sm:border-r-0 max-sm:border-b border-outline-gray-1 box-border"
-        >
-          <h2 id="settings-title" className="m-0 mb-2 px-2 py-1 text-es-lg font-semibold text-ink-gray-9 max-sm:sr-only">
-            Settings
-          </h2>
-          <span className="flex items-center h-7 px-2 text-es-sm text-ink-gray-5 max-sm:hidden">Your booking page</span>
-          {TABS.map(tabButton)}
-          {siteTabs.length > 0 && (
-            <>
-              <span className="flex items-center h-7 px-2 mt-3 text-es-sm text-ink-gray-5 max-sm:hidden">Site</span>
-              <span aria-hidden="true" className="hidden max-sm:block shrink-0 w-px h-4 mx-1 bg-outline-gray-2" />
-              {siteTabs.map(tabButton)}
-            </>
-          )}
-        </nav>
+        <DialogTitle className="m-0 mb-2 px-2 py-1 text-es-lg font-semibold text-ink-gray-9 max-sm:sr-only">Settings</DialogTitle>
+        <span className="flex items-center h-7 px-2 text-es-sm text-ink-gray-5 max-sm:hidden">Your booking page</span>
+        {TABS.map(tabButton)}
+        {siteTabs.length > 0 && (
+          <>
+            <span className="flex items-center h-7 px-2 mt-3 text-es-sm text-ink-gray-5 max-sm:hidden">Site</span>
+            <span aria-hidden="true" className="hidden max-sm:block shrink-0 w-px h-4 mx-1 bg-outline-gray-2" />
+            {siteTabs.map(tabButton)}
+          </>
+        )}
+      </nav>
 
-        <div className="flex-1 min-w-0 min-h-0 flex flex-col">
-          <div className="flex items-center justify-between gap-2 px-6 pt-5 max-sm:px-4 max-sm:pt-4">
-            <h3 className="m-0 text-es-title text-ink-gray-8">{title}</h3>
-            <Button variant="ghost" className="w-7 px-0" aria-label="Close" onClick={onClose}>
-              <X className="w-4 h-4" aria-hidden="true" />
-            </Button>
-          </div>
-          <div className="flex-1 overflow-y-auto px-6 pt-2 pb-8 max-sm:px-4 flex flex-col">
-            {tab === "booking" && <BookingTab user={user} availability={availability} onChanged={onChanged} />}
-            {tab === "calendar" && <CalendarTab user={user.name} calendar={calendar} onChanged={onChanged} />}
-            {tab === "video" && (
-              <VideoTab
-                key={String(zoomReady)}
-                user={user.name}
-                availability={availability}
-                calendar={calendar}
-                zoomReady={zoomReady}
-                onChanged={onChanged}
-              />
-            )}
-            {tab === "google" && siteTabs.some((t) => t.id === "google") && <GoogleTab onOpenGuide={onOpenGuide} />}
-            {tab === "zoom" && siteTabs.some((t) => t.id === "zoom") && <ZoomTab onChanged={onSiteChanged} />}
-            {tab === "emails" && siteTabs.some((t) => t.id === "emails") && <DefaultEmailsTab />}
-          </div>
+      <div className="flex-1 min-w-0 min-h-0 flex flex-col">
+        <div className="flex items-center justify-between gap-2 px-6 pt-5 max-sm:px-4 max-sm:pt-4">
+          <h3 className="m-0 text-es-title text-ink-gray-8">{title}</h3>
+          <Button variant="ghost" className="w-7 px-0" aria-label="Close" onClick={onClose}>
+            <X className="w-4 h-4" aria-hidden="true" />
+          </Button>
+        </div>
+        <div className="flex-1 overflow-y-auto px-6 pt-2 pb-8 max-sm:px-4 flex flex-col">
+          {tab === "booking" && <BookingTab user={user} availability={availability} onChanged={onChanged} />}
+          {tab === "calendar" && <CalendarTab user={user.name} calendar={calendar} onChanged={onChanged} />}
+          {tab === "video" && (
+            <VideoTab
+              key={String(zoomReady)}
+              user={user.name}
+              availability={availability}
+              calendar={calendar}
+              zoomReady={zoomReady}
+              onChanged={onChanged}
+            />
+          )}
+          {tab === "google" && siteTabs.some((t) => t.id === "google") && <GoogleTab onOpenGuide={onOpenGuide} />}
+          {tab === "zoom" && siteTabs.some((t) => t.id === "zoom") && <ZoomTab onChanged={onSiteChanged} />}
+          {tab === "emails" && siteTabs.some((t) => t.id === "emails") && <DefaultEmailsTab />}
         </div>
       </div>
-    </div>
+    </DialogFrame>
   );
 };
 

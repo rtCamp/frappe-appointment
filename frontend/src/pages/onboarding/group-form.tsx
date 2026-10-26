@@ -243,7 +243,7 @@ const GroupForm = ({
 
   if (!form) {
     return (
-      <Modal titleId="group-form-title" title={name} footer={<Button onClick={onCancel}>Close</Button>} onClose={onCancel}>
+      <Modal title={name} footer={<Button onClick={onCancel}>Close</Button>} onClose={onCancel}>
         {loadError ? (
           <Notice tone="red" title="Couldn't open this group">
             {errorText(loadError)}
@@ -387,7 +387,6 @@ const GroupForm = ({
 
   return (
     <Modal
-      titleId="group-form-title"
       title={isNew ? "New group" : detail?.doc.group_name ?? name}
       aside={
         isNew && (

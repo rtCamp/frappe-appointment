@@ -274,8 +274,14 @@ const problemNames = (problems: CalendarProblem[]) => {
 };
 
 /** Warns when a calendar the group's booking page needs no longer works, so guests can't book. */
-const CalendarProblems = ({ group, onReconnect }: { group: string; onReconnect: () => void }) => {
-  const { data } = useFrappeGetCall<{ message: CalendarProblem[] }>(GET_CALENDAR_PROBLEMS, { group }, undefined, { revalidateOnFocus: false });
+const CalendarProblems = ({ group, calendarVersion, onReconnect }: { group: string; calendarVersion?: string; onReconnect: () => void }) => {
+  // Asked again when your own calendar changes, like after reconnecting it.
+  const { data } = useFrappeGetCall<{ message: CalendarProblem[] }>(
+    GET_CALENDAR_PROBLEMS,
+    { group },
+    `${GET_CALENDAR_PROBLEMS}:${group}:${calendarVersion}`,
+    { revalidateOnFocus: false }
+  );
   const problems = data?.message ?? [];
   if (!problems.length) return null;
 
@@ -302,6 +308,7 @@ const GroupPage = ({
   onBack,
   onEdit,
   onReconnect,
+  calendarVersion,
 }: {
   user: SessionUser;
   name: string;
@@ -310,6 +317,8 @@ const GroupPage = ({
   onEdit: () => void;
   /** Opens Settings at the calendar, to reconnect your own Google Calendar. */
   onReconnect: () => void;
+  /** When your own calendar was last saved. */
+  calendarVersion?: string;
 }) => {
   const { db } = useContext(FrappeContext) as FrappeConfig;
   const { data, error, mutate } = useFrappeGetCall<{ message: GroupDetail }>(GET_GROUP, { group: name }, undefined, { revalidateOnFocus: false });
@@ -364,7 +373,7 @@ const GroupPage = ({
       )}
       {detail && doc && (
         <>
-          <CalendarProblems group={name} onReconnect={onReconnect} />
+          <CalendarProblems group={name} calendarVersion={calendarVersion} onReconnect={onReconnect} />
           {!detail.can_edit && (
             <Notice tone="blue" icon={<Info className="w-4 h-4 shrink-0 mt-px text-ink-blue-5" aria-hidden="true" />} title="You're in this group">
               {detail.owner_name} made it, so only they can change it. You can share its link and see its bookings.

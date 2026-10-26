@@ -101,7 +101,7 @@ const Setup = ({
       setView(
         (current) =>
           current ??
-          (isSetUp(saved) ? "home" : !isConnected(pickCalendar(list)) ? 0 : !saved?.appointment_time_slot.length ? 1 : 2)
+          (isSetUp(saved) ? "home" : !isConnected(pickCalendar(list, saved)) ? 0 : !saved?.appointment_time_slot.length ? 1 : 2)
       );
     } catch (err) {
       setLoadError(errorText(err));
@@ -112,12 +112,13 @@ const Setup = ({
     load();
   }, [load]);
 
-  const calendar = calendars ? pickCalendar(calendars) : null;
-  // A calendar can look connected after Google stopped accepting its sign-in, so Home asks the server.
+  const calendar = calendars ? pickCalendar(calendars, availability) : null;
+  // A calendar can look connected after Google stopped accepting its sign-in, so Home asks the server. Asked again
+  // whenever the record changes, like after reconnecting.
   const { data: googleAccepts } = useFrappeGetCall<{ message: boolean }>(
     IS_CALENDAR_CONNECTED,
     { calendar: calendar?.name },
-    view === "home" && isConnected(calendar) ? undefined : null,
+    view === "home" && isConnected(calendar) ? `${IS_CALENDAR_CONNECTED}:${calendar?.name}:${calendar?.modified}` : null,
     { revalidateOnFocus: false }
   );
   const done = [isConnected(calendar), !!availability?.appointment_time_slot.length, isSetUp(availability)];
@@ -266,6 +267,7 @@ const Setup = ({
           onBack={() => setView("groups")}
           onEdit={() => setView(`group-edit:${name}`)}
           onReconnect={() => setSettingsTab("calendar")}
+          calendarVersion={calendar?.modified}
         />
         {editing && (
           <GroupForm

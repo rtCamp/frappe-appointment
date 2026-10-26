@@ -51,16 +51,23 @@ export const useHours = (availability: Availability | null, savedTimeZone: strin
 
   /** Writes what changed. Every slot goes back as text: the server's check parses them with strptime. */
   const save = async ({ call, db }: Pick<FrappeConfig, "call" | "db">, user: string, calendar: string) => {
-    if (timeZone !== savedTimeZone) {
-      await call.post("frappe.client.set_value", { doctype: "User", name: user, fieldname: "time_zone", value: timeZone });
-    }
+    const setUserTimeZone = (value: string) =>
+      call.post("frappe.client.set_value", { doctype: "User", name: user, fieldname: "time_zone", value });
+    const timeZoneChanged = timeZone !== savedTimeZone;
+    if (timeZoneChanged) await setUserTimeZone(timeZone);
     const slots = days
       .filter((d) => d.on)
       .map((d) => ({ day: d.day, start_time: toServerTime(d.start), end_time: toServerTime(d.end) }));
-    if (availability) {
-      await db.updateDoc(AVAILABILITY, availability.name, { google_calendar: calendar, appointment_time_slot: slots });
-    } else {
-      await db.createDoc(AVAILABILITY, { user, google_calendar: calendar, appointment_time_slot: slots });
+    try {
+      if (availability) {
+        await db.updateDoc(AVAILABILITY, availability.name, { google_calendar: calendar, appointment_time_slot: slots });
+      } else {
+        await db.createDoc(AVAILABILITY, { user, google_calendar: calendar, appointment_time_slot: slots });
+      }
+    } catch (err) {
+      // The hours are read in this time zone, so don't keep a new one without them.
+      if (timeZoneChanged) await setUserTimeZone(savedTimeZone).catch(() => undefined);
+      throw err;
     }
   };
 
