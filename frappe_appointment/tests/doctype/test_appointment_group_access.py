@@ -13,11 +13,15 @@ from frappe_appointment.api.groups import (
     get_groups,
     search_people,
 )
+from frappe_appointment.frappe_appointment.doctype.appointment_settings.appointment_settings import (
+    get_default_email_template,
+)
 from frappe_appointment.patches.v0_1 import add_desk_user_group_permission
 from frappe_appointment.tasks.verify_availability import update_availability_status_for_appointment_group
 from frappe_appointment.tests import (
     EVENT_OVERRIDE,
     as_user,
+    make_email_template,
     make_google_calendar,
     make_test_user,
     make_user_availability,
@@ -28,6 +32,7 @@ MEMBER = "test_fa_grp_member@example.com"
 OUTSIDER = "test_fa_grp_outsider@example.com"
 NO_CALENDAR = "test_fa_grp_nocal@example.com"
 MANAGER = "test_fa_grp_manager@example.com"
+OTHER_EMAIL = "FA Test Other Confirmation"
 GROUP = "Appointment Group"
 
 
@@ -187,6 +192,47 @@ class TestAdminOnlyFields(GroupAccessCase):
         self.assertEqual(
             frappe.db.get_value(GROUP, group.name, ["event_creator", "webhook"]), (self.member_calendar, "frappe.ping")
         )
+
+
+class TestEmailChoice(GroupAccessCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.defaults = get_default_email_template()
+        cls.other_email = make_email_template(OTHER_EMAIL).name
+
+    def test_desk_users_get_the_default_emails_and_cannot_change_them(self):
+        """A new group starts on the site's default emails, even when none are sent; any other choice, on create
+        or edit, is refused, and clearing one brings the default back."""
+        group = self.make_group("FA Grp Email Default")
+        self.assertEqual(
+            frappe.db.get_value(GROUP, group.name, ["response_email_template", "availability_email_template"]),
+            (self.defaults["group"], self.defaults["availability"]),
+        )
+        for field, kind in (("response_email_template", "group"), ("availability_email_template", "availability")):
+            with self.subTest(field=field), self.assertRaises(frappe.PermissionError):
+                self.make_group(f"FA Grp Email {field}", **{field: self.other_email})
+            with self.subTest(field=field), as_user(OWNER), self.assertRaises(frappe.PermissionError):
+                group.reload()
+                group.set(field, self.other_email)
+                group.save()
+            with as_user(OWNER):
+                group.reload()
+                group.set(field, None)
+                group.save()
+            self.assertEqual(frappe.db.get_value(GROUP, group.name, field), self.defaults[kind])
+
+    def test_system_managers_choose_any_email(self):
+        """A System Manager's choice stays when the owner later saves something else."""
+        group = self.make_group("FA Grp Email Admin")
+        group.reload()
+        group.response_email_template = self.other_email
+        group.save()
+        with as_user(OWNER):
+            group.reload()
+            group.duration_for_event = 2700
+            group.save()
+        self.assertEqual(frappe.db.get_value(GROUP, group.name, "response_email_template"), self.other_email)
 
 
 class TestWhoCanDoWhat(GroupAccessCase):

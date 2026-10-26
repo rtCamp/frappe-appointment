@@ -463,23 +463,29 @@ const GroupForm = ({
                 <ChevronDown className="absolute right-2 top-1.5 w-4 h-4 text-ink-gray-4 pointer-events-none" aria-hidden="true" />
               </span>
             </Field>
-            <Field id="group-template" label="Confirmation email">
-              <span className="relative">
-                <select
-                  id="group-template"
-                  value={form.template}
-                  onChange={(e) => set({ template: e.target.value })}
-                  className={cn(fieldClass, "w-full pr-7 appearance-none truncate cursor-pointer")}
-                >
-                  {!form.template && <option value="">Choose an email</option>}
-                  {(form.template && !templates.includes(form.template) ? [form.template, ...templates] : templates).map((t) => (
-                    <option key={t} value={t}>
-                      {t}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown className="absolute right-2 top-1.5 w-4 h-4 text-ink-gray-4 pointer-events-none" aria-hidden="true" />
-              </span>
+            <Field id="group-template" label="Confirmation email" hint={user.isSystemManager ? undefined : "Only a System Manager can change it."}>
+              {!user.isSystemManager ? (
+                <span id="group-template" className="h-7 flex items-center min-w-0 truncate text-es-base text-ink-gray-8">
+                  {form.template || "None"}
+                </span>
+              ) : (
+                <span className="relative">
+                  <select
+                    id="group-template"
+                    value={form.template}
+                    onChange={(e) => set({ template: e.target.value })}
+                    className={cn(fieldClass, "w-full pr-7 appearance-none truncate cursor-pointer")}
+                  >
+                    {!form.template && <option value="">Choose an email</option>}
+                    {(form.template && !templates.includes(form.template) ? [form.template, ...templates] : templates).map((t) => (
+                      <option key={t} value={t}>
+                        {t}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="absolute right-2 top-1.5 w-4 h-4 text-ink-gray-4 pointer-events-none" aria-hidden="true" />
+                </span>
+              )}
             </Field>
           </div>
           {form.provider === "Custom" && (

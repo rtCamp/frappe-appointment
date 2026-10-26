@@ -101,7 +101,8 @@ const BookingTab = ({
   }, [loadTemplates]);
 
   const canEdit = user.canWrite.includes(EMAIL_TEMPLATE);
-  const canCreate = user.canCreate.includes(EMAIL_TEMPLATE);
+  // A new email becomes this page's confirmation email, and only System Managers choose that.
+  const canCreate = user.isSystemManager && user.canCreate.includes(EMAIL_TEMPLATE);
 
   const template = availability.response_email_template ?? "";
   const options = templates && template && !templates.includes(template) ? [template, ...templates] : templates ?? [];
@@ -142,29 +143,41 @@ const BookingTab = ({
         </div>
       </div>
 
-      <SettingRow title="Confirmation email" description="The email people get after they book." last>
+      <SettingRow
+        title="Confirmation email"
+        description={
+          user.isSystemManager ? "The email people get after they book." : "The email people get after they book. Only a System Manager can change it."
+        }
+        last
+      >
         <span className="flex flex-wrap items-center gap-1.5">
-          <span className="relative w-[220px] max-w-full">
-            <select
-              aria-label="Confirmation email"
-              value={template}
-              disabled={!templates || busy === "template"}
-              onChange={(e) => save("template", { response_email_template: e.target.value })}
-              className="w-full h-7 pl-2 pr-7 appearance-none truncate rounded-lg border border-transparent bg-surface-gray-2 text-es-base text-ink-gray-8 cursor-pointer hover:bg-surface-gray-3 focus:outline-none focus:border-outline-gray-4 focus:shadow-es-focus disabled:cursor-wait"
-            >
-              {!template && (
-                <option value="" disabled>
-                  Choose an email
-                </option>
-              )}
-              {options.map((name) => (
-                <option key={name} value={name}>
-                  {name}
-                </option>
-              ))}
-            </select>
-            <ChevronDown className="absolute right-2 top-1.5 w-4 h-4 text-ink-gray-4 pointer-events-none" aria-hidden="true" />
-          </span>
+          {!user.isSystemManager ? (
+            <span className="max-w-[220px] truncate text-es-base text-ink-gray-8" title={template}>
+              {template || "None"}
+            </span>
+          ) : (
+            <span className="relative w-[220px] max-w-full">
+              <select
+                aria-label="Confirmation email"
+                value={template}
+                disabled={!templates || busy === "template"}
+                onChange={(e) => save("template", { response_email_template: e.target.value })}
+                className="w-full h-7 pl-2 pr-7 appearance-none truncate rounded-lg border border-transparent bg-surface-gray-2 text-es-base text-ink-gray-8 cursor-pointer hover:bg-surface-gray-3 focus:outline-none focus:border-outline-gray-4 focus:shadow-es-focus disabled:cursor-wait"
+              >
+                {!template && (
+                  <option value="" disabled>
+                    Choose an email
+                  </option>
+                )}
+                {options.map((name) => (
+                  <option key={name} value={name}>
+                    {name}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="absolute right-2 top-1.5 w-4 h-4 text-ink-gray-4 pointer-events-none" aria-hidden="true" />
+            </span>
+          )}
           {template && (
             <Button variant="ghost" onClick={() => setEditing(template)}>
               {canEdit ? "Edit" : "Preview"}

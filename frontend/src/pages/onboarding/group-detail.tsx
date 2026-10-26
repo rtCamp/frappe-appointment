@@ -138,7 +138,7 @@ const Bookings = ({ user, group, people }: { user: SessionUser; group: string; p
   );
 };
 
-const Alerts = ({ detail, onSaved }: { detail: GroupDetail; onSaved: () => Promise<unknown> }) => {
+const Alerts = ({ detail, canPickEmail, onSaved }: { detail: GroupDetail; canPickEmail: boolean; onSaved: () => Promise<unknown> }) => {
   const { call, db } = useContext(FrappeContext) as FrappeConfig;
   const doc = detail.doc;
   const [threshold, setThreshold] = useState(String(doc.min_slot_threshold ?? 2));
@@ -218,22 +218,31 @@ const Alerts = ({ detail, onSaved }: { detail: GroupDetail; onSaved: () => Promi
             <label htmlFor="alert-template" className="text-es-sm text-ink-gray-6">
               Alert email
             </label>
-            <span className="relative">
-              <select
-                id="alert-template"
-                value={template}
-                onChange={(e) => setTemplate(e.target.value)}
-                className={cn(fieldClass, "w-full pr-7 appearance-none truncate cursor-pointer")}
-              >
-                {!template && <option value="">Choose an email</option>}
-                {(template && !templates.includes(template) ? [template, ...templates] : templates).map((name) => (
-                  <option key={name} value={name}>
-                    {name}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className="absolute right-2 top-1.5 w-4 h-4 text-ink-gray-4 pointer-events-none" aria-hidden="true" />
-            </span>
+            {!canPickEmail ? (
+              <>
+                <span id="alert-template" className="min-w-0 truncate text-es-base text-ink-gray-8">
+                  {template || "None"}
+                </span>
+                <span className="text-es-p-sm text-ink-gray-5">Only a System Manager can change it.</span>
+              </>
+            ) : (
+              <span className="relative">
+                <select
+                  id="alert-template"
+                  value={template}
+                  onChange={(e) => setTemplate(e.target.value)}
+                  className={cn(fieldClass, "w-full pr-7 appearance-none truncate cursor-pointer")}
+                >
+                  {!template && <option value="">Choose an email</option>}
+                  {(template && !templates.includes(template) ? [template, ...templates] : templates).map((name) => (
+                    <option key={name} value={name}>
+                      {name}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown className="absolute right-2 top-1.5 w-4 h-4 text-ink-gray-4 pointer-events-none" aria-hidden="true" />
+              </span>
+            )}
           </div>
           <Button
             variant="solid"
@@ -411,7 +420,7 @@ const GroupPage = ({
                 </dl>
               </Section>
 
-              {detail.is_owner && <Alerts detail={detail} onSaved={mutate} />}
+              {detail.is_owner && <Alerts detail={detail} canPickEmail={user.isSystemManager} onSaved={mutate} />}
             </aside>
           </div>
         </>

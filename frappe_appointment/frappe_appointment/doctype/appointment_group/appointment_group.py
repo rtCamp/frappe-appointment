@@ -19,6 +19,9 @@ from frappe.utils import (
 )
 
 from frappe_appointment.constants import APPOINTMENT_GROUP, APPOINTMENT_TIME_SLOT, USER_APPOINTMENT_AVAILABILITY
+from frappe_appointment.frappe_appointment.doctype.appointment_settings.appointment_settings import (
+    validate_email_template_choice,
+)
 from frappe_appointment.frappe_appointment.doctype.appointment_time_slot.appointment_time_slot import (
     GoogleBadRequest,
     get_all_unavailable_google_calendar_slots_for_day,
@@ -66,6 +69,8 @@ class AppointmentGroup(Document):
 
     def validate(self):
         self.validate_zoom()
+        validate_email_template_choice(self, "response_email_template", "group")
+        validate_email_template_choice(self, "availability_email_template", "availability")
         if not is_group_admin():
             self.validate_admin_only_fields()
             self.validate_owner_calendar_and_organizer()

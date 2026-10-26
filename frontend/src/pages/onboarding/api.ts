@@ -301,10 +301,12 @@ export interface SessionUser {
   /** Doctypes the user may change or create, from the boot data. */
   canWrite: string[];
   canCreate: string[];
+  /** Only System Managers choose which emails booking pages and groups send. */
+  isSystemManager: boolean;
 }
 
 interface Boot {
-  user?: { name?: string; can_write?: string[]; can_create?: string[] };
+  user?: { name?: string; can_write?: string[]; can_create?: string[]; roles?: string[] };
   user_info?: Record<string, { fullname?: string }>;
   time_zone?: { system?: string; user?: string };
 }
@@ -322,6 +324,7 @@ export const getSessionUser = (): SessionUser | null => {
     siteTimeZone: boot.time_zone?.system || Intl.DateTimeFormat().resolvedOptions().timeZone,
     canWrite: boot.user?.can_write ?? [],
     canCreate: boot.user?.can_create ?? [],
+    isSystemManager: boot.user?.roles?.includes("System Manager") ?? false,
   };
 };
 

@@ -15,6 +15,14 @@ frappe.ui.form.on("Appointment Group", {
     );
   },
   refresh: function (frm) {
+    // Only System Managers choose which emails go out; the server checks it too.
+    const picksEmails = frappe.user.has_role("System Manager");
+    frm.set_df_property("response_email_template", "read_only", !picksEmails);
+    frm.set_df_property(
+      "availability_email_template",
+      "read_only",
+      !picksEmails,
+    );
     if (frm.doc.__islocal) {
       frappe.call({
         method:
