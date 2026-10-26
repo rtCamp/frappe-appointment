@@ -5,6 +5,7 @@
 import { useContext, useEffect, useRef, useState } from "react";
 import { Check, Copy, ExternalLink, LoaderCircle, MoreHorizontal, Pencil, Plus, Trash2 } from "lucide-react";
 import { FrappeConfig, FrappeContext } from "frappe-react-sdk";
+import * as Popover from "@radix-ui/react-popover";
 
 import { cn } from "@/lib/utils";
 import {
@@ -21,6 +22,7 @@ import {
 import { BREAKS, LENGTHS, WHOLE_NUMBER, daysLabel } from "./booking-rules";
 import { Field, NumberInput, SecondsSelect, fieldClass } from "./form-fields";
 import { Frame, FrameNav } from "./frame";
+import { buttonClass } from "./styles";
 import { Button, ConfirmDialog, Modal, Notice, Pill, Switch } from "./ui";
 import { useCopied } from "./use-copied";
 
@@ -261,61 +263,46 @@ const RowMenu = ({
   onDelete: () => void;
 }) => {
   const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    const close = (e: MouseEvent | KeyboardEvent) => {
-      if (e instanceof KeyboardEvent ? e.key === "Escape" : !ref.current?.contains(e.target as Node)) setOpen(false);
-    };
-    document.addEventListener("mousedown", close);
-    document.addEventListener("keydown", close);
-    return () => {
-      document.removeEventListener("mousedown", close);
-      document.removeEventListener("keydown", close);
-    };
-  }, [open]);
 
   const itemClass =
     "flex items-center gap-2 h-7 px-2 rounded-lg text-es-base text-ink-gray-8 no-underline bg-transparent border-0 cursor-pointer text-left w-full hover:bg-surface-gray-2 focus-visible:outline-none focus-visible:bg-surface-gray-2 disabled:cursor-not-allowed disabled:text-ink-gray-4 disabled:hover:bg-transparent";
 
   return (
-    <div ref={ref} className="relative inline-block">
-      <Button
-        variant="ghost"
-        className="w-7 px-0 text-ink-gray-6"
-        aria-label={`More actions for ${title}`}
-        aria-haspopup="menu"
-        aria-expanded={open}
-        onClick={() => setOpen((v) => !v)}
-      >
+    <Popover.Root open={open} onOpenChange={setOpen}>
+      <Popover.Trigger className={cn(buttonClass("ghost"), "w-7 px-0 text-ink-gray-6")} aria-label={`More actions for ${title}`}>
         <MoreHorizontal className="w-4 h-4" aria-hidden="true" />
-      </Button>
-      {open && (
-        <div role="menu" className="absolute z-20 right-0 top-8 w-48 p-1 rounded-xl bg-surface-elevation-2 shadow-es-2xl flex flex-col text-left">
-          <button role="menuitem" type="button" className={itemClass} onClick={() => (setOpen(false), onEdit())}>
-            <Pencil className="w-4 h-4 text-ink-gray-6" aria-hidden="true" />
-            Edit
-          </button>
-          <a role="menuitem" href={link} target="_blank" rel="noreferrer" className={itemClass} onClick={() => setOpen(false)}>
-            <ExternalLink className="w-4 h-4 text-ink-gray-6" aria-hidden="true" />
-            Open booking page
-          </a>
-          <div className="h-px my-1 bg-outline-gray-1" />
-          <button
-            role="menuitem"
-            type="button"
-            className={cn(itemClass, "text-ink-red-7")}
-            disabled={!canDelete}
-            title={canDelete ? undefined : "Your booking page needs at least one meeting type."}
-            onClick={() => (setOpen(false), onDelete())}
-          >
-            <Trash2 className="w-4 h-4" aria-hidden="true" />
-            Delete
-          </button>
-        </div>
-      )}
-    </div>
+      </Popover.Trigger>
+      {/* Radix places it with fixed positioning, so the table's scroll box neither clips it nor grows to fit it. It
+          stays out of a portal so it keeps the page's theme. */}
+      <Popover.Content
+        role="menu"
+        align="end"
+        sideOffset={4}
+        collisionPadding={8}
+        className="z-20 w-48 p-1 rounded-xl bg-surface-elevation-2 shadow-es-2xl flex flex-col text-left outline-none"
+      >
+        <button role="menuitem" type="button" className={itemClass} onClick={() => (setOpen(false), onEdit())}>
+          <Pencil className="w-4 h-4 text-ink-gray-6" aria-hidden="true" />
+          Edit
+        </button>
+        <a role="menuitem" href={link} target="_blank" rel="noreferrer" className={itemClass} onClick={() => setOpen(false)}>
+          <ExternalLink className="w-4 h-4 text-ink-gray-6" aria-hidden="true" />
+          Open booking page
+        </a>
+        <div className="h-px my-1 bg-outline-gray-1" />
+        <button
+          role="menuitem"
+          type="button"
+          className={cn(itemClass, "text-ink-red-7")}
+          disabled={!canDelete}
+          title={canDelete ? undefined : "Your booking page needs at least one meeting type."}
+          onClick={() => (setOpen(false), onDelete())}
+        >
+          <Trash2 className="w-4 h-4" aria-hidden="true" />
+          Delete
+        </button>
+      </Popover.Content>
+    </Popover.Root>
   );
 };
 
