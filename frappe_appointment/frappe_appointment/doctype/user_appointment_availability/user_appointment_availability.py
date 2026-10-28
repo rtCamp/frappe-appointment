@@ -124,7 +124,7 @@ def get_user_appointment_availability_slots(
             appointment_time_slots = frappe.db.get_all(
                 APPOINTMENT_TIME_SLOT,
                 filters={"parent": member.user, "day": weekday},
-                fields="*",
+                fields=["start_time", "end_time"],
             )
 
             user_appointment_time_slots_utc = []
