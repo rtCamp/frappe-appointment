@@ -452,7 +452,8 @@ def get_mandatory_member_time_slots(appointment_group: object) -> dict:
     group's flags for as long as that group object lives (one request or one availability job).
     """
     if appointment_group.flags.member_time_slots is None:
-        # Matched case-insensitively, as the database matches the names.
+        # Matched case-insensitively, as the database matches the names. The database can also match a
+        # name that differs in accents or trailing spaces; those rows aren't a member's, so they're skipped.
         members = {member.user.lower(): member.user for member in appointment_group.members if member.is_mandatory}
         member_time_slots = {member: [] for member in members.values()}
 
@@ -462,7 +463,8 @@ def get_mandatory_member_time_slots(appointment_group: object) -> dict:
                 filters={"parenttype": USER_APPOINTMENT_AVAILABILITY, "parent": ["in", list(members.values())]},
                 fields=["parent", "day", "start_time", "end_time"],
             ):
-                member_time_slots[members[slot.parent.lower()]].append(slot)
+                if member := members.get(slot.parent.lower()):
+                    member_time_slots[member].append(slot)
 
         appointment_group.flags.member_time_slots = member_time_slots
 
@@ -900,7 +902,7 @@ def is_member_on_leave_or_is_holiday(appointment_group, date):
         if member.is_mandatory:  # Only check for mandatory members
             employee = time_off.employees.get(member.user.lower())
             if not employee:
-                return False  # If we don't have the employee, we can't check for leaves or holidays
+                continue  # Without an Employee we can't check this member's leaves or holidays
 
             if date in time_off.days_off[employee.name.lower()]:
                 return True
@@ -921,7 +923,8 @@ def get_mandatory_member_time_off(appointment_group: object, date: datetime.date
     from_date, to_date = date, add_days(date, TIME_OFF_WINDOW_DAYS)
     members = [member.user for member in appointment_group.members if member.is_mandatory]
 
-    # Emails and names are keyed lowercased, as the database matches them case-insensitively.
+    # Emails and names are keyed lowercased, as the database matches them case-insensitively. Rows it
+    # matches by accents or trailing spaces alone don't belong to these employees and are skipped.
     employees = {}
     if members:
         for employee in frappe.get_all(
@@ -944,9 +947,12 @@ def get_mandatory_member_time_off(appointment_group: object, date: datetime.date
             },
             fields=["employee", "from_date", "to_date"],
         ):
+            employee_days_off = days_off.get(leave.employee.lower())
+            if employee_days_off is None:
+                continue
             day, last_day = max(leave.from_date, from_date), min(leave.to_date, to_date)
             while day <= last_day:
-                days_off[leave.employee.lower()].add(day)
+                employee_days_off.add(day)
                 day = add_days(day, 1)
 
     holiday_lists = {employee.holiday_list for employee in employees.values() if employee.holiday_list}

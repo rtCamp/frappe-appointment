@@ -40,6 +40,21 @@ AG = "frappe_appointment.frappe_appointment.doctype.appointment_group.appointmen
 FIXED = get_datetime("2027-01-15 00:00:00")
 
 
+def _with_extra_rows(doctype, *rows):
+    """Patch frappe.get_all to add `rows` to reads of `doctype`.
+
+    They stand in for rows the database matches by accents or trailing spaces alone, which a member's
+    name or an employee's doesn't equal in Python.
+    """
+    get_all = frappe.get_all
+
+    def get_all_with_rows(dt, *args, **kwargs):
+        result = get_all(dt, *args, **kwargs)
+        return result + [frappe._dict(row) for row in rows] if dt == doctype else result
+
+    return patch("frappe.get_all", side_effect=get_all_with_rows)
+
+
 def _slot(start, end):
     """A busy calendar slot with UTC starts_on/ends_on datetimes."""
     return {"starts_on": get_datetime(start), "ends_on": get_datetime(end)}
@@ -124,6 +139,14 @@ class TestCheckAvailability(IntegrationTestCase):
         frappe.db.set_value("Members", {"parent": group.name}, "user", user.upper())
         group = frappe.get_doc("Appointment Group", group.name)
         res = check_availability(self._valid_dvo(), "Monday", group)
+        self.assertEqual(res["available_days"], {"Monday", "Tuesday", "Wednesday", "Thursday", "Friday"})
+
+    def test_hours_of_a_near_match_are_skipped(self):
+        """5.11 hours whose availability only nearly matches a member's name are skipped, not an error."""
+        group = frappe.get_doc("Appointment Group", self.group.name)
+        near_match = {"parent": "tést_fa_ca_weekdays@example.com", "day": "Saturday"}
+        with _with_extra_rows("Appointment Time Slot", near_match | {"start_time": "09:00:00", "end_time": "17:00:00"}):
+            res = check_availability(self._valid_dvo(), "Monday", group)
         self.assertEqual(res["available_days"], {"Monday", "Tuesday", "Wednesday", "Thursday", "Friday"})
 
     def test_weekly_hours_read_once_per_group(self):
@@ -400,6 +423,18 @@ class TestMemberLeaveOrHoliday(IntegrationTestCase):
     def test_member_without_employee_available(self):
         """10.4 a member with no Employee record returns False."""
         self.assertFalse(is_member_on_leave_or_is_holiday(self.no_emp_group, datetime.date(2027, 2, 2)))
+
+    def test_member_without_employee_does_not_hide_others_leave(self):
+        """10.9 a member with no Employee record listed first doesn't stop the next member's leave counting."""
+        group = make_appointment_group("FA NoEmp Then Leave Grp", members=[self.no_emp_user, self.leave_user])
+        self.assertTrue(is_member_on_leave_or_is_holiday(group, datetime.date(2027, 2, 2)))
+
+    def test_leave_of_a_near_match_is_skipped(self):
+        """10.10 leave whose employee only nearly matches a member's employee is skipped, not an error."""
+        group = frappe.get_doc("Appointment Group", self.free_group.name)
+        near_match = {"employee": "HR-EMP-NEAR-MATCH ", "from_date": getdate("2027-02-20")}
+        with _with_extra_rows("Leave Application", near_match | {"to_date": getdate("2027-02-20")}):
+            self.assertFalse(is_member_on_leave_or_is_holiday(group, datetime.date(2027, 2, 20)))
 
     def test_days_in_window_read_once(self):
         """10.5 leave and holidays are read once for the window; later days in it need no queries."""

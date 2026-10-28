@@ -46,15 +46,31 @@ class TestSendReminderMail(IntegrationTestCase):
             "Google Calendar", cls.shared_calendar, "google_calendar_id", "team@group.calendar.google.com"
         )
 
-        for calendar in (cls.lapsed_calendar, cls.authorized_calendar, cls.disabled_calendar, cls.shared_calendar):
+        # A calendar whose user differs from the User's name only in case.
+        cls.case_user = "test_fa_rem_case@example.com"
+        cls.case_calendar = make_google_calendar(cls.case_user).name
+        frappe.db.set_value(
+            "Google Calendar",
+            cls.case_calendar,
+            {"user": cls.case_user.upper(), "google_calendar_id": cls.case_user.upper()},
+        )
+
+        cls.calendars = (
+            cls.lapsed_calendar,
+            cls.authorized_calendar,
+            cls.disabled_calendar,
+            cls.shared_calendar,
+            cls.case_calendar,
+        )
+        for calendar in cls.calendars:
             frappe.db.set_value("Google Calendar", calendar, "custom_is_google_calendar_authorized", 1)
 
     def _run(self):
-        """Run the job with only this class's lapsed, disabled and shared calendars failing the token check.
+        """Run the job with only this class's calendars, bar the authorized one, failing the token check.
 
         Every other calendar on the site passes it, so the run never changes them.
         """
-        unauthorized = {self.lapsed_calendar, self.disabled_calendar, self.shared_calendar}
+        unauthorized = set(self.calendars) - {self.authorized_calendar}
         checked = []
 
         def authorized(google_calendar):
@@ -92,6 +108,12 @@ class TestSendReminderMail(IntegrationTestCase):
         self.assertNotIn(self.disabled_calendar, checked)
         self.assertNotIn(self.disabled_user, recipients)
         self.assertTrue(self._is_authorized(self.disabled_calendar))
+
+    def test_user_name_case_differs(self):
+        """25.7 a calendar whose user differs from the User's name only in case is still checked and reminded."""
+        _, recipients = self._run()
+        self.assertIn(self.case_user, {recipient.lower() for recipient in recipients})
+        self.assertFalse(self._is_authorized(self.case_calendar))
 
     def test_shared_calendar_is_not_checked(self):
         """25.7 a calendar that isn't the user's own isn't checked, so its flag is left as it was."""

@@ -18,10 +18,13 @@ def send_reminder_mail():
             "Google Calendar", filters={"enable": 1}, fields=["name", "user", "google_calendar_id"]
         )
         users = list({google_calendar.user for google_calendar in google_calendars})
-        enabled_users = set(frappe.get_all("User", filters={"name": ["in", users], "enabled": 1}, pluck="name"))
+        # Matched case-insensitively, as the database matches the names.
+        enabled_users = {
+            user.lower() for user in frappe.get_all("User", filters={"name": ["in", users], "enabled": 1}, pluck="name")
+        }
 
         for google_calendar in google_calendars:
-            if google_calendar.user not in enabled_users:
+            if google_calendar.user.lower() not in enabled_users:
                 continue
             if google_calendar.user == google_calendar.google_calendar_id:
                 google_calendar = frappe.get_doc("Google Calendar", google_calendar.name)
