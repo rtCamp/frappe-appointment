@@ -4,6 +4,9 @@ from unittest.mock import patch
 import frappe
 from frappe.tests import IntegrationTestCase
 
+from frappe_appointment.frappe_appointment.doctype.appointment_group.appointment_group import (
+    get_time_slots_for_given_date,
+)
 from frappe_appointment.tasks.verify_availability import (
     get_availability_status_for_appointment_group,
     send_availability_email,
@@ -13,6 +16,7 @@ from frappe_appointment.tasks.verify_availability import (
 from frappe_appointment.tests import make_appointment_group, make_user_availability
 
 VA = "frappe_appointment.tasks.verify_availability"
+AG = "frappe_appointment.frappe_appointment.doctype.appointment_group.appointment_group"
 ENQUEUE_TARGET = "frappe_appointment.tasks.verify_availability.get_availability_status_for_appointment_group"
 
 
@@ -59,6 +63,22 @@ class TestGetAvailabilityStatus(IntegrationTestCase):
         self.group.reload()
         self.assertEqual(json.loads(self.group.available_slots_data), data)
 
+    def test_per_date_totals_match_a_fresh_calculation(self):
+        """25.2 the job's per-date totals, from one group object, match a fresh calculation for each date."""
+        with (
+            patch(f"{AG}.get_all_unavailable_google_calendar_slots_for_day", return_value=[]),
+            patch("frappe.db.commit"),
+        ):
+            data = get_availability_status_for_appointment_group(frappe.get_doc("Appointment Group", self.group.name))
+            expected = {
+                date: get_time_slots_for_given_date(
+                    frappe.get_doc("Appointment Group", self.group.name), frappe.utils.get_datetime(date)
+                )["total_slots_for_day"]
+                for date in data
+            }
+        self.assertEqual(len(data), 3)
+        self.assertEqual(data, expected)
+
 
 class TestVerifyMembersAvailability(IntegrationTestCase):
     def test_skip_cron_flag_short_circuits(self):
@@ -90,11 +110,44 @@ class TestSendAvailabilityEmail(IntegrationTestCase):
         make_user_availability(cls.quiet_user, slug="fa-va-quiet")
         cls.quiet_group = make_appointment_group("FA VA Quiet", members=[cls.quiet_user], send_email_alerts=0)
 
+        # An alerting group with one mandatory and one optional member.
+        cls.optional_user = "test_fa_va_optional@example.com"
+        make_user_availability(cls.optional_user, slug="fa-va-optional")
+        cls.mixed_group = make_appointment_group(
+            "FA VA Mixed",
+            members=[cls.alert_user, cls.optional_user],
+            send_email_alerts=1,
+            min_slot_threshold=5,
+            availability_email_template=template,
+            email_address_to_send="mixed@example.com",
+        )
+        frappe.db.set_value("Members", {"parent": cls.mixed_group.name, "user": cls.optional_user}, "is_mandatory", 0)
+
     def test_below_threshold_sends(self):
         """25.5 a group below its slot threshold sends the availability email."""
         with patch(f"{VA}.send_email_template_mail") as mock_send:
             send_availability_email({self.alert_group.name: {"2027-01-15": 1}})
         mock_send.assert_called_once()
+
+    def test_alert_goes_to_group_address_and_mandatory_members(self):
+        """25.5 the availability email goes to the group's alert address and its mandatory members."""
+        with patch(f"{VA}.send_email_template_mail") as mock_send:
+            send_availability_email({self.alert_group.name: {"2027-01-15": 1}})
+        self.assertCountEqual(mock_send.call_args.args[3], ["alerts@example.com", self.alert_user])
+
+    def test_optional_members_get_no_alert(self):
+        """25.5 a member who isn't mandatory doesn't get the availability email."""
+        with patch(f"{VA}.send_email_template_mail") as mock_send:
+            send_availability_email({self.mixed_group.name: {"2027-01-15": 1}})
+        self.assertCountEqual(mock_send.call_args.args[3], ["mixed@example.com", self.alert_user])
+
+    def test_only_groups_with_alerts_on_are_emailed(self):
+        """25.4 of several groups below threshold, only those with email alerts on are emailed."""
+        with patch(f"{VA}.send_email_template_mail") as mock_send:
+            send_availability_email(
+                {self.alert_group.name: {"2027-01-15": 1}, self.quiet_group.name: {"2027-01-15": 1}}
+            )
+        self.assertEqual([call.args[0].name for call in mock_send.call_args_list], [self.alert_group.name])
 
     def test_alerts_disabled_skips(self):
         """25.4 a group with email alerts disabled is skipped."""
