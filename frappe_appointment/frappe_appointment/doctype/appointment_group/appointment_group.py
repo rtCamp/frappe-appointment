@@ -414,7 +414,7 @@ def _get_time_slots_for_given_date(appointment_group: object, datetime: datetime
         appointment_time_slots = frappe.db.get_all(
             APPOINTMENT_TIME_SLOT,
             filters={"parent": member.user, "day": weekday},
-            fields="*",
+            fields=["start_time", "end_time"],
         )
 
         max_start_time, min_end_time = get_max_min_time_slot(appointment_time_slots, max_start_time, min_end_time)
