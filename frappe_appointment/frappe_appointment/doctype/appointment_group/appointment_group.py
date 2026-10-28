@@ -16,6 +16,7 @@ from frappe.utils import (
     get_datetime,
     get_datetime_str,
     get_time_str,
+    getdate,
 )
 
 from frappe_appointment.constants import APPOINTMENT_GROUP, APPOINTMENT_TIME_SLOT, USER_APPOINTMENT_AVAILABILITY
@@ -34,6 +35,9 @@ from frappe_appointment.helpers.utils import (
 )
 
 ALL_DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+
+# How many days of the members' leave and holidays are read at once, from the first day slot calculation asks about.
+TIME_OFF_WINDOW_DAYS = 90
 
 
 class AppointmentGroup(Document):
@@ -402,24 +406,15 @@ def _get_time_slots_for_given_date(appointment_group: object, datetime: datetime
             date_validation_obj=date_validation_obj,
         )
 
-    members = appointment_group.members
-
     member_time_slots = {}
     max_start_time, min_end_time = "00:00:00", "24:00:00"
 
-    for member in members:
-        if not member.is_mandatory:
-            continue
-
-        appointment_time_slots = frappe.db.get_all(
-            APPOINTMENT_TIME_SLOT,
-            filters={"parent": member.user, "day": weekday},
-            fields=["start_time", "end_time"],
-        )
+    for member, weekly_time_slots in get_mandatory_member_time_slots(appointment_group).items():
+        appointment_time_slots = [slot for slot in weekly_time_slots if slot.day == weekday]
 
         max_start_time, min_end_time = get_max_min_time_slot(appointment_time_slots, max_start_time, min_end_time)
 
-        member_time_slots[member.user] = appointment_time_slots
+        member_time_slots[member] = appointment_time_slots
 
     starttime = get_utc_datatime_with_time(date, max_start_time)
     endtime = get_utc_datatime_with_time(date, min_end_time)
@@ -450,6 +445,30 @@ def _get_time_slots_for_given_date(appointment_group: object, datetime: datetime
     )
 
 
+def get_mandatory_member_time_slots(appointment_group: object) -> dict:
+    """Each mandatory member's weekly hours, as {member: [Appointment Time Slot rows]}.
+
+    Slot calculation needs them for every day it looks at, so they're read once and kept on the
+    group's flags for as long as that group object lives (one request or one availability job).
+    """
+    if appointment_group.flags.member_time_slots is None:
+        # Matched case-insensitively, as the database matches the names.
+        members = {member.user.lower(): member.user for member in appointment_group.members if member.is_mandatory}
+        member_time_slots = {member: [] for member in members.values()}
+
+        if members:
+            for slot in frappe.get_all(
+                APPOINTMENT_TIME_SLOT,
+                filters={"parenttype": USER_APPOINTMENT_AVAILABILITY, "parent": ["in", list(members.values())]},
+                fields=["parent", "day", "start_time", "end_time"],
+            ):
+                member_time_slots[members[slot.parent.lower()]].append(slot)
+
+        appointment_group.flags.member_time_slots = member_time_slots
+
+    return appointment_group.flags.member_time_slots
+
+
 def check_availability(date_validation_obj: object, weekday: str, appointment_group: object) -> object:
     """
     Check if data is valid based on weekdays in user availability.
@@ -466,13 +485,10 @@ def check_availability(date_validation_obj: object, weekday: str, appointment_gr
         "date_validation_obj": date_validation_obj,
     }
 
-    mandatory_members = [member for member in appointment_group.members if member.is_mandatory]
     available_days = set(ALL_DAYS)
 
-    for member in mandatory_members:
-        availability = frappe.get_doc("User Appointment Availability", member.user)
-        user_available_days = [day.day for day in availability.appointment_time_slot]
-        available_days = available_days.intersection(set(user_available_days))
+    for weekly_time_slots in get_mandatory_member_time_slots(appointment_group).values():
+        available_days = available_days.intersection(slot.day for slot in weekly_time_slots)
 
     res["available_days"] = available_days
 
@@ -877,36 +893,83 @@ def is_member_on_leave_or_is_holiday(appointment_group, date):
     if "hrms" not in installed_apps:
         return False
 
-    date_str = date.strftime("%Y-%m-%d")
+    date = getdate(date)
+    time_off = get_mandatory_member_time_off(appointment_group, date)
 
     for member in appointment_group.members:
         if member.is_mandatory:  # Only check for mandatory members
-            employee = frappe.get_all(
-                "Employee", filters={"company_email": member.user}, fields=["name", "holiday_list"]
-            )
+            employee = time_off.employees.get(member.user.lower())
             if not employee:
                 return False  # If we don't have the employee, we can't check for leaves or holidays
 
-            leaves = frappe.get_all(
-                "Leave Application",
-                filters={
-                    "employee": employee[0].name,
-                    "from_date": ["<=", date_str],
-                    "to_date": [">=", date_str],
-                    "status": "Approved",
-                },
-            )
-
-            if leaves:
+            if date in time_off.days_off[employee.name.lower()]:
                 return True
 
-            if employee and employee[0].holiday_list:
-                holidays = frappe.get_doc("Holiday List", employee[0].holiday_list)
-                for holiday in holidays.holidays:
-                    if holiday.holiday_date.strftime("%Y-%m-%d") == date_str:
-                        return True
-
     return False
+
+
+def get_mandatory_member_time_off(appointment_group: object, date: datetime.date) -> frappe._dict:
+    """Find which days each mandatory member is off, from `date` to TIME_OFF_WINDOW_DAYS later.
+
+    A day off is an approved leave or a holiday in the member's Holiday List. The result is kept on the
+    group so later days in the window reuse it; a day outside the window reads a new window from there.
+    """
+    time_off = appointment_group.flags.member_time_off
+    if time_off and time_off.from_date <= date <= time_off.to_date:
+        return time_off
+
+    from_date, to_date = date, add_days(date, TIME_OFF_WINDOW_DAYS)
+    members = [member.user for member in appointment_group.members if member.is_mandatory]
+
+    # Emails and names are keyed lowercased, as the database matches them case-insensitively.
+    employees = {}
+    if members:
+        for employee in frappe.get_all(
+            "Employee",
+            filters={"company_email": ["in", members]},
+            fields=["name", "company_email", "holiday_list"],
+        ):
+            employees.setdefault(employee.company_email.lower(), employee)
+
+    days_off = {employee.name.lower(): set() for employee in employees.values()}
+
+    if days_off:
+        for leave in frappe.get_all(
+            "Leave Application",
+            filters={
+                "employee": ["in", [employee.name for employee in employees.values()]],
+                "from_date": ["<=", to_date],
+                "to_date": [">=", from_date],
+                "status": "Approved",
+            },
+            fields=["employee", "from_date", "to_date"],
+        ):
+            day, last_day = max(leave.from_date, from_date), min(leave.to_date, to_date)
+            while day <= last_day:
+                days_off[leave.employee.lower()].add(day)
+                day = add_days(day, 1)
+
+    holiday_lists = {employee.holiday_list for employee in employees.values() if employee.holiday_list}
+    if holiday_lists:
+        holidays_by_list = {}
+        for holiday in frappe.get_all(
+            "Holiday",
+            filters={
+                "parenttype": "Holiday List",
+                "parent": ["in", list(holiday_lists)],
+                "holiday_date": ["between", [from_date, to_date]],
+            },
+            fields=["parent", "holiday_date"],
+        ):
+            holidays_by_list.setdefault(holiday.parent.lower(), set()).add(holiday.holiday_date)
+
+        for employee in employees.values():
+            if employee.holiday_list:
+                days_off[employee.name.lower()].update(holidays_by_list.get(employee.holiday_list.lower(), ()))
+
+    time_off = frappe._dict(from_date=from_date, to_date=to_date, employees=employees, days_off=days_off)
+    appointment_group.flags.member_time_off = time_off
+    return time_off
 
 
 @frappe.whitelist()
