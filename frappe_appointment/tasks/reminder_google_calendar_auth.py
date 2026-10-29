@@ -14,14 +14,20 @@ def send_reminder_mail():
         if not setup_reminder_template():
             return
 
-        google_calendars = frappe.get_all("Google Calendar", {"enable": 1})
+        google_calendars = frappe.get_all(
+            "Google Calendar", filters={"enable": 1}, fields=["name", "user", "google_calendar_id"]
+        )
+        users = list({google_calendar.user for google_calendar in google_calendars})
+        # Matched case-insensitively, as the database matches the names.
+        enabled_users = {
+            user.lower() for user in frappe.get_all("User", filters={"name": ["in", users], "enabled": 1}, pluck="name")
+        }
 
         for google_calendar in google_calendars:
-            google_calendar = frappe.get_doc("Google Calendar", google_calendar.name)
-            user = frappe.get_doc("User", google_calendar.user)
-            if not user.enabled:
+            if google_calendar.user.lower() not in enabled_users:
                 continue
             if google_calendar.user == google_calendar.google_calendar_id:
+                google_calendar = frappe.get_doc("Google Calendar", google_calendar.name)
                 if not google_calendar_authorized(google_calendar):
                     frappe.db.set_value(
                         "Google Calendar", google_calendar.name, "custom_is_google_calendar_authorized", False
