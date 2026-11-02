@@ -172,7 +172,8 @@ const ClockField = ({
   };
 
   const length = (time: string) => {
-    const minutes = after ? toMinutes(time) - toMinutes(after) + (time === END_OF_DAY ? 1 : 0) : 0;
+    // 23:59 is stored and booked as 23:59, so a stretch to it is a minute short of the hour.
+    const minutes = after ? toMinutes(time) - toMinutes(after) : 0;
     return minutes > 0 ? lengthInWords(minutes) : null;
   };
 
