@@ -45,6 +45,7 @@ export const SecondsSelect = ({
   value,
   choices,
   none,
+  custom,
   onChange,
   className,
 }: {
@@ -53,14 +54,16 @@ export const SecondsSelect = ({
   choices: number[];
   /** Label for 0. */
   none?: string;
+  /** Adds a "Custom…" choice at the end; open while the caller shows its own minutes field. */
+  custom?: { open: boolean; onOpen: () => void };
   onChange: (value: number) => void;
   className?: string;
 }) => (
   <span className={cn("relative", className)}>
     <select
       id={id}
-      value={value}
-      onChange={(e) => onChange(Number(e.target.value))}
+      value={custom?.open ? "custom" : value}
+      onChange={(e) => (e.target.value === "custom" ? custom?.onOpen() : onChange(Number(e.target.value)))}
       className={cn(fieldClass, "w-full pr-7 appearance-none tabular-nums cursor-pointer")}
     >
       {(choices.includes(value) ? choices : [...choices, value].sort((a, b) => a - b)).map((s) => (
@@ -68,6 +71,7 @@ export const SecondsSelect = ({
           {s === 0 && none ? none : durationLabel(s)}
         </option>
       ))}
+      {custom && <option value="custom">Custom…</option>}
     </select>
     <ChevronDown className="absolute right-2 top-1.5 w-4 h-4 text-ink-gray-4 pointer-events-none" aria-hidden="true" />
   </span>

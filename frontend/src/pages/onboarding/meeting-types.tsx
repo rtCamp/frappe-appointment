@@ -3,11 +3,11 @@
  * available_durations rows of the user's availability), edited in a dialog.
  */
 import { useContext, useEffect, useRef, useState } from "react";
-import { Check, Copy, ExternalLink, LoaderCircle, MoreHorizontal, Pencil, Plus, Trash2 } from "lucide-react";
+import { ArrowRight, Check, Copy, ExternalLink, LoaderCircle, MoreHorizontal, Pencil, Plus, Trash2 } from "lucide-react";
 import { FrappeConfig, FrappeContext } from "frappe-react-sdk";
 import * as Popover from "@radix-ui/react-popover";
 
-import { cn } from "@/lib/utils";
+import { cn, lengthInWords } from "@/lib/utils";
 import {
   AVAILABILITY,
   Availability,
@@ -33,6 +33,9 @@ const hasLimit = (t: MeetingType) => t.limit_booking_frequency != null && t.limi
 interface Form {
   title: string;
   duration: number;
+  /** Custom… is picked: the length comes from customMinutes instead. */
+  custom: boolean;
+  customMinutes: string;
   buffer: number;
   notice: string;
   window: string;
@@ -47,6 +50,8 @@ type FormErrors = Partial<Record<keyof Form, string>>;
 const toForm = (t?: MeetingType): Form => ({
   title: t?.title ?? "",
   duration: t?.duration ?? 30 * 60,
+  custom: false,
+  customMinutes: "",
   buffer: t?.minimum_buffer_time ?? 0,
   notice: t?.minimum_notice_before_event ? String(t.minimum_notice_before_event) : "",
   window: t?.availability_window && t.availability_window > 0 ? String(t.availability_window) : "",
@@ -59,6 +64,13 @@ const check = (f: Form): FormErrors => {
   const errors: FormErrors = {};
   const notWhole = (value: string) => !!value.trim() && !WHOLE_NUMBER.test(value.trim());
   if (!f.title.trim()) errors.title = "Give it a name.";
+  if (f.custom) {
+    const minutes = f.customMinutes.trim();
+    // 0 has to be blocked: slots are made by stepping through your hours by the length.
+    if (!minutes) errors.customMinutes = "Enter a length in minutes.";
+    else if (!WHOLE_NUMBER.test(minutes)) errors.customMinutes = "Use whole minutes, like 95.";
+    else if (Number(minutes) === 0) errors.customMinutes = "Enter more than 0 minutes.";
+  }
   if (notWhole(f.notice)) errors.notice = "Enter a whole number of days.";
   if (notWhole(f.window)) errors.window = "Enter a whole number of days, or leave it blank.";
   if (f.max.trim() && (!WHOLE_NUMBER.test(f.max.trim()) || Number(f.max) < 1))
@@ -70,7 +82,7 @@ const check = (f: Form): FormErrors => {
 const fromForm = (f: Form, saved?: MeetingType): MeetingType => ({
   ...(saved?.name ? { name: saved.name } : {}),
   title: f.title.trim(),
-  duration: f.duration,
+  duration: f.custom ? Number(f.customMinutes.trim()) * 60 : f.duration,
   minimum_buffer_time: f.buffer || null,
   minimum_notice_before_event: f.notice.trim() ? Number(f.notice) : 0,
   availability_window: f.window.trim() ? Number(f.window) : null,
@@ -174,9 +186,49 @@ const Editor = ({
             className={cn(fieldClass, errors.title && "border-ink-red-7")}
           />
         </Field>
-        <Field id="mt-length" label="Length">
-          <SecondsSelect id="mt-length" value={form.duration} choices={LENGTHS} onChange={(duration) => set({ duration })} className="w-48" />
-        </Field>
+        <div className="flex flex-col gap-1.5">
+          <Field id="mt-length" label="Length">
+            <SecondsSelect
+              id="mt-length"
+              value={form.duration}
+              choices={LENGTHS}
+              custom={{ open: form.custom, onOpen: () => set({ custom: true, customMinutes: String(Math.round(form.duration / 60)) }) }}
+              onChange={(duration) => set({ duration, custom: false })}
+              className="w-48"
+            />
+          </Field>
+          {form.custom && (
+            <div className="flex flex-col gap-1.5">
+              <div className="flex flex-wrap items-center gap-2">
+                <label htmlFor="mt-custom" className="text-es-base text-ink-gray-7">
+                  Custom length:
+                </label>
+                <input
+                  id="mt-custom"
+                  type="text"
+                  inputMode="numeric"
+                  value={form.customMinutes}
+                  aria-invalid={!!errors.customMinutes}
+                  aria-describedby={errors.customMinutes ? "mt-custom-error" : undefined}
+                  onChange={(e) => set({ customMinutes: e.target.value })}
+                  className={cn(fieldClass, "w-16 text-right tabular-nums", errors.customMinutes && "border-ink-red-7")}
+                />
+                <span className="text-es-base text-ink-gray-7">minutes</span>
+                {WHOLE_NUMBER.test(form.customMinutes.trim()) && Number(form.customMinutes) > 0 && (
+                  <span className="inline-flex items-center gap-2 text-es-base text-ink-gray-5 tabular-nums">
+                    <ArrowRight className="w-3.5 h-3.5" aria-hidden="true" />
+                    {lengthInWords(Number(form.customMinutes))}
+                  </span>
+                )}
+              </div>
+              {errors.customMinutes && (
+                <span id="mt-custom-error" role="alert" className="text-es-p-sm text-ink-red-7">
+                  {errors.customMinutes}
+                </span>
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
       <section className="flex flex-col gap-4">
