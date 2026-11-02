@@ -22,7 +22,7 @@ import {
   slugify,
 } from "../api";
 import { Length, customLengthError, lengthSeconds, savedLength } from "../booking-rules";
-import { CustomLength, LengthSelect } from "../form-fields";
+import { CustomLength, LengthSelect, fieldClass } from "../form-fields";
 import SlugField from "../slug-field";
 import { Button, Notice, StepHeader } from "../ui";
 import { useSlugCheck } from "../use-slug-check";
@@ -50,9 +50,6 @@ interface TypeRow {
 
 let nextKey = 0;
 const row = (title: string, seconds: number, saved?: MeetingType): TypeRow => ({ key: ++nextKey, title, length: savedLength(seconds), saved });
-
-const fieldClass =
-  "h-7 px-2 rounded-lg border border-transparent bg-surface-gray-2 text-es-base text-ink-gray-8 placeholder:text-ink-gray-4 hover:bg-surface-gray-3 focus:outline-none focus:bg-surface-base focus:border-outline-gray-4 focus:shadow-es-focus";
 
 const BookingStep = ({
   user,
