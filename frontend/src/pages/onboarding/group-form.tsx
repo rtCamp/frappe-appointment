@@ -234,13 +234,16 @@ const GroupForm = ({
   // The step is in the address (?step=2), replaced rather than added, so closing the dialog goes straight back.
   const [params, setParams] = useSearchParams();
   const { state } = useLocation();
-  const asked = Number(params.get("step")) - 1;
-  const step = Math.min(Math.max(asked, 0), furthest);
+  // Steps are numbered from 1 in the address; anything else opens the first step.
+  const stepParam = params.get("step") ?? "";
+  const asked = /^[1-9]\d*$/.test(stepParam) ? Number(stepParam) - 1 : 0;
+  const step = Math.min(asked, furthest);
   const setStep = (next: number) => setParams({ step: String(next + 1) }, { replace: true, state });
 
+  // A step that can't open yet, or isn't a step, is corrected in the address.
   useEffect(() => {
-    if (params.has("step") && asked !== step) setParams({ step: String(step + 1) }, { replace: true, state });
-  }, [params, asked, step, setParams, state]);
+    if (params.has("step") && stepParam !== String(step + 1)) setParams({ step: String(step + 1) }, { replace: true, state });
+  }, [params, stepParam, step, setParams, state]);
   // Errors show on the steps someone has tried to leave or save.
   const [checkedUpTo, setCheckedUpTo] = useState(-1);
   const [saving, setSaving] = useState(false);
