@@ -169,16 +169,20 @@ const Setup = ({
   // Until setup is finished, the app's sections aren't there yet: go to the first unfinished step. A step further
   // than that can't open yet either.
   const loaded = !!calendars;
-  const admin = pageRoute.screen === "guide" || pageRoute.screen === "credentials";
+  // The Google guide and credentials are for System Managers; anyone else goes where they would have.
+  const adminRoute = pageRoute.screen === "guide" || pageRoute.screen === "credentials";
+  const isAdmin = user.isSystemManager;
   useEffect(() => {
     if (!loaded || loadError) return;
     if (step !== null) {
       if (step === -1) navigate(setUp ? paths.home : paths.setup(firstUnfinished), { replace: true });
       else if (!setUp && step > firstUnfinished) navigate(paths.setup(firstUnfinished), { replace: true });
-    } else if (!setUp && !admin) {
+    } else if (adminRoute && !isAdmin) {
+      navigate(setUp ? paths.home : paths.setup(firstUnfinished), { replace: true });
+    } else if (!setUp && !adminRoute) {
       navigate(paths.setup(firstUnfinished), { replace: true });
     }
-  }, [loaded, loadError, setUp, firstUnfinished, step, admin, navigate]);
+  }, [loaded, loadError, setUp, firstUnfinished, step, adminRoute, isAdmin, navigate]);
 
   // A meeting type opens in the editor by its id; one that's gone shows the list.
   const editRoute = pageRoute.screen === "types" ? pageRoute.edit : undefined;
@@ -346,7 +350,7 @@ const Setup = ({
         )}
       </>
     );
-  } else if (view === "guide") {
+  } else if (view === "guide" && isAdmin) {
     page = <AdminSetup user={user} nav={appNav()} onDone={() => navigate(paths.home)} />;
   } else if (view === "types" && availability && !loadError) {
     page = (
