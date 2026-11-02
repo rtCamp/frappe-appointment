@@ -500,9 +500,9 @@ const GroupForm = ({
             </Field>
           )}
           <div className="flex flex-col gap-1">
-            <span className="text-es-sm text-ink-gray-6">Calendar and organiser</span>
+            <span className="text-es-sm text-ink-gray-6">Calendar and organizer</span>
             <span className="text-es-base text-ink-gray-8">
-              {owner === user.name ? "Your Google Calendar, with you as the organiser" : `${detail?.doc.event_creator}, organised by ${detail?.doc.event_organizer ?? "—"}`}
+              {owner === user.name ? "Your Google Calendar, with you as the organizer" : `${detail?.doc.event_creator}, organized by ${detail?.doc.event_organizer ?? "—"}`}
             </span>
             <span className="text-es-p-sm text-ink-gray-5">Bookings are added to this calendar, and invites come from it.</span>
           </div>

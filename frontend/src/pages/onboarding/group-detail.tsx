@@ -122,7 +122,7 @@ const Bookings = ({ user, group, people }: { user: SessionUser; group: string; p
               <span className="truncate text-es-sm tabular-nums text-ink-gray-5">
                 {time(b.starts_on)}
                 {b.ends_on && ` – ${time(b.ends_on)}`} · {b.guests.length ? b.guests.join(", ") : "No guest details"}
-                {b.status === "Cancelled" && " · Cancelled"}
+                {b.status === "Cancelled" && " · Canceled"}
               </span>
             </span>
             <span className="flex pl-1.5">
@@ -424,7 +424,7 @@ const GroupPage = ({
                   </dd>
                   <dt className="text-ink-gray-5">Calendar</dt>
                   <dd className="m-0 break-all">{doc.event_creator}</dd>
-                  <dt className="text-ink-gray-5">Organiser</dt>
+                  <dt className="text-ink-gray-5">Organizer</dt>
                   <dd className="m-0 break-all">{organizerLabel(detail, user.name)}</dd>
                 </dl>
               </Section>
