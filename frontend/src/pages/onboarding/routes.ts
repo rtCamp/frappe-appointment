@@ -15,7 +15,7 @@ export type AppRoute =
   | { screen: "groups"; isNew: boolean }
   | { screen: "group"; name: string; edit: boolean }
   | { screen: "settings"; tab: SettingsTab }
-  /** step: 0-2 for the steps, 3 for the done screen; -1 for an address that isn't a step. */
+  /** step: 0-2 for the steps, 3 for the done screen; -1 for /setup with no step, which goes to the right one. */
   | { screen: "setup"; step: number }
   /** step: 0-based Google Cloud step. */
   | { screen: "guide"; step: number }
@@ -25,7 +25,14 @@ const TABS: SettingsTab[] = ["booking", "calendar", "video", "google", "zoom", "
 
 /** The screen for an address, or null when the app has none. */
 export const parsePath = (pathname: string): AppRoute | null => {
-  const [first, second, third, ...rest] = pathname.split("/").filter(Boolean).map(decodeURIComponent);
+  let parts: string[];
+  try {
+    parts = pathname.split("/").filter(Boolean).map(decodeURIComponent);
+  } catch {
+    // A stray % that isn't an escape.
+    return null;
+  }
+  const [first, second, third, ...rest] = parts;
   if (rest.length) return null;
   if (!first) return { screen: "home" };
   if (first === "meeting-types") return third ? null : { screen: "types", edit: second };
@@ -40,10 +47,19 @@ export const parsePath = (pathname: string): AppRoute | null => {
     const tab = (second ?? "booking") as SettingsTab;
     return TABS.includes(tab) && !third ? { screen: "settings", tab } : null;
   }
-  if (first === "setup") return third ? null : { screen: "setup", step: SETUP_PATHS.indexOf(second ?? "") };
+  if (first === "setup") {
+    if (third) return null;
+    if (!second) return { screen: "setup", step: -1 };
+    const step = SETUP_PATHS.indexOf(second);
+    return step === -1 ? null : { screen: "setup", step };
+  }
   if (first === "admin") {
     if (second === "credentials" && !third) return { screen: "credentials" };
-    if (second === "guide") return { screen: "guide", step: third ? Math.max(0, Number(third) - 1 || 0) : 0 };
+    if (second === "guide") {
+      if (!third) return { screen: "guide", step: 0 };
+      // Steps are numbered from 1; anything else isn't a step.
+      return /^[1-9]\d*$/.test(third) ? { screen: "guide", step: Number(third) - 1 } : null;
+    }
   }
   return null;
 };
