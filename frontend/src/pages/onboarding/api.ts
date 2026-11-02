@@ -301,6 +301,9 @@ export const isNotYours = (err: any) => err?.exc_type === "PermissionError" || e
 export interface SessionUser {
   name: string;
   fullName: string;
+  /** User.first_name and User.email, which the server fills into the off message. */
+  firstName: string;
+  email: string;
   timeZone: string;
   /** The site's time zone, which Datetime fields like Event.starts_on are written in. */
   siteTimeZone: string;
@@ -312,7 +315,7 @@ export interface SessionUser {
 }
 
 interface Boot {
-  user?: { name?: string; can_write?: string[]; can_create?: string[]; roles?: string[] };
+  user?: { name?: string; first_name?: string; email?: string; can_write?: string[]; can_create?: string[]; roles?: string[] };
   user_info?: Record<string, { fullname?: string }>;
   time_zone?: { system?: string; user?: string };
 }
@@ -326,6 +329,8 @@ export const getSessionUser = (): SessionUser | null => {
   return {
     name,
     fullName: boot.user_info?.[name]?.fullname || name,
+    firstName: boot.user?.first_name ?? "",
+    email: boot.user?.email ?? "",
     timeZone: boot.time_zone?.user || boot.time_zone?.system || Intl.DateTimeFormat().resolvedOptions().timeZone,
     siteTimeZone: boot.time_zone?.system || Intl.DateTimeFormat().resolvedOptions().timeZone,
     canWrite: boot.user?.can_write ?? [],

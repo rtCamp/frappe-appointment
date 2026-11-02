@@ -96,7 +96,8 @@ const OffMessage = ({
   }, [saved]);
 
   const dirty = effective(draft) !== effective(saved);
-  const owner = { name: user.fullName, firstName: user.fullName.split(" ")[0], email: user.name };
+  // The same User fields the server fills in (personal_meet.fill_off_message).
+  const owner = { name: user.fullName, firstName: user.firstName || user.fullName, email: user.email };
   const preview = fillOffMessage(effective(draft), owner);
 
   const changed = () => {
