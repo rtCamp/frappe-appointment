@@ -6,6 +6,7 @@ import { ChevronDown } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { durationLabel } from "./api";
+import { RuleDate } from "./booking-rules";
 
 export const fieldClass =
   "h-7 px-2 rounded-lg border border-transparent bg-surface-gray-2 text-es-base text-ink-gray-8 placeholder:text-ink-gray-4 hover:bg-surface-gray-3 focus:outline-none focus:bg-surface-base focus:border-outline-gray-4 focus:shadow-es-focus";
@@ -20,7 +21,7 @@ export const Field = ({
 }: {
   id: string;
   label: string;
-  hint?: string;
+  hint?: ReactNode;
   error?: string;
   children: ReactNode;
   className?: string;
@@ -38,6 +39,14 @@ export const Field = ({
       hint && <span className="text-es-p-sm text-ink-gray-5">{hint}</span>
     )}
   </div>
+);
+
+/** The real date under a booking rule, like "Until Wed, Jan 13, 2027, including that day." */
+export const DateHint = ({ note }: { note: RuleDate }) => (
+  <span className="tabular-nums">
+    {note.lead} {note.date && <span className="text-ink-gray-8">{note.date}</span>}
+    {note.tail}
+  </span>
 );
 
 export const SecondsSelect = ({

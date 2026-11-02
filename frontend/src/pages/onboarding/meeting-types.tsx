@@ -19,8 +19,8 @@ import {
   siteNow,
   slotsAsText,
 } from "./api";
-import { BREAKS, LENGTHS, WHOLE_NUMBER, daysLabel } from "./booking-rules";
-import { Field, NumberInput, SecondsSelect, fieldClass } from "./form-fields";
+import { BREAKS, LENGTHS, WHOLE_NUMBER, daysLabel, firstDayNote, lastDayNote } from "./booking-rules";
+import { Field, NumberInput, DateHint, SecondsSelect, fieldClass } from "./form-fields";
 import { Frame, FrameNav } from "./frame";
 import { buttonClass } from "./styles";
 import { Button, ConfirmDialog, Modal, Notice, Pill, Switch } from "./ui";
@@ -128,6 +128,8 @@ const Editor = ({
 
   const errors = tried ? check(form) : {};
   const set = (patch: Partial<Form>) => setForm((current) => ({ ...current, ...patch }));
+  const firstDay = firstDayNote(form.notice);
+  const lastDay = lastDayNote(form.notice, form.window);
 
   useEffect(() => {
     nameRef.current?.focus();
@@ -240,10 +242,10 @@ const Editor = ({
           <Field id="mt-max" label="Max per day" error={errors.max}>
             <NumberInput id="mt-max" value={form.max} placeholder="No limit" error={errors.max} onChange={(max) => set({ max })} />
           </Field>
-          <Field id="mt-notice" label="Earliest booking" hint="Days from today. 0 allows same-day bookings." error={errors.notice}>
+          <Field id="mt-notice" label="Earliest booking" hint={firstDay && <DateHint note={firstDay} />} error={errors.notice}>
             <NumberInput id="mt-notice" value={form.notice} placeholder="0" error={errors.notice} onChange={(notice) => set({ notice })} />
           </Field>
-          <Field id="mt-window" label="Book up to" hint="Days ahead, counted from the earliest booking day." error={errors.window}>
+          <Field id="mt-window" label="Book up to" hint={lastDay && <DateHint note={lastDay} />} error={errors.window}>
             <NumberInput id="mt-window" value={form.window} placeholder="No limit" error={errors.window} onChange={(window) => set({ window })} />
           </Field>
         </div>

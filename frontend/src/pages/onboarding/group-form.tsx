@@ -19,8 +19,8 @@ import {
   SessionUser,
   errorText,
 } from "./api";
-import { BREAKS, LENGTHS, WHOLE_NUMBER } from "./booking-rules";
-import { Field, NumberInput, SecondsSelect, fieldClass } from "./form-fields";
+import { BREAKS, LENGTHS, WHOLE_NUMBER, firstDayNote, lastDayNote } from "./booking-rules";
+import { Field, NumberInput, DateHint, SecondsSelect, fieldClass } from "./form-fields";
 import { PeopleList } from "./group-people";
 import { Button, ConfirmDialog, Modal, Notice, Switch } from "./ui";
 import { PROVIDERS, Provider, isMeetingLink, providersFor } from "./video";
@@ -261,6 +261,8 @@ const GroupForm = ({
   const providers = providersFor(zoomReady, detail ? savedProvider : "Google Meet");
   const errors = checkForm(form);
   const shown = (key: keyof FormErrors) => (STEP_OF[key] <= checkedUpTo ? errors[key] : undefined);
+  const firstDay = firstDayNote(form.notice);
+  const lastDay = lastDayNote(form.notice, form.window);
 
   const goTo = (next: number) => {
     setStep(next);
@@ -512,10 +514,10 @@ const GroupForm = ({
       {step === 2 && (
         <>
           <div className="grid grid-cols-2 max-sm:grid-cols-1 gap-4">
-            <Field id="group-notice" label="Earliest booking" hint="Days from today. 0 allows same-day bookings." error={shown("notice")}>
+            <Field id="group-notice" label="Earliest booking" hint={firstDay && <DateHint note={firstDay} />} error={shown("notice")}>
               <NumberInput id="group-notice" value={form.notice} placeholder="0" error={shown("notice")} onChange={(notice) => set({ notice })} />
             </Field>
-            <Field id="group-window" label="Book up to" hint="Days ahead, counted from the earliest booking day." error={shown("window")}>
+            <Field id="group-window" label="Book up to" hint={lastDay && <DateHint note={lastDay} />} error={shown("window")}>
               <NumberInput id="group-window" value={form.window} placeholder="No limit" error={shown("window")} onChange={(window) => set({ window })} />
             </Field>
             <Field id="group-max" label="Max per day" error={shown("max")}>
