@@ -22,7 +22,14 @@ const Router = () => {
         <Route path="/gr/:groupId" element={<GroupAppointment />} errorElement={<ErrorFallback />}></Route>
         <Route path="*" element={<NotFound />} />
       </Route>
-      <Route path="/" element={<Onboarding />} errorElement={<ErrorFallback />}></Route>
+      {/* The app reads its screen from the address (pages/onboarding/routes.ts); these only keep it mounted while
+          the address changes, and leave anything else to Not found. */}
+      <Route path="/" element={<Onboarding />} errorElement={<ErrorFallback />}>
+        <Route index element={null} />
+        {["meeting-types/*", "availability", "groups/*", "new-group", "settings/*", "setup/*", "admin/*"].map((path) => (
+          <Route key={path} path={path} element={null} />
+        ))}
+      </Route>
     </>
   );
 };

@@ -2,8 +2,8 @@
  * Meeting types: every choice on the booking page with all of its booking rules (the
  * available_durations rows of the user's availability), edited in a dialog.
  */
-import { useContext, useEffect, useRef, useState } from "react";
-import { Check, Copy, ExternalLink, LoaderCircle, MoreHorizontal, Pencil, Plus, Trash2 } from "lucide-react";
+import { DragEvent, KeyboardEvent, useContext, useEffect, useRef, useState } from "react";
+import { Check, Copy, ExternalLink, GripVertical, LoaderCircle, MoreHorizontal, Pencil, Plus, Trash2 } from "lucide-react";
 import { FrappeConfig, FrappeContext } from "frappe-react-sdk";
 import * as Popover from "@radix-ui/react-popover";
 
@@ -19,8 +19,18 @@ import {
   siteNow,
   slotsAsText,
 } from "./api";
-import { BREAKS, LENGTHS, WHOLE_NUMBER, daysLabel } from "./booking-rules";
-import { Field, NumberInput, SecondsSelect, fieldClass } from "./form-fields";
+import {
+  BREAKS,
+  Length,
+  WHOLE_NUMBER,
+  customLengthError,
+  daysLabel,
+  firstDayNote,
+  lastDayNote,
+  lengthSeconds,
+  savedLength,
+} from "./booking-rules";
+import { DateHint, Field, LengthField, NumberInput, SecondsSelect, fieldClass } from "./form-fields";
 import { Frame, FrameNav } from "./frame";
 import { buttonClass } from "./styles";
 import { Button, ConfirmDialog, Modal, Notice, Pill, Switch } from "./ui";
@@ -32,7 +42,7 @@ const hasLimit = (t: MeetingType) => t.limit_booking_frequency != null && t.limi
 
 interface Form {
   title: string;
-  duration: number;
+  length: Length;
   buffer: number;
   notice: string;
   window: string;
@@ -46,7 +56,7 @@ type FormErrors = Partial<Record<keyof Form, string>>;
 /** A new type starts from the doctype's defaults. */
 const toForm = (t?: MeetingType): Form => ({
   title: t?.title ?? "",
-  duration: t?.duration ?? 30 * 60,
+  length: savedLength(t?.duration ?? 30 * 60),
   buffer: t?.minimum_buffer_time ?? 0,
   notice: t?.minimum_notice_before_event ? String(t.minimum_notice_before_event) : "",
   window: t?.availability_window && t.availability_window > 0 ? String(t.availability_window) : "",
@@ -59,6 +69,8 @@ const check = (f: Form): FormErrors => {
   const errors: FormErrors = {};
   const notWhole = (value: string) => !!value.trim() && !WHOLE_NUMBER.test(value.trim());
   if (!f.title.trim()) errors.title = "Give it a name.";
+  const lengthError = customLengthError(f.length);
+  if (lengthError) errors.length = lengthError;
   if (notWhole(f.notice)) errors.notice = "Enter a whole number of days.";
   if (notWhole(f.window)) errors.window = "Enter a whole number of days, or leave it blank.";
   if (f.max.trim() && (!WHOLE_NUMBER.test(f.max.trim()) || Number(f.max) < 1))
@@ -70,7 +82,7 @@ const check = (f: Form): FormErrors => {
 const fromForm = (f: Form, saved?: MeetingType): MeetingType => ({
   ...(saved?.name ? { name: saved.name } : {}),
   title: f.title.trim(),
-  duration: f.duration,
+  duration: lengthSeconds(f.length),
   minimum_buffer_time: f.buffer || null,
   minimum_notice_before_event: f.notice.trim() ? Number(f.notice) : 0,
   availability_window: f.window.trim() ? Number(f.window) : null,
@@ -116,6 +128,8 @@ const Editor = ({
 
   const errors = tried ? check(form) : {};
   const set = (patch: Partial<Form>) => setForm((current) => ({ ...current, ...patch }));
+  const firstDay = firstDayNote(form.notice);
+  const lastDay = lastDayNote(form.notice, form.window);
 
   useEffect(() => {
     nameRef.current?.focus();
@@ -174,9 +188,7 @@ const Editor = ({
             className={cn(fieldClass, errors.title && "border-ink-red-7")}
           />
         </Field>
-        <Field id="mt-length" label="Length">
-          <SecondsSelect id="mt-length" value={form.duration} choices={LENGTHS} onChange={(duration) => set({ duration })} className="w-40" />
-        </Field>
+        <LengthField id="mt-length" value={form.length} onChange={(length) => set({ length })} error={errors.length} className="w-48" />
       </div>
 
       <section className="flex flex-col gap-4">
@@ -188,10 +200,10 @@ const Editor = ({
           <Field id="mt-max" label="Max per day" error={errors.max}>
             <NumberInput id="mt-max" value={form.max} placeholder="No limit" error={errors.max} onChange={(max) => set({ max })} />
           </Field>
-          <Field id="mt-notice" label="Earliest booking" hint="Days from today. 0 allows same-day bookings." error={errors.notice}>
+          <Field id="mt-notice" label="Earliest booking" hint={firstDay && <DateHint note={firstDay} />} error={errors.notice}>
             <NumberInput id="mt-notice" value={form.notice} placeholder="0" error={errors.notice} onChange={(notice) => set({ notice })} />
           </Field>
-          <Field id="mt-window" label="Book up to" hint="Days ahead, counted from the earliest booking day." error={errors.window}>
+          <Field id="mt-window" label="Book up to" hint={lastDay && <DateHint note={lastDay} />} error={errors.window}>
             <NumberInput id="mt-window" value={form.window} placeholder="No limit" error={errors.window} onChange={(window) => set({ window })} />
           </Field>
         </div>
@@ -310,23 +322,39 @@ const MeetingTypes = ({
   user,
   availability,
   nav,
+  editing,
+  onEdit: setEditing,
   onChanged,
 }: {
   user: SessionUser;
   availability: Availability;
   nav: FrameNav;
+  /** The row open in the editor (by name), "new", or nothing. It lives in the address, /schedule/meeting-types/<id>. */
+  editing: string | null;
+  onEdit: (name: string | null) => void;
   /** Reloads the availability after a save. */
   onChanged: () => Promise<void>;
 }) => {
   const { db } = useContext(FrappeContext) as FrappeConfig;
-  // The row being edited (by name), "new", or nothing.
-  const [editing, setEditing] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<MeetingType | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const { copied, copy } = useCopied();
+  // Reordering: the row being dragged, where it would land, the order while it saves, and how that went.
+  const [dragging, setDragging] = useState<string | null>(null);
+  const [dropAt, setDropAt] = useState<{ name: string; after: boolean } | null>(null);
+  const [pendingOrder, setPendingOrder] = useState<string[] | null>(null);
+  const [orderSaved, setOrderSaved] = useState(false);
+  const [orderError, setOrderError] = useState<string | null>(null);
+  const [announce, setAnnounce] = useState("");
+  const savedTimer = useRef<ReturnType<typeof setTimeout>>();
 
-  const types = availability.available_durations;
+  useEffect(() => () => clearTimeout(savedTimer.current), []);
+
+  const savedTypes = availability.available_durations;
+  const types = pendingOrder
+    ? pendingOrder.map((name) => savedTypes.find((t) => t.name === name)).filter((t): t is MeetingType => !!t)
+    : savedTypes;
   const link = `${window.location.origin}/schedule/in/${availability.slug}`;
   const typeLink = (t: MeetingType) => `${link}?type=${encodeURIComponent(t.name ?? "")}`;
   const selected = editing && editing !== "new" ? types.find((t) => t.name === editing) : undefined;
@@ -337,6 +365,75 @@ const MeetingTypes = ({
       available_durations: list.map(asRow),
       appointment_time_slot: slotsAsText(availability),
     });
+
+  /** Saves a new order at once: the rows go back in this order and Frappe renumbers idx, which guests follow. */
+  const reorder = async (names: string[], moved: MeetingType) => {
+    // One order saves at a time: each save sends the whole list, so two at once could land out of order.
+    if (pendingOrder || names.join() === types.map((t) => t.name).join()) return;
+    setPendingOrder(names);
+    setOrderSaved(false);
+    setOrderError(null);
+    setAnnounce(`${moved.title} moved to position ${names.indexOf(moved.name ?? "") + 1} of ${names.length}.`);
+    try {
+      await saveTypes(names.map((name) => savedTypes.find((t) => t.name === name)).filter((t): t is MeetingType => !!t));
+      await onChanged();
+      setOrderSaved(true);
+      clearTimeout(savedTimer.current);
+      savedTimer.current = setTimeout(() => setOrderSaved(false), 2400);
+    } catch (err) {
+      setOrderError(errorText(err));
+    } finally {
+      setPendingOrder(null);
+    }
+  };
+
+  const names = types.map((t) => t.name ?? "");
+
+  const onDragStart = (e: DragEvent<HTMLButtonElement>, t: MeetingType) => {
+    if (pendingOrder) {
+      e.preventDefault();
+      return;
+    }
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", t.name ?? "");
+    // Drag the whole row, not just the grip.
+    const row = e.currentTarget.closest("tr");
+    if (row) e.dataTransfer.setDragImage(row, 16, 22);
+    setDragging(t.name ?? null);
+    setOrderSaved(false);
+  };
+
+  const onDragOver = (e: DragEvent<HTMLTableRowElement>, t: MeetingType) => {
+    if (!dragging) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    const box = e.currentTarget.getBoundingClientRect();
+    const after = e.clientY > box.top + box.height / 2;
+    if (dropAt?.name !== t.name || dropAt?.after !== after) setDropAt({ name: t.name ?? "", after });
+  };
+
+  const onDrop = (e: DragEvent<HTMLTableRowElement>, t: MeetingType) => {
+    e.preventDefault();
+    const from = dragging;
+    const after = dropAt?.after ?? false;
+    setDragging(null);
+    setDropAt(null);
+    if (!from || from === t.name) return;
+    const rest = names.filter((n) => n !== from);
+    const at = rest.indexOf(t.name ?? "") + (after ? 1 : 0);
+    const moved = types.find((x) => x.name === from);
+    if (moved) reorder([...rest.slice(0, at), from, ...rest.slice(at)], moved);
+  };
+
+  const onGripKey = (e: KeyboardEvent<HTMLButtonElement>, t: MeetingType, i: number) => {
+    const step = e.key === "ArrowUp" ? -1 : e.key === "ArrowDown" ? 1 : 0;
+    if (!step || pendingOrder) return;
+    e.preventDefault();
+    const to = i + step;
+    if (to < 0 || to >= names.length) return;
+    const rest = names.filter((n) => n !== t.name);
+    reorder([...rest.slice(0, to), t.name ?? "", ...rest.slice(to)], t);
+  };
 
   const save = async (type: MeetingType) => {
     await saveTypes(type.name ? types.map((t) => (t.name === type.name ? type : t)) : [...types, type]);
@@ -367,9 +464,9 @@ const MeetingTypes = ({
         return;
       }
       await saveTypes(types.filter((x) => x.name !== t.name));
-      await onChanged();
       setDeleting(null);
-      setEditing(null);
+      if (editing) setEditing(null);
+      await onChanged();
     } catch (err) {
       setDeleteError(errorText(err));
     } finally {
@@ -386,16 +483,33 @@ const MeetingTypes = ({
       width="full"
       {...nav}
       headerAction={
-        <Button variant="solid" onClick={() => setEditing("new")}>
-          <Plus className="w-4 h-4" aria-hidden="true" />
-          New meeting type
-        </Button>
+        <span className="flex items-center gap-3">
+          {dragging && <span className="text-es-sm text-ink-gray-5">Guests see them in this order</span>}
+          {!dragging && orderSaved && (
+            <span className="inline-flex items-center gap-1 text-es-sm text-ink-gray-5">
+              <Check className="w-3.5 h-3.5" aria-hidden="true" />
+              Order saved
+            </span>
+          )}
+          <Button variant="solid" onClick={() => setEditing("new")}>
+            <Plus className="w-4 h-4" aria-hidden="true" />
+            New meeting type
+          </Button>
+        </span>
       }
     >
+      {orderError && (
+        <Notice tone="red" title="Couldn't save the new order">
+          {orderError}
+        </Notice>
+      )}
       <div className="relative overflow-x-auto">
         <table className="w-full min-w-[760px] border-collapse">
           <thead>
             <tr className="h-8 text-es-sm text-ink-gray-5 text-left border-b border-outline-gray-1">
+              <th scope="col" className="w-8 p-0">
+                <span className="sr-only">Order</span>
+              </th>
               <th scope="col" className="pr-3 font-[420]">Name</th>
               <th scope="col" className="px-3 font-[420]">Length</th>
               <th scope="col" className="px-3 font-[420]">Break</th>
@@ -409,15 +523,33 @@ const MeetingTypes = ({
             </tr>
           </thead>
           <tbody>
-            {types.map((t) => (
+            {types.map((t, i) => (
               <tr
                 key={t.name}
                 onClick={() => setEditing(t.name ?? null)}
+                onDragOver={(e) => onDragOver(e, t)}
+                onDrop={(e) => onDrop(e, t)}
                 className={cn(
                   "h-11 text-es-base border-b border-outline-gray-1 cursor-pointer",
-                  editing === t.name ? "bg-surface-gray-2" : "hover:bg-surface-gray-1"
+                  dragging === t.name ? "bg-surface-gray-2 opacity-40" : editing === t.name ? "bg-surface-gray-2" : "hover:bg-surface-gray-1",
+                  dropAt?.name === t.name && dragging !== t.name && (dropAt?.after ? "shadow-[inset_0_-2px_0_0_var(--ink-gray-8)]" : "shadow-[inset_0_2px_0_0_var(--ink-gray-8)]")
                 )}
               >
+                <td className="w-8 p-0" onClick={(e) => e.stopPropagation()}>
+                  <button
+                    type="button"
+                    draggable
+                    data-grip={t.name}
+                    onDragStart={(e) => onDragStart(e, t)}
+                    onDragEnd={() => (setDragging(null), setDropAt(null))}
+                    onKeyDown={(e) => onGripKey(e, t, i)}
+                    aria-label={`Move ${t.title}, position ${i + 1} of ${types.length}. Drag, or use the up and down arrow keys.`}
+                    title="Drag to reorder"
+                    className="grid place-items-center w-6 h-7 p-0 border-0 rounded-md bg-transparent text-ink-gray-4 cursor-grab hover:bg-surface-gray-3 hover:text-ink-gray-7 focus-visible:outline-none focus-visible:shadow-es-focus"
+                  >
+                    <GripVertical className="w-4 h-4" aria-hidden="true" />
+                  </button>
+                </td>
                 <td className="pr-3">
                   <button
                     type="button"
@@ -460,6 +592,9 @@ const MeetingTypes = ({
       </div>
       <span className="sr-only" aria-live="polite">
         {copied ? "Link copied" : ""}
+      </span>
+      <span className="sr-only" aria-live="polite">
+        {announce}
       </span>
 
       {editing && (editing === "new" || selected) && (

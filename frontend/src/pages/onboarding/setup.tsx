@@ -1,7 +1,9 @@
 /**
- * The setup steps inside the page frame: Calendar, then Hours, then Booking page.
+ * The setup steps inside the page frame: Calendar, then Hours, then Booking page. Once set up, the app's sections.
+ * Which one shows comes from the address (see routes.ts).
  */
 import { useCallback, useContext, useEffect, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { FrappeConfig, FrappeContext, useFrappeGetCall } from "frappe-react-sdk";
 
 import {
@@ -33,6 +35,7 @@ import AdminSetup from "./admin";
 import GroupsPage from "./groups";
 import GroupPage from "./group-detail";
 import GroupForm from "./group-form";
+import { AppRoute, OpenedFrom, parsePath, paths } from "./routes";
 
 const STEPS = ["Calendar", "Hours", "Booking page"];
 const DONE = 3;
@@ -43,11 +46,31 @@ const DONE = 3;
  */
 type View = number | "home" | "types" | "availability" | "guide" | "groups" | "group-new" | `group:${string}` | `group-edit:${string}`;
 
-const SECTION_VIEWS: Record<string, View> = {
-  Home: "home",
-  "Meeting types": "types",
-  Availability: "availability",
-  "Group meetings": "groups",
+const viewOf = (route: AppRoute): View => {
+  switch (route.screen) {
+    case "types":
+      return "types";
+    case "availability":
+      return "availability";
+    case "groups":
+      return route.isNew ? "group-new" : "groups";
+    case "group":
+      return route.edit ? `group-edit:${route.name}` : `group:${route.name}`;
+    case "setup":
+      return route.step;
+    case "guide":
+    case "credentials":
+      return "guide";
+    default:
+      return "home";
+  }
+};
+
+const SECTION_PATHS: Record<string, string> = {
+  Home: paths.home,
+  "Meeting types": paths.types(),
+  Availability: paths.availability,
+  "Group meetings": paths.groups,
 };
 
 const Setup = ({
@@ -70,8 +93,6 @@ const Setup = ({
   // The boot data's time zone goes stale once the user changes it here.
   const user = { ...sessionUser, timeZone };
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [view, setView] = useState<View | null>(null);
-  const [settingsTab, setSettingsTab] = useState<SettingsTab | null>(null);
   const [toggling, setToggling] = useState(false);
   const [homeError, setHomeError] = useState<string | null>(null);
 
@@ -97,12 +118,6 @@ const Setup = ({
       setCalendars(list);
       setAvailability(saved);
       setAvailabilityNotYours(notYours);
-      // The first time the page loads: Home once setup is finished, else the first unfinished step.
-      setView(
-        (current) =>
-          current ??
-          (isSetUp(saved) ? "home" : !isConnected(pickCalendar(list, saved)) ? 0 : !saved?.appointment_time_slot.length ? 1 : 2)
-      );
     } catch (err) {
       setLoadError(errorText(err));
     }
@@ -111,6 +126,31 @@ const Setup = ({
   useEffect(() => {
     load();
   }, [load]);
+
+  const location = useLocation();
+  const navigate = useNavigate();
+  const opened = location.state as OpenedFrom | null;
+  // index.tsx shows Not found for addresses the app doesn't have.
+  const route = parsePath(location.pathname) ?? { screen: "home" };
+  // Settings is a dialog over the page it was opened from; opened by its address, over Home.
+  const settingsTab: SettingsTab | null = route.screen === "settings" ? route.tab : null;
+  const pageRoute = settingsTab ? parsePath(opened?.back?.split("?")[0] ?? "/") ?? { screen: "home" } : route;
+  const view = viewOf(pageRoute);
+
+  /** Opens a dialog's address, remembering the page under it. */
+  const openOver = (path: string) =>
+    navigate(path, { state: { back: opened?.back && settingsTab ? opened.back : location.pathname + location.search } });
+  /** Closes a dialog: Back to the page it was opened from, or to `page` when it was opened by its address. */
+  const closeTo = (page: string) => (opened?.back ? navigate(-1) : navigate(page, { replace: true }));
+  const setView = (next: View) => {
+    if (typeof next === "number") return navigate(paths.setup(next));
+    if (next === "group-new") return openOver(paths.newGroup);
+    if (next.startsWith("group-edit:")) return openOver(paths.group(next.slice(11), true));
+    if (next.startsWith("group:")) return navigate(paths.group(next.slice(6)));
+    if (next === "guide") return navigate(paths.guide(0));
+    navigate(next === "types" ? paths.types() : next === "availability" ? paths.availability : next === "groups" ? paths.groups : paths.home);
+  };
+  const openSettings = (tab: SettingsTab) => openOver(paths.settings(tab));
 
   const calendar = calendars ? pickCalendar(calendars, availability) : null;
   // A calendar can look connected after Google stopped accepting its sign-in, so Home asks the server. Asked again
@@ -124,15 +164,44 @@ const Setup = ({
   const done = [isConnected(calendar), !!availability?.appointment_time_slot.length, isSetUp(availability)];
   const setUp = isSetUp(availability);
   const step = typeof view === "number" ? view : null;
+  const firstUnfinished = !done[0] ? 0 : !done[1] ? 1 : 2;
+
+  // Until setup is finished, the app's sections aren't there yet: go to the first unfinished step. A step further
+  // than that can't open yet either.
+  const loaded = !!calendars;
+  // The Google guide and credentials are for System Managers; anyone else goes where they would have.
+  const adminRoute = pageRoute.screen === "guide" || pageRoute.screen === "credentials";
+  const isAdmin = user.isSystemManager;
+  useEffect(() => {
+    if (!loaded || loadError) return;
+    if (step !== null) {
+      if (step === -1) navigate(setUp ? paths.home : paths.setup(firstUnfinished), { replace: true });
+      else if (!setUp && step > firstUnfinished) navigate(paths.setup(firstUnfinished), { replace: true });
+    } else if (adminRoute && !isAdmin) {
+      navigate(setUp ? paths.home : paths.setup(firstUnfinished), { replace: true });
+    } else if (!setUp && !adminRoute) {
+      navigate(paths.setup(firstUnfinished), { replace: true });
+    }
+  }, [loaded, loadError, setUp, firstUnfinished, step, adminRoute, isAdmin, navigate]);
+
+  // A meeting type opens in the editor by its id; one that's gone shows the list.
+  const editRoute = pageRoute.screen === "types" ? pageRoute.edit : undefined;
+  const savedTypes = availability?.available_durations ?? [];
+  const editingType =
+    editRoute === "new" ? "new" : editRoute ? savedTypes.find((t) => t.name === editRoute)?.name ?? null : null;
+  const unknownType = !!availability && !!editRoute && !editingType;
+  useEffect(() => {
+    if (unknownType) navigate(paths.types(), { replace: true });
+  }, [unknownType, navigate]);
 
   /** The sidebar and the Settings menu item, once setup is finished. */
   const appNav = (current?: string): FrameNav =>
     setUp
       ? {
-          openSections: Object.keys(SECTION_VIEWS),
+          openSections: Object.keys(SECTION_PATHS),
           current,
-          onOpen: (section) => setView(SECTION_VIEWS[section]),
-          onSettings: () => setSettingsTab("booking"),
+          onOpen: (section) => location.pathname !== SECTION_PATHS[section] && navigate(SECTION_PATHS[section]),
+          onSettings: () => openSettings("booking"),
         }
       : {};
 
@@ -181,11 +250,11 @@ const Setup = ({
           user={user}
           availability={availability}
           calendarConnected={isConnected(calendar) && googleAccepts?.message !== false}
-          onReconnect={() => setSettingsTab("calendar")}
+          onReconnect={() => openSettings("calendar")}
         />
       </>
     );
-  } else if (calendars && step !== null) {
+  } else if (calendars && step !== null && step >= 0) {
     content = (
       <>
         {step < DONE && <Stepper steps={STEPS} current={step} done={done} />}
@@ -229,7 +298,7 @@ const Setup = ({
             onBack={() => setView(1)}
           />
         )}
-        {step === DONE && availability?.slug && <DoneStep slug={availability.slug} onHome={() => setView("home")} />}
+        {step === DONE && availability?.slug && <DoneStep slug={availability.slug} onHome={() => navigate(paths.home)} />}
       </>
     );
   }
@@ -246,9 +315,9 @@ const Setup = ({
             user={user}
             name={null}
             zoomReady={zoomReady}
-            onSaved={(saved) => setView(`group:${saved}`)}
-            onCancel={() => setView("groups")}
-            onDeleted={() => setView("groups")}
+            onSaved={(saved) => navigate(paths.group(saved), { replace: true })}
+            onCancel={() => closeTo(paths.groups)}
+            onDeleted={() => navigate(paths.groups, { replace: true })}
           />
         )}
       </>
@@ -264,9 +333,9 @@ const Setup = ({
           user={user}
           name={name}
           nav={appNav("Group meetings")}
-          onBack={() => setView("groups")}
+          onBack={() => navigate(paths.groups)}
           onEdit={() => setView(`group-edit:${name}`)}
-          onReconnect={() => setSettingsTab("calendar")}
+          onReconnect={() => openSettings("calendar")}
           calendarVersion={calendar?.modified}
         />
         {editing && (
@@ -274,17 +343,28 @@ const Setup = ({
             user={user}
             name={name}
             zoomReady={zoomReady}
-            onSaved={() => setView(`group:${name}`)}
-            onCancel={() => setView(`group:${name}`)}
-            onDeleted={() => setView("groups")}
+            onSaved={() => closeTo(paths.group(name))}
+            onCancel={() => closeTo(paths.group(name))}
+            onDeleted={() => navigate(paths.groups, { replace: true })}
           />
         )}
       </>
     );
-  } else if (view === "guide") {
-    page = <AdminSetup user={user} startAt="guide" nav={appNav()} onDone={() => setView("home")} />;
+  } else if (view === "guide" && isAdmin) {
+    page = <AdminSetup user={user} nav={appNav()} onDone={() => navigate(paths.home)} />;
   } else if (view === "types" && availability && !loadError) {
-    page = <MeetingTypes user={user} availability={availability} nav={appNav("Meeting types")} onChanged={load} />;
+    page = (
+      <MeetingTypes
+        user={user}
+        availability={availability}
+        nav={appNav("Meeting types")}
+        editing={editingType}
+        onEdit={(name) =>
+          (name ? openOver(paths.types(name)) : closeTo(paths.types()))
+        }
+        onChanged={load}
+      />
+    );
   } else if (view === "availability" && availability && !loadError) {
     page = (
       <AvailabilityPage
@@ -344,14 +424,11 @@ const Setup = ({
           calendar={calendar}
           zoomReady={zoomReady}
           tab={settingsTab}
-          onTab={setSettingsTab}
+          onTab={(tab) => navigate(paths.settings(tab), { replace: true, state: location.state })}
           onChanged={load}
           onSiteChanged={onStatusChanged}
-          onOpenGuide={() => {
-            setSettingsTab(null);
-            setView("guide");
-          }}
-          onClose={() => setSettingsTab(null)}
+          onOpenGuide={() => navigate(paths.guide(0), { replace: true })}
+          onClose={() => closeTo(paths.home)}
         />
       )}
     </>

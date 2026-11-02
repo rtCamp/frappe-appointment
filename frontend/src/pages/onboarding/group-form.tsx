@@ -5,6 +5,7 @@
  */
 import { useContext, useEffect, useState } from "react";
 import { Check, ChevronDown, LoaderCircle, Trash2 } from "lucide-react";
+import { useLocation, useSearchParams } from "react-router-dom";
 import { FrappeConfig, FrappeContext, useFrappeGetCall } from "frappe-react-sdk";
 
 import { cn } from "@/lib/utils";
@@ -19,8 +20,17 @@ import {
   SessionUser,
   errorText,
 } from "./api";
-import { BREAKS, LENGTHS, WHOLE_NUMBER } from "./booking-rules";
-import { Field, NumberInput, SecondsSelect, fieldClass } from "./form-fields";
+import {
+  BREAKS,
+  Length,
+  WHOLE_NUMBER,
+  customLengthError,
+  firstDayNote,
+  lastDayNote,
+  lengthSeconds,
+  savedLength,
+} from "./booking-rules";
+import { DateHint, Field, LengthField, NumberInput, SecondsSelect, fieldClass } from "./form-fields";
 import { PeopleList } from "./group-people";
 import { Button, ConfirmDialog, Modal, Notice, Switch } from "./ui";
 import { PROVIDERS, Provider, isMeetingLink, providersFor } from "./video";
@@ -28,7 +38,7 @@ import { PROVIDERS, Provider, isMeetingLink, providersFor } from "./video";
 interface Form {
   groupName: string;
   people: GroupPerson[];
-  duration: number;
+  length: Length;
   buffer: number;
   provider: Provider;
   meetLink: string;
@@ -46,7 +56,7 @@ const toForm = (detail: GroupDetail | null, me: GroupPerson): Form => {
   return {
     groupName: doc?.group_name ?? "",
     people: detail?.people ?? [me],
-    duration: doc?.duration_for_event ?? 30 * 60,
+    length: savedLength(doc?.duration_for_event ?? 30 * 60),
     buffer: doc?.minimum_buffer_time ?? 0,
     // The doctype defaults to "Custom" with no link; a new group starts on Google Meet instead.
     provider: (doc ? doc.meet_provider || "None" : "Google Meet") as Provider,
@@ -67,12 +77,13 @@ const STEPS = [
 ];
 const LAST_STEP = STEPS.length - 1;
 
-type FormErrors = Partial<Record<"groupName" | "people" | "meetLink" | "notice" | "window" | "max" | "reschedHours", string>>;
+type FormErrors = Partial<Record<"groupName" | "people" | "length" | "meetLink" | "notice" | "window" | "max" | "reschedHours", string>>;
 
 /** The step each field is on, so a check can send people back to it. */
 const STEP_OF: Record<keyof FormErrors, number> = {
   groupName: 0,
   people: 0,
+  length: 1,
   meetLink: 1,
   notice: 2,
   window: 2,
@@ -98,6 +109,10 @@ const checkForm = (form: Form): FormErrors => {
     errors.people = "At least one person has to be required.";
   }
 
+  const lengthError = customLengthError(form.length);
+  if (lengthError) {
+    errors.length = lengthError;
+  }
   if (form.provider === "Custom" && !isMeetingLink(form.meetLink)) {
     errors.meetLink = "Enter a full link that starts with https://";
   }
@@ -213,9 +228,22 @@ const GroupForm = ({
 
   const [form, setForm] = useState<Form | null>(name ? null : toForm(null, me));
   const [templates, setTemplates] = useState<string[]>([]);
-  const [step, setStep] = useState(0);
-  // A new group only reaches a step through the ones before it.
+  // A new group only reaches a step through the ones before it, so a new group opened by its address starts at the
+  // first step: what was typed before isn't kept.
   const [furthest, setFurthest] = useState(isNew ? 0 : LAST_STEP);
+  // The step is in the address (?step=2), replaced rather than added, so closing the dialog goes straight back.
+  const [params, setParams] = useSearchParams();
+  const { state } = useLocation();
+  // Steps are numbered from 1 in the address; anything else opens the first step.
+  const stepParam = params.get("step") ?? "";
+  const asked = /^[1-9]\d*$/.test(stepParam) ? Number(stepParam) - 1 : 0;
+  const step = Math.min(asked, furthest);
+  const setStep = (next: number) => setParams({ step: String(next + 1) }, { replace: true, state });
+
+  // A step that can't open yet, or isn't a step, is corrected in the address.
+  useEffect(() => {
+    if (params.has("step") && stepParam !== String(step + 1)) setParams({ step: String(step + 1) }, { replace: true, state });
+  }, [params, stepParam, step, setParams, state]);
   // Errors show on the steps someone has tried to leave or save.
   const [checkedUpTo, setCheckedUpTo] = useState(-1);
   const [saving, setSaving] = useState(false);
@@ -261,6 +289,8 @@ const GroupForm = ({
   const providers = providersFor(zoomReady, detail ? savedProvider : "Google Meet");
   const errors = checkForm(form);
   const shown = (key: keyof FormErrors) => (STEP_OF[key] <= checkedUpTo ? errors[key] : undefined);
+  const firstDay = firstDayNote(form.notice);
+  const lastDay = lastDayNote(form.notice, form.window);
 
   const goTo = (next: number) => {
     setStep(next);
@@ -284,7 +314,7 @@ const GroupForm = ({
     const values: Partial<AppointmentGroup> = {
       group_name: form.groupName.trim(),
       members: form.people.map((p) => ({ user: p.availability, is_mandatory: p.is_mandatory })),
-      duration_for_event: form.duration,
+      duration_for_event: lengthSeconds(form.length),
       minimum_buffer_time: form.buffer || null,
       meet_provider: form.provider,
       meet_link: form.provider === "Custom" ? form.meetLink.trim() : "",
@@ -439,9 +469,7 @@ const GroupForm = ({
       {step === 1 && (
         <>
           <div className="grid grid-cols-2 max-sm:grid-cols-1 gap-4">
-            <Field id="group-length" label="Length">
-              <SecondsSelect id="group-length" value={form.duration} choices={LENGTHS} onChange={(duration) => set({ duration })} />
-            </Field>
+            <LengthField id="group-length" value={form.length} onChange={(length) => set({ length })} error={shown("length")} />
             <Field id="group-break" label="Break between meetings">
               <SecondsSelect id="group-break" value={form.buffer} choices={BREAKS} none="No break" onChange={(buffer) => set({ buffer })} />
             </Field>
@@ -500,9 +528,9 @@ const GroupForm = ({
             </Field>
           )}
           <div className="flex flex-col gap-1">
-            <span className="text-es-sm text-ink-gray-6">Calendar and organiser</span>
+            <span className="text-es-sm text-ink-gray-6">Calendar and organizer</span>
             <span className="text-es-base text-ink-gray-8">
-              {owner === user.name ? "Your Google Calendar, with you as the organiser" : `${detail?.doc.event_creator}, organised by ${detail?.doc.event_organizer ?? "—"}`}
+              {owner === user.name ? "Your Google Calendar, with you as the organizer" : `${detail?.doc.event_creator}, organized by ${detail?.doc.event_organizer ?? "—"}`}
             </span>
             <span className="text-es-p-sm text-ink-gray-5">Bookings are added to this calendar, and invites come from it.</span>
           </div>
@@ -512,10 +540,10 @@ const GroupForm = ({
       {step === 2 && (
         <>
           <div className="grid grid-cols-2 max-sm:grid-cols-1 gap-4">
-            <Field id="group-notice" label="Earliest booking" hint="Days from today. 0 allows same-day bookings." error={shown("notice")}>
+            <Field id="group-notice" label="Earliest booking" hint={firstDay && <DateHint note={firstDay} />} error={shown("notice")}>
               <NumberInput id="group-notice" value={form.notice} placeholder="0" error={shown("notice")} onChange={(notice) => set({ notice })} />
             </Field>
-            <Field id="group-window" label="Book up to" hint="Days ahead, counted from the earliest booking day." error={shown("window")}>
+            <Field id="group-window" label="Book up to" hint={lastDay && <DateHint note={lastDay} />} error={shown("window")}>
               <NumberInput id="group-window" value={form.window} placeholder="No limit" error={shown("window")} onChange={(window) => set({ window })} />
             </Field>
             <Field id="group-max" label="Max per day" error={shown("max")}>

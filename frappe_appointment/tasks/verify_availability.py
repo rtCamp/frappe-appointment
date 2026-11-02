@@ -80,10 +80,11 @@ def verify_appointment_group_members_availabililty():
 def send_availability_email(data):
     if not data:
         return
-    for appointment_group in data:
+    alerting_groups = frappe.get_all(
+        "Appointment Group", filters={"name": ["in", list(data)], "send_email_alerts": 1}, pluck="name"
+    )
+    for appointment_group in alerting_groups:
         doc = frappe.get_doc("Appointment Group", appointment_group)
-        if not doc.send_email_alerts:
-            continue
         min_slot_threshold = doc.min_slot_threshold
         total_slots = sum(data[appointment_group].values())
         if min_slot_threshold >= 0 and total_slots > min_slot_threshold:
@@ -104,11 +105,10 @@ def send_availability_email(data):
         daywise_slots_data += "</ul>"
 
         email_addresses = [doc.email_address_to_send]
-        for member in doc.members:
-            if member.is_mandatory:
-                user = frappe.get_doc("User", member.user)
-                if user.email:
-                    email_addresses.append(user.email)
+        mandatory_members = [member.user for member in doc.members if member.is_mandatory]
+        if mandatory_members:
+            member_emails = frappe.get_all("User", filters={"name": ["in", mandatory_members]}, pluck="email")
+            email_addresses.extend(email for email in member_emails if email)
 
         send_email_template_mail(
             doc,

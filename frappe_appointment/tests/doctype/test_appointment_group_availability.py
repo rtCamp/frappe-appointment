@@ -1,10 +1,13 @@
 import datetime
+from unittest.mock import patch
 
+import frappe
 import pytz
 from frappe.tests import IntegrationTestCase
-from frappe.utils import add_days, add_to_date, get_datetime
+from frappe.utils import add_days, add_to_date, get_datetime, getdate
 
 from frappe_appointment.frappe_appointment.doctype.appointment_group.appointment_group import (
+    _get_time_slots_for_day,
     check_availability,
     get_avaiable_time_slot_for_day,
     get_booking_frequency_reached,
@@ -13,6 +16,7 @@ from frappe_appointment.frappe_appointment.doctype.appointment_group.appointment
     get_next_round_value,
     get_previous_available_day,
     get_response_body,
+    get_time_slots_for_given_date,
     get_user_time_slots,
     hours_to_time_slot,
     is_member_on_leave_or_is_holiday,
@@ -20,7 +24,7 @@ from frappe_appointment.frappe_appointment.doctype.appointment_group.appointment
     update_cal_slots_with_events,
     vaild_date,
 )
-from frappe_appointment.helpers.utils import convert_timezone_to_utc
+from frappe_appointment.helpers.utils import convert_timezone_to_utc, get_utc_datatime_with_time
 from frappe_appointment.tests import (
     make_appointment_group,
     make_approved_leave,
@@ -31,7 +35,24 @@ from frappe_appointment.tests import (
     make_user_availability,
 )
 
+AG = "frappe_appointment.frappe_appointment.doctype.appointment_group.appointment_group"
+
 FIXED = get_datetime("2027-01-15 00:00:00")
+
+
+def _with_extra_rows(doctype, *rows):
+    """Patch frappe.get_all to add `rows` to reads of `doctype`.
+
+    They stand in for rows the database matches by accents or trailing spaces alone, which a member's
+    name or an employee's doesn't equal in Python.
+    """
+    get_all = frappe.get_all
+
+    def get_all_with_rows(dt, *args, **kwargs):
+        result = get_all(dt, *args, **kwargs)
+        return result + [frappe._dict(row) for row in rows] if dt == doctype else result
+
+    return patch("frappe.get_all", side_effect=get_all_with_rows)
 
 
 def _slot(start, end):
@@ -109,6 +130,32 @@ class TestCheckAvailability(IntegrationTestCase):
         res = check_availability(self._valid_dvo(), "Monday", self.disjoint_group)
         self.assertFalse(res["is_slots_available"])
         self.assertTrue(res["is_invalid_date"])
+
+    def test_member_name_case_differs(self):
+        """5.10 a member row whose name differs from its availability only in case still gets its hours."""
+        user = "test_fa_ca_case@example.com"
+        make_user_availability(user, slug="fa-ca-case")
+        group = make_appointment_group("FA CA Case", members=[user])
+        frappe.db.set_value("Members", {"parent": group.name}, "user", user.upper())
+        group = frappe.get_doc("Appointment Group", group.name)
+        res = check_availability(self._valid_dvo(), "Monday", group)
+        self.assertEqual(res["available_days"], {"Monday", "Tuesday", "Wednesday", "Thursday", "Friday"})
+
+    def test_hours_of_a_near_match_are_skipped(self):
+        """5.11 hours whose availability only nearly matches a member's name are skipped, not an error."""
+        group = frappe.get_doc("Appointment Group", self.group.name)
+        near_match = {"parent": "tést_fa_ca_weekdays@example.com", "day": "Saturday"}
+        with _with_extra_rows("Appointment Time Slot", near_match | {"start_time": "09:00:00", "end_time": "17:00:00"}):
+            res = check_availability(self._valid_dvo(), "Monday", group)
+        self.assertEqual(res["available_days"], {"Monday", "Tuesday", "Wednesday", "Thursday", "Friday"})
+
+    def test_weekly_hours_read_once_per_group(self):
+        """5.9 the members' weekly hours are read once per group object, not once per day."""
+        group = frappe.get_doc("Appointment Group", self.disjoint_group.name)
+        check_availability(self._valid_dvo(), "Monday", group)
+        with self.assertQueryCount(0):
+            res = check_availability(self._valid_dvo(), "Tuesday", group)
+        self.assertFalse(res["available_days"])
 
 
 class TestValidDate(IntegrationTestCase):
@@ -345,6 +392,22 @@ class TestMemberLeaveOrHoliday(IntegrationTestCase):
 
         cls.no_emp_group = make_appointment_group("FA NoEmp Grp", members=[cls.no_emp_user])
 
+        cls.far_holiday_user = "test_fa_far_holiday@example.com"
+        make_user_availability(cls.far_holiday_user, slug="fa-far-holiday")
+        far_holiday_list = make_holiday_list(
+            "FA HL Far", holidays=[("2027-02-10", "Founders Day"), ("2027-06-15", "Midsummer")]
+        )
+        make_employee(cls.far_holiday_user, holiday_list=far_holiday_list.name)
+        cls.far_holiday_group = make_appointment_group("FA Far Holiday Grp", members=[cls.far_holiday_user])
+
+        # The Employee's company email differs from the member only in case.
+        cls.case_user = "test_fa_case_leave@example.com"
+        make_user_availability(cls.case_user, slug="fa-case-leave")
+        case_emp = make_employee(cls.case_user)
+        frappe.db.set_value("Employee", case_emp.name, "company_email", cls.case_user.upper())
+        make_approved_leave(case_emp.name, "2027-03-01", "2027-03-01")
+        cls.case_group = make_appointment_group("FA Case Leave Grp", members=[cls.case_user])
+
     def test_approved_leave_marks_unavailable(self):
         """10.1 an Approved leave covering the date returns True."""
         self.assertTrue(is_member_on_leave_or_is_holiday(self.leave_group, datetime.date(2027, 2, 2)))
@@ -360,3 +423,116 @@ class TestMemberLeaveOrHoliday(IntegrationTestCase):
     def test_member_without_employee_available(self):
         """10.4 a member with no Employee record returns False."""
         self.assertFalse(is_member_on_leave_or_is_holiday(self.no_emp_group, datetime.date(2027, 2, 2)))
+
+    def test_member_without_employee_does_not_hide_others_leave(self):
+        """10.9 a member with no Employee record listed first doesn't stop the next member's leave counting."""
+        group = make_appointment_group("FA NoEmp Then Leave Grp", members=[self.no_emp_user, self.leave_user])
+        self.assertTrue(is_member_on_leave_or_is_holiday(group, datetime.date(2027, 2, 2)))
+
+    def test_leave_of_a_near_match_is_skipped(self):
+        """10.10 leave whose employee only nearly matches a member's employee is skipped, not an error."""
+        group = frappe.get_doc("Appointment Group", self.free_group.name)
+        near_match = {"employee": "HR-EMP-NEAR-MATCH ", "from_date": getdate("2027-02-20")}
+        with _with_extra_rows("Leave Application", near_match | {"to_date": getdate("2027-02-20")}):
+            self.assertFalse(is_member_on_leave_or_is_holiday(group, datetime.date(2027, 2, 20)))
+
+    def test_days_in_window_read_once(self):
+        """10.5 leave and holidays are read once for the window; later days in it need no queries."""
+        group = frappe.get_doc("Appointment Group", self.leave_group.name)
+        # The leave started on 2027-02-01, before the window opens on 2027-02-02.
+        self.assertTrue(is_member_on_leave_or_is_holiday(group, datetime.date(2027, 2, 2)))
+        with self.assertQueryCount(0):
+            self.assertTrue(is_member_on_leave_or_is_holiday(group, datetime.date(2027, 2, 3)))
+            self.assertFalse(is_member_on_leave_or_is_holiday(group, datetime.date(2027, 2, 4)))
+
+    def test_day_past_window_reads_again(self):
+        """10.6 a day past the window reads that day's leave and holidays instead of reusing the old window."""
+        group = frappe.get_doc("Appointment Group", self.far_holiday_group.name)
+        self.assertTrue(is_member_on_leave_or_is_holiday(group, datetime.date(2027, 2, 10)))
+        self.assertTrue(is_member_on_leave_or_is_holiday(group, datetime.date(2027, 6, 15)))
+
+    def test_day_before_window_reads_again(self):
+        """10.8 a day before the window (the day-before lookup) reads that day instead of reusing the window."""
+        group = frappe.get_doc("Appointment Group", self.far_holiday_group.name)
+        self.assertFalse(is_member_on_leave_or_is_holiday(group, datetime.date(2027, 2, 11)))
+        self.assertTrue(is_member_on_leave_or_is_holiday(group, datetime.date(2027, 2, 10)))
+
+    def test_company_email_matches_case_insensitively(self):
+        """10.7 an Employee whose company email differs from the member only in case still counts."""
+        self.assertTrue(is_member_on_leave_or_is_holiday(self.case_group, datetime.date(2027, 3, 1)))
+
+
+class TestSlotCalculation(IntegrationTestCase):
+    """A whole day's slot calculation on real members, with only the Google Calendar read patched out."""
+
+    MONDAY, HOLIDAY_TUESDAY, WEDNESDAY, THURSDAY = "2027-03-01", "2027-03-02", "2027-03-03", "2027-03-04"
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        # The early member works Mon-Fri 09:00-17:00 and has a holiday on the Tuesday.
+        cls.early_user = "test_fa_sc_early@example.com"
+        make_user_availability(cls.early_user, slug="fa-sc-early")
+        holiday_list = make_holiday_list("FA SC HL", holidays=[(cls.HOLIDAY_TUESDAY, "SC Day")])
+        make_employee(cls.early_user, holiday_list=holiday_list.name)
+
+        # The late member works 11:00-15:00 on every weekday but Wednesday.
+        cls.late_user = "test_fa_sc_late@example.com"
+        make_user_availability(
+            cls.late_user,
+            slug="fa-sc-late",
+            days=[(d, "11:00:00", "15:00:00") for d in ["Monday", "Tuesday", "Thursday", "Friday"]],
+        )
+        make_employee(cls.late_user)
+
+        cls.group = make_appointment_group("FA SC Group", members=[cls.early_user, cls.late_user])
+
+    def _slots(self, group, day):
+        with patch(f"{AG}.get_all_unavailable_google_calendar_slots_for_day", return_value=[]):
+            return get_time_slots_for_given_date(group, get_datetime(day))
+
+    def _fresh_group(self):
+        return frappe.get_doc("Appointment Group", self.group.name)
+
+    def test_shared_hours_set_the_day_window(self):
+        """11.1 a day runs from the latest start to the earliest end of the mandatory members' hours."""
+        res = self._slots(self._fresh_group(), self.MONDAY)
+        start = get_utc_datatime_with_time(get_datetime(self.MONDAY), "11:00:00")
+        end = get_utc_datatime_with_time(get_datetime(self.MONDAY), "15:00:00")
+        self.assertFalse(res["is_invalid_date"])
+        self.assertEqual((res["starttime"], res["endtime"]), (start, end))
+        self.assertEqual(res["total_slots_for_day"], 8)
+        self.assertEqual(res["all_available_slots_for_data"][0]["start_time"], start)
+        self.assertEqual(res["all_available_slots_for_data"][-1]["end_time"], end)
+        self.assertEqual(res["available_days"], {"Monday", "Tuesday", "Thursday", "Friday"})
+
+    def test_day_a_member_does_not_work_has_no_slots(self):
+        """11.2 a weekday one mandatory member doesn't work is invalid and points to the next shared day."""
+        res = self._slots(self._fresh_group(), self.WEDNESDAY)
+        self.assertTrue(res["is_invalid_date"])
+        self.assertEqual(res["total_slots_for_day"], 0)
+        self.assertEqual(getdate(res["next_valid_date"]), getdate(self.THURSDAY))
+
+    def test_member_holiday_has_no_slots(self):
+        """11.3 a mandatory member's holiday leaves the day with no slots."""
+        res = self._slots(self._fresh_group(), self.HOLIDAY_TUESDAY)
+        self.assertEqual(res["total_slots_for_day"], 0)
+        self.assertEqual(res["all_available_slots_for_data"], [])
+
+    def test_one_group_across_days_matches_fresh_groups(self):
+        """11.4 one group object reused across days gives the same result as a fresh group for each day."""
+        days = [self.MONDAY, self.HOLIDAY_TUESDAY, self.WEDNESDAY, self.THURSDAY, self.MONDAY]
+        reused = self._fresh_group()
+        for day in days:
+            with self.subTest(day=day):
+                self.assertEqual(self._slots(reused, day), self._slots(self._fresh_group(), day))
+
+    def test_guest_timezone_paths(self):
+        """11.5 the day-before (ahead of UTC) and day-after (behind UTC) paths give the same slots."""
+        with patch(f"{AG}.get_all_unavailable_google_calendar_slots_for_day", return_value=[]):
+            for offset in ("330", "-300"):
+                with self.subTest(offset=offset):
+                    monday = _get_time_slots_for_day(self._fresh_group(), self.MONDAY, offset)
+                    holiday = _get_time_slots_for_day(self._fresh_group(), self.HOLIDAY_TUESDAY, offset)
+                    self.assertEqual(monday["total_slots_for_day"], 8)
+                    self.assertEqual(holiday["total_slots_for_day"], 0)

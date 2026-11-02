@@ -14,37 +14,73 @@ from frappe_appointment.overrides.event_override import _create_event_for_appoin
 # Upper bound on the caller-supplied `start_date`..`end_date` window walked by `get_time_slots`.
 MAX_RANGE_DAYS = 62
 
+# The User Appointment Availability columns `create_dummy_appointment_group` and the booking flow read.
+AVAILABILITY_FIELDS = [
+    "name",
+    "user",
+    "slug",
+    "google_calendar",
+    "meeting_provider",
+    "meeting_link",
+    "response_email_template",
+]
+
+
+def fill_off_message(message: str | None, owner: dict) -> str | None:
+    """The owner's message for a switched-off booking page, with {name}, {first_name} and {email} filled in.
+    A plain text swap, not a template, so guests can't run anything through it. None when there's no message."""
+    message = (message or "").strip()
+    if not message:
+        return None
+    full_name = owner.get("full_name") or ""
+    return (
+        message.replace("{first_name}", owner.get("first_name") or full_name)
+        .replace("{name}", full_name)
+        .replace("{email}", owner.get("email") or "")
+    )
+
 
 @frappe.whitelist(allow_guest=True)  # nosemgrep
 @rate_limit(limit=100, seconds=60 * 60)
 @add_response_code
 def get_meeting_windows(slug: str):
     user_availability = frappe.get_all(
-        "User Appointment Availability", filters={"slug": slug, "enable_scheduling": 1}, fields=["*"]
+        "User Appointment Availability",
+        filters={"slug": slug, "enable_scheduling": 1},
+        fields=["name", "user", "meeting_provider"],
     )
     if not user_availability:
         # A page that exists but is switched off says so, with whose it is, instead of looking like a broken link.
-        paused_user = frappe.db.get_value("User Appointment Availability", {"slug": slug}, "user")
-        if paused_user:
-            full_name = frappe.db.get_value("User", paused_user, "full_name")
-            return {"error": "Not accepting bookings", "not_accepting": True, "full_name": full_name}, 404
+        paused = frappe.db.get_value(
+            "User Appointment Availability", {"slug": slug}, ["user", "off_message"], as_dict=True
+        )
+        if paused and paused.user:
+            owner = frappe.db.get_value("User", paused.user, ["full_name", "first_name", "email"], as_dict=True) or {}
+            return {
+                "error": "Not accepting bookings",
+                "not_accepting": True,
+                "full_name": owner.get("full_name"),
+                "message": fill_off_message(paused.off_message, owner),
+            }, 404
         return {"error": "No user found"}, 404
     user_availability = user_availability[0]
     user = user_availability.get("user")
     if not user:
         return {"error": "No user found"}, 404
 
-    user = frappe.get_doc("User", user)
+    profile = frappe.db.get_value("User", user, ["full_name", "user_image", "banner_image"], as_dict=True)
+    if not profile:
+        return {"error": "No user found"}, 404
 
-    full_name = user.get("full_name")
-    profile_pic = user.get("user_image")
-    banner_image = user.get("banner_image")
+    full_name = profile.full_name
+    profile_pic = profile.user_image
+    banner_image = profile.banner_image
     position = None
     company = None
 
     installed_apps = frappe.get_installed_apps()
     if "erpnext" in installed_apps:
-        employee = frappe.get_all("Employee", filters={"user_id": user.name}, fields=["*"])
+        employee = frappe.get_all("Employee", filters={"user_id": user}, fields=["designation", "company"])
         if employee:
             employee = employee[0]
             position = employee.get("designation")
@@ -52,8 +88,12 @@ def get_meeting_windows(slug: str):
 
     meeting_provider = user_availability.get("meeting_provider")
 
+    # In the order the owner arranged them in /schedule (the table's row order).
     all_durations = frappe.get_all(
-        "Appointment Slot Duration", filters={"parent": user_availability.get("name")}, fields=["*"]
+        "Appointment Slot Duration",
+        filters={"parent": user_availability.get("name")},
+        fields=["name", "title", "duration"],
+        order_by="idx asc",
     )
 
     durations = [
@@ -95,7 +135,7 @@ def get_time_slots(
     user_availability = frappe.get_all(
         "User Appointment Availability",
         filters={"name": duration.get("parent"), "enable_scheduling": 1},
-        fields=["*"],
+        fields=AVAILABILITY_FIELDS,
     )
 
     if not user_availability:
@@ -182,7 +222,7 @@ def book_time_slot(
     user_availability = frappe.get_all(
         "User Appointment Availability",
         filters={"name": duration.get("parent"), "enable_scheduling": 1},
-        fields=["*"],
+        fields=AVAILABILITY_FIELDS,
     )
 
     if not user_availability:
@@ -300,7 +340,7 @@ def get_all_timezones():
 @frappe.whitelist()
 def get_schedular_link(user: str):
     user_availability = frappe.get_all(
-        "User Appointment Availability", filters={"user": user, "enable_scheduling": 1}, fields=["*"]
+        "User Appointment Availability", filters={"user": user, "enable_scheduling": 1}, fields=["name", "slug"]
     )
     if not user_availability:
         return {"error": "No user found"}, 404

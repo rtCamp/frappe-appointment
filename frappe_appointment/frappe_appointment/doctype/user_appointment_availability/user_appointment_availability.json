@@ -15,6 +15,7 @@
   "personal_meetings_section",
   "enable_scheduling",
   "slug",
+  "off_message",
   "column_break_lser",
   "meeting_provider",
   "meeting_link",
@@ -61,6 +62,13 @@
    "read_only_depends_on": "eval:!doc.enable_scheduling;"
   },
   {
+   "description": "Shown on the booking page while bookings are off. {name}, {first_name} and {email} are filled in. Empty shows the default message.",
+   "fieldname": "off_message",
+   "fieldtype": "Small Text",
+   "hidden": 1,
+   "label": "Message While Off"
+  },
+  {
    "fieldname": "column_break_lser",
    "fieldtype": "Column Break"
   },
@@ -105,7 +113,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-02-20 12:47:50.808412",
+ "modified": "2026-11-02 18:00:00.000000",
  "modified_by": "Administrator",
  "module": "Frappe Appointment",
  "name": "User Appointment Availability",
