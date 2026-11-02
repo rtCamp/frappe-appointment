@@ -15,7 +15,7 @@ import Booking from "./components/booking";
 import SocialProfiles from "./components/socialProfiles";
 import { useAppContext } from "@/context/app";
 import { Skeleton } from "@/components/skeleton";
-import { getLocalTimezone } from "@/lib/utils";
+import { DEFAULT_OFF_MESSAGE, getLocalTimezone, splitEmails } from "@/lib/utils";
 import PoweredBy from "@/components/powered-by";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/tooltip";
 import Typography from "@/components/typography";
@@ -43,7 +43,8 @@ const Appointment = () => {
     setMeetingDurationCards,
   } = useAppContext();
   // The owner's name when their booking page is switched off.
-  const [notAccepting, setNotAccepting] = useState<string | null>(null);
+  // Whose page is switched off, and what it says: their own message, or the default one.
+  const [notAccepting, setNotAccepting] = useState<{ name: string; message: string } | null>(null);
 
   const { data, isLoading, error } = useFrappeGetCall(
     "frappe_appointment.api.personal_meet.get_meeting_windows",
@@ -80,9 +81,10 @@ const Appointment = () => {
     }
     // A page that exists but is switched off says so instead of showing a 404. The SDK types `message` as text, but
     // this endpoint's error reply is an object.
-    const reply = error?.message as unknown as { not_accepting?: boolean; full_name?: string } | undefined;
+    const reply = error?.message as unknown as { not_accepting?: boolean; full_name?: string; message?: string | null } | undefined;
     if (reply?.not_accepting) {
-      setNotAccepting(reply.full_name || "This person");
+      const name = reply.full_name || "This person";
+      setNotAccepting({ name, message: reply.message || DEFAULT_OFF_MESSAGE.replace("{name}", name) });
     } else if (error) {
       navigate("/not-found", { replace: true });
     }
@@ -91,15 +93,22 @@ const Appointment = () => {
   if (notAccepting) {
     return (
       <div className="flex items-center justify-center min-h-screen px-4 py-12">
-        <MetaTags title={`${notAccepting} | Appointment`} description={`${notAccepting} isn't taking bookings right now`} />
+        <MetaTags title={`${notAccepting.name} | Appointment`} description={`${notAccepting.name} isn't taking bookings right now`} />
         <div className="max-w-md flex flex-col items-center gap-3 text-center">
           <CalendarX className="h-8 w-8 text-gray-500 dark:text-gray-400" />
           <Typography variant="h2" className="text-2xl font-semibold">
             Not taking bookings right now
           </Typography>
-          <Typography className="text-gray-600 dark:text-gray-400">
-            {notAccepting} isn't accepting bookings at the moment. Please check back later, or get in touch with them
-            directly.
+          <Typography className="text-gray-600 dark:text-gray-400 whitespace-pre-line break-words">
+            {splitEmails(notAccepting.message).map((part, i) =>
+              part.email ? (
+                <a key={i} href={`mailto:${part.text}`} className="text-blue-600 dark:text-blue-400 underline">
+                  {part.text}
+                </a>
+              ) : (
+                part.text
+              )
+            )}
           </Typography>
         </div>
       </div>

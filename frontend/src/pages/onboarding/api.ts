@@ -97,6 +97,8 @@ export interface Availability {
   appointment_time_slot: TimeSlot[];
   enable_scheduling: 0 | 1;
   slug: string | null;
+  /** Shown to guests while enable_scheduling is off; empty for the default message. */
+  off_message: string | null;
   meeting_provider: "None" | "Custom" | "Zoom" | "Google Meet" | "" | null;
   meeting_link: string | null;
   response_email_template: string | null;
