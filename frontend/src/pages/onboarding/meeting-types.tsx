@@ -368,7 +368,8 @@ const MeetingTypes = ({
 
   /** Saves a new order at once: the rows go back in this order and Frappe renumbers idx, which guests follow. */
   const reorder = async (names: string[], moved: MeetingType) => {
-    if (names.join() === types.map((t) => t.name).join()) return;
+    // One order saves at a time: each save sends the whole list, so two at once could land out of order.
+    if (pendingOrder || names.join() === types.map((t) => t.name).join()) return;
     setPendingOrder(names);
     setOrderSaved(false);
     setOrderError(null);
@@ -389,6 +390,10 @@ const MeetingTypes = ({
   const names = types.map((t) => t.name ?? "");
 
   const onDragStart = (e: DragEvent<HTMLButtonElement>, t: MeetingType) => {
+    if (pendingOrder) {
+      e.preventDefault();
+      return;
+    }
     e.dataTransfer.effectAllowed = "move";
     e.dataTransfer.setData("text/plain", t.name ?? "");
     // Drag the whole row, not just the grip.
