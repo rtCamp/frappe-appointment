@@ -8,6 +8,9 @@ export const BREAKS = [0, 5, 10, 15, 20, 30, 45, 60].map((m) => m * 60);
 
 export const WHOLE_NUMBER = /^\d+$/;
 
+/** What's left of typed or pasted text once everything but digits is dropped, for fields that only take whole numbers. */
+export const digitsOnly = (text: string) => text.replace(/\D/g, "");
+
 /** A meeting length: one of LENGTHS, or Custom… with typed minutes. */
 export interface Length {
   seconds: number;

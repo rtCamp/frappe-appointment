@@ -7,7 +7,7 @@ import { ArrowRight, ChevronDown } from "lucide-react";
 
 import { cn, lengthInWords } from "@/lib/utils";
 import { durationLabel } from "./api";
-import { LENGTHS, Length, RuleDate, WHOLE_NUMBER, savedLength } from "./booking-rules";
+import { LENGTHS, Length, RuleDate, WHOLE_NUMBER, digitsOnly, savedLength } from "./booking-rules";
 
 export const fieldClass =
   "h-7 px-2 rounded-lg border border-transparent bg-surface-gray-2 text-es-base text-ink-gray-8 placeholder:text-ink-gray-4 hover:bg-surface-gray-3 focus:outline-none focus:bg-surface-base focus:border-outline-gray-4 focus:shadow-es-focus";
@@ -143,7 +143,7 @@ export const CustomLength = ({
           value={value.customMinutes}
           aria-invalid={!!error}
           aria-describedby={error ? `${id}-error` : undefined}
-          onChange={(e) => onChange({ ...value, customMinutes: e.target.value })}
+          onChange={(e) => onChange({ ...value, customMinutes: digitsOnly(e.target.value) })}
           className={cn(fieldClass, "w-16 text-right tabular-nums", error && "border-ink-red-7")}
         />
         <span className="text-es-base text-ink-gray-7">minutes</span>
@@ -205,7 +205,7 @@ export const NumberInput = ({
     value={value}
     placeholder={placeholder}
     aria-invalid={!!error}
-    onChange={(e) => onChange(e.target.value)}
+    onChange={(e) => onChange(digitsOnly(e.target.value))}
     className={cn(fieldClass, "tabular-nums", error && "border-ink-red-7")}
   />
 );

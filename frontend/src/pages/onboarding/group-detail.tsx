@@ -207,7 +207,8 @@ const Alerts = ({ detail, canPickEmail, onSaved }: { detail: GroupDetail; canPic
               type="text"
               inputMode="numeric"
               value={threshold}
-              onChange={(e) => setThreshold(e.target.value)}
+              // Whole numbers, and a leading minus for -1.
+              onChange={(e) => setThreshold(e.target.value.replace(/[^\d-]/g, "").replace(/(?!^)-/g, ""))}
               aria-invalid={!thresholdOk}
               className={cn(fieldClass, "w-24 tabular-nums", !thresholdOk && "border-ink-red-7")}
             />
