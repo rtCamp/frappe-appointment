@@ -1,6 +1,6 @@
 /**
- * Availability: the time zone and weekly hours once setup is finished, saved from the header.
- * Leaving for another section with unsaved changes asks first.
+ * Availability: the time zone and weekly hours once setup is finished, saved at the end of the page, next to the
+ * hours. Leaving for another section with unsaved changes asks first.
  */
 import { useContext, useEffect, useState } from "react";
 import { Check, LoaderCircle } from "lucide-react";
@@ -75,24 +75,6 @@ const AvailabilityPage = ({
       width="page"
       {...nav}
       onOpen={onOpen && ((section) => section !== "Availability" && askFirst(() => onOpen(section)))}
-      headerAction={
-        <span className="flex items-center gap-2">
-          {dirty ? (
-            <span className="text-es-sm text-ink-gray-5">Unsaved changes</span>
-          ) : (
-            saved && (
-              <span role="status" className="inline-flex items-center gap-1 text-es-sm text-ink-gray-5">
-                <Check className="w-3.5 h-3.5" aria-hidden="true" />
-                Saved
-              </span>
-            )
-          )}
-          <Button variant={dirty && valid ? "solid" : "subtle"} onClick={save} disabled={!dirty || !valid || saving}>
-            {saving && <LoaderCircle className="w-4 h-4 animate-spin" aria-hidden="true" />}
-            Save
-          </Button>
-        </span>
-      }
     >
       <HoursEditor
         hours={hours}
@@ -106,6 +88,29 @@ const AvailabilityPage = ({
           {error}
         </Notice>
       )}
+
+      <div className="flex flex-wrap items-center justify-end gap-2">
+        {dirty ? (
+          <>
+            <span className="text-es-sm text-ink-gray-5">Unsaved changes</span>
+            {/* Puts back what's saved without asking: only what was just typed is lost. */}
+            <Button onClick={() => (hours.discard(), setError(null))} disabled={saving}>
+              Discard
+            </Button>
+          </>
+        ) : (
+          saved && (
+            <span role="status" className="inline-flex items-center gap-1 text-es-sm text-ink-gray-5">
+              <Check className="w-3.5 h-3.5" aria-hidden="true" />
+              Saved
+            </span>
+          )
+        )}
+        <Button variant={dirty && valid ? "solid" : "subtle"} onClick={save} disabled={!dirty || !valid || saving}>
+          {saving && <LoaderCircle className="w-4 h-4 animate-spin" aria-hidden="true" />}
+          Save
+        </Button>
+      </div>
 
       {leaving && (
         <ConfirmDialog
