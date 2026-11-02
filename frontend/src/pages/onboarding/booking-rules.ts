@@ -8,6 +8,28 @@ export const BREAKS = [0, 5, 10, 15, 20, 30, 45, 60].map((m) => m * 60);
 
 export const WHOLE_NUMBER = /^\d+$/;
 
+/** A meeting length: one of LENGTHS, or Custom… with typed minutes. */
+export interface Length {
+  seconds: number;
+  custom: boolean;
+  customMinutes: string;
+}
+
+export const savedLength = (seconds: number): Length => ({ seconds, custom: false, customMinutes: "" });
+
+/** The length to save, in seconds. */
+export const lengthSeconds = (length: Length) => (length.custom ? Number(length.customMinutes.trim()) * 60 : length.seconds);
+
+/** What's wrong with a custom length. 0 has to be blocked: slots are made by stepping through your hours by the length. */
+export const customLengthError = (length: Length) => {
+  if (!length.custom) return undefined;
+  const minutes = length.customMinutes.trim();
+  if (!minutes) return "Enter a length in minutes.";
+  if (!WHOLE_NUMBER.test(minutes)) return "Use whole minutes, like 95.";
+  if (Number(minutes) === 0) return "Enter more than 0 minutes.";
+  return undefined;
+};
+
 export const daysLabel = (n: number) => (n === 1 ? "1 day" : `${n} days`);
 
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];

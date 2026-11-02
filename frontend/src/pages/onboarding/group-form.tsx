@@ -19,8 +19,17 @@ import {
   SessionUser,
   errorText,
 } from "./api";
-import { BREAKS, LENGTHS, WHOLE_NUMBER, firstDayNote, lastDayNote } from "./booking-rules";
-import { Field, NumberInput, DateHint, SecondsSelect, fieldClass } from "./form-fields";
+import {
+  BREAKS,
+  Length,
+  WHOLE_NUMBER,
+  customLengthError,
+  firstDayNote,
+  lastDayNote,
+  lengthSeconds,
+  savedLength,
+} from "./booking-rules";
+import { DateHint, Field, LengthField, NumberInput, SecondsSelect, fieldClass } from "./form-fields";
 import { PeopleList } from "./group-people";
 import { Button, ConfirmDialog, Modal, Notice, Switch } from "./ui";
 import { PROVIDERS, Provider, isMeetingLink, providersFor } from "./video";
@@ -28,7 +37,7 @@ import { PROVIDERS, Provider, isMeetingLink, providersFor } from "./video";
 interface Form {
   groupName: string;
   people: GroupPerson[];
-  duration: number;
+  length: Length;
   buffer: number;
   provider: Provider;
   meetLink: string;
@@ -46,7 +55,7 @@ const toForm = (detail: GroupDetail | null, me: GroupPerson): Form => {
   return {
     groupName: doc?.group_name ?? "",
     people: detail?.people ?? [me],
-    duration: doc?.duration_for_event ?? 30 * 60,
+    length: savedLength(doc?.duration_for_event ?? 30 * 60),
     buffer: doc?.minimum_buffer_time ?? 0,
     // The doctype defaults to "Custom" with no link; a new group starts on Google Meet instead.
     provider: (doc ? doc.meet_provider || "None" : "Google Meet") as Provider,
@@ -67,12 +76,13 @@ const STEPS = [
 ];
 const LAST_STEP = STEPS.length - 1;
 
-type FormErrors = Partial<Record<"groupName" | "people" | "meetLink" | "notice" | "window" | "max" | "reschedHours", string>>;
+type FormErrors = Partial<Record<"groupName" | "people" | "length" | "meetLink" | "notice" | "window" | "max" | "reschedHours", string>>;
 
 /** The step each field is on, so a check can send people back to it. */
 const STEP_OF: Record<keyof FormErrors, number> = {
   groupName: 0,
   people: 0,
+  length: 1,
   meetLink: 1,
   notice: 2,
   window: 2,
@@ -98,6 +108,10 @@ const checkForm = (form: Form): FormErrors => {
     errors.people = "At least one person has to be required.";
   }
 
+  const lengthError = customLengthError(form.length);
+  if (lengthError) {
+    errors.length = lengthError;
+  }
   if (form.provider === "Custom" && !isMeetingLink(form.meetLink)) {
     errors.meetLink = "Enter a full link that starts with https://";
   }
@@ -286,7 +300,7 @@ const GroupForm = ({
     const values: Partial<AppointmentGroup> = {
       group_name: form.groupName.trim(),
       members: form.people.map((p) => ({ user: p.availability, is_mandatory: p.is_mandatory })),
-      duration_for_event: form.duration,
+      duration_for_event: lengthSeconds(form.length),
       minimum_buffer_time: form.buffer || null,
       meet_provider: form.provider,
       meet_link: form.provider === "Custom" ? form.meetLink.trim() : "",
@@ -441,9 +455,7 @@ const GroupForm = ({
       {step === 1 && (
         <>
           <div className="grid grid-cols-2 max-sm:grid-cols-1 gap-4">
-            <Field id="group-length" label="Length">
-              <SecondsSelect id="group-length" value={form.duration} choices={LENGTHS} onChange={(duration) => set({ duration })} />
-            </Field>
+            <LengthField id="group-length" value={form.length} onChange={(length) => set({ length })} error={shown("length")} />
             <Field id="group-break" label="Break between meetings">
               <SecondsSelect id="group-break" value={form.buffer} choices={BREAKS} none="No break" onChange={(buffer) => set({ buffer })} />
             </Field>

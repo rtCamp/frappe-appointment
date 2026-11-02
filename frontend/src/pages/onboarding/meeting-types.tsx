@@ -3,11 +3,11 @@
  * available_durations rows of the user's availability), edited in a dialog.
  */
 import { DragEvent, KeyboardEvent, useContext, useEffect, useRef, useState } from "react";
-import { ArrowRight, Check, Copy, ExternalLink, GripVertical, LoaderCircle, MoreHorizontal, Pencil, Plus, Trash2 } from "lucide-react";
+import { Check, Copy, ExternalLink, GripVertical, LoaderCircle, MoreHorizontal, Pencil, Plus, Trash2 } from "lucide-react";
 import { FrappeConfig, FrappeContext } from "frappe-react-sdk";
 import * as Popover from "@radix-ui/react-popover";
 
-import { cn, lengthInWords } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import {
   AVAILABILITY,
   Availability,
@@ -19,8 +19,18 @@ import {
   siteNow,
   slotsAsText,
 } from "./api";
-import { BREAKS, LENGTHS, WHOLE_NUMBER, daysLabel, firstDayNote, lastDayNote } from "./booking-rules";
-import { Field, NumberInput, DateHint, SecondsSelect, fieldClass } from "./form-fields";
+import {
+  BREAKS,
+  Length,
+  WHOLE_NUMBER,
+  customLengthError,
+  daysLabel,
+  firstDayNote,
+  lastDayNote,
+  lengthSeconds,
+  savedLength,
+} from "./booking-rules";
+import { DateHint, Field, LengthField, NumberInput, SecondsSelect, fieldClass } from "./form-fields";
 import { Frame, FrameNav } from "./frame";
 import { buttonClass } from "./styles";
 import { Button, ConfirmDialog, Modal, Notice, Pill, Switch } from "./ui";
@@ -32,10 +42,7 @@ const hasLimit = (t: MeetingType) => t.limit_booking_frequency != null && t.limi
 
 interface Form {
   title: string;
-  duration: number;
-  /** Custom… is picked: the length comes from customMinutes instead. */
-  custom: boolean;
-  customMinutes: string;
+  length: Length;
   buffer: number;
   notice: string;
   window: string;
@@ -49,9 +56,7 @@ type FormErrors = Partial<Record<keyof Form, string>>;
 /** A new type starts from the doctype's defaults. */
 const toForm = (t?: MeetingType): Form => ({
   title: t?.title ?? "",
-  duration: t?.duration ?? 30 * 60,
-  custom: false,
-  customMinutes: "",
+  length: savedLength(t?.duration ?? 30 * 60),
   buffer: t?.minimum_buffer_time ?? 0,
   notice: t?.minimum_notice_before_event ? String(t.minimum_notice_before_event) : "",
   window: t?.availability_window && t.availability_window > 0 ? String(t.availability_window) : "",
@@ -64,13 +69,8 @@ const check = (f: Form): FormErrors => {
   const errors: FormErrors = {};
   const notWhole = (value: string) => !!value.trim() && !WHOLE_NUMBER.test(value.trim());
   if (!f.title.trim()) errors.title = "Give it a name.";
-  if (f.custom) {
-    const minutes = f.customMinutes.trim();
-    // 0 has to be blocked: slots are made by stepping through your hours by the length.
-    if (!minutes) errors.customMinutes = "Enter a length in minutes.";
-    else if (!WHOLE_NUMBER.test(minutes)) errors.customMinutes = "Use whole minutes, like 95.";
-    else if (Number(minutes) === 0) errors.customMinutes = "Enter more than 0 minutes.";
-  }
+  const lengthError = customLengthError(f.length);
+  if (lengthError) errors.length = lengthError;
   if (notWhole(f.notice)) errors.notice = "Enter a whole number of days.";
   if (notWhole(f.window)) errors.window = "Enter a whole number of days, or leave it blank.";
   if (f.max.trim() && (!WHOLE_NUMBER.test(f.max.trim()) || Number(f.max) < 1))
@@ -82,7 +82,7 @@ const check = (f: Form): FormErrors => {
 const fromForm = (f: Form, saved?: MeetingType): MeetingType => ({
   ...(saved?.name ? { name: saved.name } : {}),
   title: f.title.trim(),
-  duration: f.custom ? Number(f.customMinutes.trim()) * 60 : f.duration,
+  duration: lengthSeconds(f.length),
   minimum_buffer_time: f.buffer || null,
   minimum_notice_before_event: f.notice.trim() ? Number(f.notice) : 0,
   availability_window: f.window.trim() ? Number(f.window) : null,
@@ -188,49 +188,7 @@ const Editor = ({
             className={cn(fieldClass, errors.title && "border-ink-red-7")}
           />
         </Field>
-        <div className="flex flex-col gap-1.5">
-          <Field id="mt-length" label="Length">
-            <SecondsSelect
-              id="mt-length"
-              value={form.duration}
-              choices={LENGTHS}
-              custom={{ open: form.custom, onOpen: () => set({ custom: true, customMinutes: String(Math.round(form.duration / 60)) }) }}
-              onChange={(duration) => set({ duration, custom: false })}
-              className="w-48"
-            />
-          </Field>
-          {form.custom && (
-            <div className="flex flex-col gap-1.5">
-              <div className="flex flex-wrap items-center gap-2">
-                <label htmlFor="mt-custom" className="text-es-base text-ink-gray-7">
-                  Custom length:
-                </label>
-                <input
-                  id="mt-custom"
-                  type="text"
-                  inputMode="numeric"
-                  value={form.customMinutes}
-                  aria-invalid={!!errors.customMinutes}
-                  aria-describedby={errors.customMinutes ? "mt-custom-error" : undefined}
-                  onChange={(e) => set({ customMinutes: e.target.value })}
-                  className={cn(fieldClass, "w-16 text-right tabular-nums", errors.customMinutes && "border-ink-red-7")}
-                />
-                <span className="text-es-base text-ink-gray-7">minutes</span>
-                {WHOLE_NUMBER.test(form.customMinutes.trim()) && Number(form.customMinutes) > 0 && (
-                  <span className="inline-flex items-center gap-2 text-es-base text-ink-gray-5 tabular-nums">
-                    <ArrowRight className="w-3.5 h-3.5" aria-hidden="true" />
-                    {lengthInWords(Number(form.customMinutes))}
-                  </span>
-                )}
-              </div>
-              {errors.customMinutes && (
-                <span id="mt-custom-error" role="alert" className="text-es-p-sm text-ink-red-7">
-                  {errors.customMinutes}
-                </span>
-              )}
-            </div>
-          )}
-        </div>
+        <LengthField id="mt-length" value={form.length} onChange={(length) => set({ length })} error={errors.length} className="w-48" />
       </div>
 
       <section className="flex flex-col gap-4">

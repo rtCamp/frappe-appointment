@@ -4,7 +4,7 @@
  * meeting types (available_durations). Finishing turns the booking page on.
  */
 import { useContext, useState } from "react";
-import { ChevronDown, LoaderCircle, Plus, Trash2 } from "lucide-react";
+import { LoaderCircle, Plus, Trash2 } from "lucide-react";
 import { FrappeConfig, FrappeContext } from "frappe-react-sdk";
 
 import { cn } from "@/lib/utils";
@@ -16,22 +16,19 @@ import {
   GOOGLE_CALENDAR,
   MeetingType,
   NOT_YOURS,
-  durationLabel,
   errorText,
   isNotYours,
   slotsAsText,
   slugify,
 } from "../api";
-import { LENGTHS as LENGTH_SECONDS } from "../booking-rules";
+import { Length, customLengthError, lengthSeconds, savedLength } from "../booking-rules";
+import { CustomLength, LengthSelect } from "../form-fields";
 import SlugField from "../slug-field";
 import { Button, Notice, StepHeader } from "../ui";
 import { useSlugCheck } from "../use-slug-check";
 import VideoPicker from "../video-picker";
 import { Provider, isEmail, isMeetingLink, providersFor, savedProviderOf } from "../video";
 
-// The same choices as the meeting type editor, in minutes.
-const LENGTHS = LENGTH_SECONDS.map((s) => s / 60);
-const minutesLabel = (m: number) => durationLabel(m * 60);
 
 /** Values a new meeting type starts with: the doctype's defaults. */
 const NEW_TYPE_DEFAULTS = {
@@ -46,13 +43,13 @@ const NEW_TYPE_DEFAULTS = {
 interface TypeRow {
   key: number;
   title: string;
-  minutes: number;
+  length: Length;
   /** The saved row, so its breaks, notice and rescheduling settings go back unchanged. */
   saved?: MeetingType;
 }
 
 let nextKey = 0;
-const row = (title: string, minutes: number, saved?: MeetingType): TypeRow => ({ key: ++nextKey, title, minutes, saved });
+const row = (title: string, seconds: number, saved?: MeetingType): TypeRow => ({ key: ++nextKey, title, length: savedLength(seconds), saved });
 
 const fieldClass =
   "h-7 px-2 rounded-lg border border-transparent bg-surface-gray-2 text-es-base text-ink-gray-8 placeholder:text-ink-gray-4 hover:bg-surface-gray-3 focus:outline-none focus:bg-surface-base focus:border-outline-gray-4 focus:shadow-es-focus";
@@ -88,8 +85,8 @@ const BookingStep = ({
 
   const [types, setTypes] = useState<TypeRow[]>(() =>
     availability.available_durations.length
-      ? availability.available_durations.map((d) => row(d.title, Math.round(d.duration / 60), d))
-      : [row("Quick chat", 15), row("Meeting", 30)]
+      ? availability.available_durations.map((d) => row(d.title, d.duration, d))
+      : [row("Quick chat", 15 * 60), row("Meeting", 30 * 60)]
   );
 
   const [saving, setSaving] = useState(false);
@@ -101,7 +98,7 @@ const BookingStep = ({
   const linkOk = slugCheck.ok;
   const meetingLinkOk = provider !== "Custom" || isMeetingLink(meetingLink);
   const zoomEmailOk = provider !== "Zoom" || isEmail(zoomEmail);
-  const typesOk = types.length > 0 && types.every((t) => t.title.trim());
+  const typesOk = types.length > 0 && types.every((t) => t.title.trim() && !customLengthError(t.length));
   const zoomOff = provider === "Zoom" && !zoomReady;
   const canFinish = linkOk && meetingLinkOk && zoomEmailOk && typesOk && !zoomOff;
 
@@ -133,7 +130,7 @@ const BookingStep = ({
                 minimum_notice_for_reschedule: t.saved.minimum_notice_for_reschedule,
               }
             : NEW_TYPE_DEFAULTS;
-          return { ...kept, title: t.title.trim(), duration: t.minutes * 60 };
+          return { ...kept, title: t.title.trim(), duration: lengthSeconds(t.length) };
         }),
         appointment_time_slot: slotsAsText(availability),
       });
@@ -178,48 +175,48 @@ const BookingStep = ({
         </div>
         <div className="flex flex-col gap-2 mt-1">
           {types.map((t, i) => (
-            <div key={t.key} className="flex items-center gap-2">
-              <input
-                type="text"
-                aria-label={`Meeting type ${i + 1} name`}
-                value={t.title}
-                onChange={(e) => setType(t.key, { title: e.target.value })}
-                placeholder="Intro call"
-                aria-invalid={!t.title.trim()}
-                className={cn(fieldClass, "flex-1 min-w-0")}
-              />
-              <span className="relative w-48 shrink-0">
-                <select
-                  aria-label={`Meeting type ${i + 1} length`}
-                  value={t.minutes}
-                  onChange={(e) => setType(t.key, { minutes: Number(e.target.value) })}
-                  className={cn(fieldClass, "w-full pr-7 appearance-none tabular-nums cursor-pointer")}
+            <div key={t.key} className="flex flex-col gap-1.5">
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  aria-label={`Meeting type ${i + 1} name`}
+                  value={t.title}
+                  onChange={(e) => setType(t.key, { title: e.target.value })}
+                  placeholder="Intro call"
+                  aria-invalid={!t.title.trim()}
+                  className={cn(fieldClass, "flex-1 min-w-0")}
+                />
+                <LengthSelect
+                  id={`setup-length-${t.key}`}
+                  label={`Meeting type ${i + 1} length`}
+                  value={t.length}
+                  onChange={(length) => setType(t.key, { length })}
+                  className="w-48 shrink-0"
+                />
+                <Button
+                  variant="ghost"
+                  className="w-7 px-0"
+                  aria-label={`Remove meeting type ${i + 1}`}
+                  disabled={types.length === 1}
+                  onClick={() => setTypes((current) => current.filter((x) => x.key !== t.key))}
                 >
-                  {(LENGTHS.includes(t.minutes) ? LENGTHS : [t.minutes, ...LENGTHS]).map((m) => (
-                    <option key={m} value={m}>
-                      {minutesLabel(m)}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown className="absolute right-2 top-1.5 w-4 h-4 text-ink-gray-4 pointer-events-none" aria-hidden="true" />
-              </span>
-              <Button
-                variant="ghost"
-                className="w-7 px-0"
-                aria-label={`Remove meeting type ${i + 1}`}
-                disabled={types.length === 1}
-                onClick={() => setTypes((current) => current.filter((x) => x.key !== t.key))}
-              >
-                <Trash2 className="w-4 h-4" aria-hidden="true" />
-              </Button>
+                  <Trash2 className="w-4 h-4" aria-hidden="true" />
+                </Button>
+              </div>
+              <CustomLength
+                id={`setup-length-${t.key}-custom`}
+                value={t.length}
+                onChange={(length) => setType(t.key, { length })}
+                error={customLengthError(t.length)}
+              />
             </div>
           ))}
         </div>
-        <Button variant="ghost" className="self-start" onClick={() => setTypes((current) => [...current, row("", 30)])}>
+        <Button variant="ghost" className="self-start" onClick={() => setTypes((current) => [...current, row("", 30 * 60)])}>
           <Plus className="w-4 h-4" aria-hidden="true" />
           Add meeting type
         </Button>
-        {!typesOk && <span className="text-es-p-sm text-ink-red-7">Give every meeting type a name.</span>}
+        {!types.every((t) => t.title.trim()) && <span className="text-es-p-sm text-ink-red-7">Give every meeting type a name.</span>}
       </section>
 
       {error && (
