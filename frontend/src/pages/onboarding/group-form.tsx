@@ -5,6 +5,7 @@
  */
 import { useContext, useEffect, useState } from "react";
 import { Check, ChevronDown, LoaderCircle, Trash2 } from "lucide-react";
+import { useLocation, useSearchParams } from "react-router-dom";
 import { FrappeConfig, FrappeContext, useFrappeGetCall } from "frappe-react-sdk";
 
 import { cn } from "@/lib/utils";
@@ -227,9 +228,19 @@ const GroupForm = ({
 
   const [form, setForm] = useState<Form | null>(name ? null : toForm(null, me));
   const [templates, setTemplates] = useState<string[]>([]);
-  const [step, setStep] = useState(0);
-  // A new group only reaches a step through the ones before it.
+  // A new group only reaches a step through the ones before it, so a new group opened by its address starts at the
+  // first step: what was typed before isn't kept.
   const [furthest, setFurthest] = useState(isNew ? 0 : LAST_STEP);
+  // The step is in the address (?step=2), replaced rather than added, so closing the dialog goes straight back.
+  const [params, setParams] = useSearchParams();
+  const { state } = useLocation();
+  const asked = Number(params.get("step")) - 1;
+  const step = Math.min(Math.max(asked, 0), furthest);
+  const setStep = (next: number) => setParams({ step: String(next + 1) }, { replace: true, state });
+
+  useEffect(() => {
+    if (params.has("step") && asked !== step) setParams({ step: String(step + 1) }, { replace: true, state });
+  }, [params, asked, step, setParams, state]);
   // Errors show on the steps someone has tried to leave or save.
   const [checkedUpTo, setCheckedUpTo] = useState(-1);
   const [saving, setSaving] = useState(false);

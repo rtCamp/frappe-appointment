@@ -4,6 +4,7 @@
  */
 import { ReactNode, useContext, useEffect, useState } from "react";
 import { ChevronDown, Info, LoaderCircle } from "lucide-react";
+import { useLocation, useSearchParams } from "react-router-dom";
 import { FrappeConfig, FrappeContext, useFrappeGetCall } from "frappe-react-sdk";
 
 import { cn } from "@/lib/utils";
@@ -71,7 +72,11 @@ const organizerLabel = (detail: GroupDetail, me: string) => {
 };
 
 const Bookings = ({ user, group, people }: { user: SessionUser; group: string; people: GroupPerson[] }) => {
-  const [past, setPast] = useState(false);
+  // Past bookings are /schedule/groups/<name>?show=past, so a refresh stays on them.
+  const [params, setParams] = useSearchParams();
+  const { state } = useLocation();
+  const past = params.get("show") === "past";
+  const setPast = (on: boolean) => setParams(on ? { show: "past" } : {}, { replace: true, state });
   const { data, isLoading } = useFrappeGetCall<{ message: GroupBooking[] }>(GET_GROUP_BOOKINGS, { group, past: past ? 1 : 0 }, undefined, {
     revalidateOnFocus: false,
   });

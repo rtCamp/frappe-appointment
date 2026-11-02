@@ -2,6 +2,7 @@
  * /schedule: where people set up their booking page. A gate card first decides whether they
  * can start; then the setup steps.
  */
+import { useLocation } from "react-router-dom";
 import { useFrappeGetCall } from "frappe-react-sdk";
 
 import MetaTags from "@/components/meta-tags";
@@ -9,6 +10,8 @@ import { ONBOARDING_STATUS, OnboardingStatus, SessionUser, getSessionUser } from
 import { LoadErrorGate, LoginGate, NotReadyGate, WebsiteUserGate } from "./gate";
 import Setup from "./setup";
 import AdminSetup from "./admin";
+import { parsePath } from "./routes";
+import NotFound from "@/pages/notFound";
 import "@/styles/espresso.css";
 
 const SignedIn = ({ user }: { user: SessionUser }) => {
@@ -30,6 +33,8 @@ const SignedIn = ({ user }: { user: SessionUser }) => {
 
 const Onboarding = () => {
   const user = getSessionUser();
+  const { pathname } = useLocation();
+  if (!parsePath(pathname)) return <NotFound />;
   return (
     <>
       <MetaTags title="Appointments" description="Set up your booking page" />

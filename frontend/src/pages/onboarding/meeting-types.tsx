@@ -322,17 +322,20 @@ const MeetingTypes = ({
   user,
   availability,
   nav,
+  editing,
+  onEdit: setEditing,
   onChanged,
 }: {
   user: SessionUser;
   availability: Availability;
   nav: FrameNav;
+  /** The row open in the editor (by name), "new", or nothing. It lives in the address, /schedule/meeting-types/<id>. */
+  editing: string | null;
+  onEdit: (name: string | null) => void;
   /** Reloads the availability after a save. */
   onChanged: () => Promise<void>;
 }) => {
   const { db } = useContext(FrappeContext) as FrappeConfig;
-  // The row being edited (by name), "new", or nothing.
-  const [editing, setEditing] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<MeetingType | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -456,9 +459,9 @@ const MeetingTypes = ({
         return;
       }
       await saveTypes(types.filter((x) => x.name !== t.name));
-      await onChanged();
       setDeleting(null);
-      setEditing(null);
+      if (editing) setEditing(null);
+      await onChanged();
     } catch (err) {
       setDeleteError(errorText(err));
     } finally {

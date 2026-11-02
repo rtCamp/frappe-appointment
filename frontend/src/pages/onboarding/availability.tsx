@@ -1,8 +1,9 @@
 /**
  * Availability: the time zone and weekly hours once setup is finished, saved at the end of the page, next to the
- * hours. Leaving for another section with unsaved changes asks first.
+ * hours. Leaving with unsaved changes asks first, whether by the sidebar, a link or Back.
  */
 import { useContext, useEffect, useState } from "react";
+import { useBlocker } from "react-router-dom";
 import { Check, LoaderCircle } from "lucide-react";
 import { FrappeConfig, FrappeContext } from "frappe-react-sdk";
 
@@ -10,6 +11,7 @@ import { Availability, SessionUser, errorText } from "./api";
 import { Frame, FrameNav } from "./frame";
 import HoursEditor from "./hours-editor";
 import { Button, ConfirmDialog, Notice } from "./ui";
+import { paths } from "./routes";
 import { useHours } from "./use-hours";
 
 const AvailabilityPage = ({
@@ -33,9 +35,6 @@ const AvailabilityPage = ({
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  // Where someone tried to go with unsaved changes, waiting for them to confirm.
-  const [leaving, setLeaving] = useState<(() => void) | null>(null);
-
   const dirty = hours.changed;
   const valid = !hours.badDays.length && !hours.noDays;
 
@@ -51,8 +50,10 @@ const AvailabilityPage = ({
     if (dirty) setSaved(false);
   }, [dirty]);
 
-  const askFirst = (go: () => void) => (dirty ? setLeaving(() => go) : go());
-  const { onOpen } = nav;
+  // Settings opens over this page, which stays as it is, so only going somewhere else asks.
+  const leaving = useBlocker(
+    ({ nextLocation }) => dirty && nextLocation.pathname !== paths.availability && !nextLocation.pathname.startsWith("/settings/")
+  );
 
   const save = async () => {
     setError(null);
@@ -74,7 +75,6 @@ const AvailabilityPage = ({
       title="Availability"
       width="page"
       {...nav}
-      onOpen={onOpen && ((section) => section !== "Availability" && askFirst(() => onOpen(section)))}
     >
       <HoursEditor
         hours={hours}
@@ -112,16 +112,12 @@ const AvailabilityPage = ({
         </Button>
       </div>
 
-      {leaving && (
+      {leaving.state === "blocked" && (
         <ConfirmDialog
           title="Leave without saving?"
           confirmLabel="Discard changes"
-          onConfirm={() => {
-            const go = leaving;
-            setLeaving(null);
-            go();
-          }}
-          onCancel={() => setLeaving(null)}
+          onConfirm={() => leaving.proceed()}
+          onCancel={() => leaving.reset()}
         >
           Your changes to your hours haven't been saved.
         </ConfirmDialog>
