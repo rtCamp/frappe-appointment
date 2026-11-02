@@ -17,7 +17,7 @@ import {
 import Typography from "@/components/typography";
 import { useAppContext } from "@/context/app";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/tooltip";
-import { convertMinutesToTimeFormat } from "@/lib/utils";
+import { lengthInWords } from "@/lib/utils";
 
 interface MeetingCardProps {
   title: string;
@@ -38,7 +38,7 @@ const MeetingCard = ({ title, duration, onClick }: MeetingCardProps) => {
         </CardTitle>
         <CardDescription className="flex items-center gap-1">
           <Clock className="w-4 h-4 text-blue-500" />
-          <Typography>{convertMinutesToTimeFormat(duration,true)}</Typography>
+          <Typography>{lengthInWords(duration)}</Typography>
           <span className="mx-1">•</span>
           <Video className="w-4 h-4 text-blue-400" />
           <Typography className="text-blue-400">

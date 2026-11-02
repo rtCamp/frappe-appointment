@@ -174,33 +174,14 @@ export const parseDateString = (dateString: string): Date => {
   }
 };
 
-// Converts Minute string to Hours and Minutes Format (HH:MM)
-export const convertMinutesToTimeFormat = (
-  minutes: number | string,
-  useAbbr: boolean = false
-): string => {
-  try {
-    const totalMinutes =
-      typeof minutes === "string" ? parseInt(minutes, 10) : minutes;
-      
-    if (isNaN(totalMinutes)) {
-      throw new Error("Invalid input: Cannot convert to number");
-    }
-
-    // If minutes less than 60, return as is with "Minute" suffix
-    if (totalMinutes < 60) {
-      return `${totalMinutes} ${useAbbr ? "min" : "Minute"}`;
-    }
-
-    const hours = Math.floor(totalMinutes / 60);
-    const mins = totalMinutes % 60;
-
-    const hoursStr = hours.toString().padStart(2, "0");
-    const minutesStr = mins.toString().padStart(2, "0");
-
-    return `${hoursStr}:${minutesStr} ${useAbbr ? "hr" : "Hour"}`;
-  } catch (error) {
-    console.log(error);
-    return "";
-  }
+/**
+ * A length in words, the way the server's duration_to_string writes it:
+ * "45 minutes", "1 hour", "1 hour 45 minutes".
+ */
+export const lengthInWords = (minutes: number): string => {
+  const total = Math.round(minutes);
+  const hours = Math.floor(total / 60);
+  const rest = total % 60;
+  const part = (n: number, unit: string) => `${n} ${unit}${n === 1 ? "" : "s"}`;
+  return [hours ? part(hours, "hour") : "", rest || !hours ? part(rest, "minute") : ""].filter(Boolean).join(" ");
 };

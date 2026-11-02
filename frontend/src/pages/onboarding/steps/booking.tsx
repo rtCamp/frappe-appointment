@@ -22,13 +22,15 @@ import {
   slotsAsText,
   slugify,
 } from "../api";
+import { LENGTHS as LENGTH_SECONDS } from "../booking-rules";
 import SlugField from "../slug-field";
 import { Button, Notice, StepHeader } from "../ui";
 import { useSlugCheck } from "../use-slug-check";
 import VideoPicker from "../video-picker";
 import { Provider, isEmail, isMeetingLink, providersFor, savedProviderOf } from "../video";
 
-const LENGTHS = [15, 30, 45, 60, 90, 120];
+// The same choices as the meeting type editor, in minutes.
+const LENGTHS = LENGTH_SECONDS.map((s) => s / 60);
 const minutesLabel = (m: number) => durationLabel(m * 60);
 
 /** Values a new meeting type starts with: the doctype's defaults. */
@@ -186,7 +188,7 @@ const BookingStep = ({
                 aria-invalid={!t.title.trim()}
                 className={cn(fieldClass, "flex-1 min-w-0")}
               />
-              <span className="relative w-28 shrink-0">
+              <span className="relative w-48 shrink-0">
                 <select
                   aria-label={`Meeting type ${i + 1} length`}
                   value={t.minutes}

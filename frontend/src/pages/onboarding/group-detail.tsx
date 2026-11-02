@@ -404,10 +404,13 @@ const GroupPage = ({
               <Section title="Details">
                 <dl className="m-0 grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-es-base">
                   <dt className="text-ink-gray-5">Length</dt>
-                  <dd className="m-0">
-                    {durationLabel(doc.duration_for_event)}
-                    {doc.minimum_buffer_time ? `, ${durationLabel(doc.minimum_buffer_time)} break` : ""}
-                  </dd>
+                  <dd className="m-0">{durationLabel(doc.duration_for_event)}</dd>
+                  {!!doc.minimum_buffer_time && (
+                    <>
+                      <dt className="text-ink-gray-5">Break</dt>
+                      <dd className="m-0">{durationLabel(doc.minimum_buffer_time)}</dd>
+                    </>
+                  )}
                   <dt className="text-ink-gray-5">Video</dt>
                   <dd className="m-0">{providerLabel(doc.meet_provider)}</dd>
                   <dt className="text-ink-gray-5">Bookable</dt>

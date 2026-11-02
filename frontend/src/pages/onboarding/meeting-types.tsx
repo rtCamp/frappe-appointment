@@ -175,7 +175,7 @@ const Editor = ({
           />
         </Field>
         <Field id="mt-length" label="Length">
-          <SecondsSelect id="mt-length" value={form.duration} choices={LENGTHS} onChange={(duration) => set({ duration })} className="w-40" />
+          <SecondsSelect id="mt-length" value={form.duration} choices={LENGTHS} onChange={(duration) => set({ duration })} className="w-48" />
         </Field>
       </div>
 

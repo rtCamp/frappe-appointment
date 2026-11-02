@@ -1,4 +1,4 @@
-import { getErrorMessages } from "@/lib/utils";
+import { getErrorMessages, lengthInWords } from "@/lib/utils";
 
 export const ONBOARDING_STATUS = "frappe_appointment.api.onboarding.get_onboarding_status";
 export const GOOGLE_SETUP = "frappe_appointment.api.onboarding.get_google_setup";
@@ -142,11 +142,8 @@ export const slotsAsText = (availability: Availability) =>
     end_time: toServerTime(toInputTime(s.end_time)),
   }));
 
-/** A length in seconds, in words: "30 min", "1 hr", "1 hr 30 min". */
-export const durationLabel = (seconds: number) => {
-  const m = Math.round(seconds / 60);
-  return m < 60 ? `${m} min` : m % 60 === 0 ? `${m / 60} hr` : `${Math.floor(m / 60)} hr ${m % 60} min`;
-};
+/** A length in seconds, in words: "30 minutes", "1 hour", "1 hour 30 minutes". */
+export const durationLabel = (seconds: number) => lengthInWords(seconds / 60);
 
 /** What a booking page offers for video calls, in words. */
 export const providerLabel = (provider: Availability["meeting_provider"]) =>
