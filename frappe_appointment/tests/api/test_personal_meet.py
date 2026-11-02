@@ -49,9 +49,80 @@ class TestGetMeetingWindows(IntegrationTestCase):
         finally:
             frappe.db.set_value("User Appointment Availability", self.user, "enable_scheduling", 1)
         self.assertEqual(
-            result, {"error": "Not accepting bookings", "not_accepting": True, "full_name": "test_fa_pmwin"}
+            result,
+            {"error": "Not accepting bookings", "not_accepting": True, "full_name": "test_fa_pmwin", "message": None},
         )
         self.assertEqual(frappe.local.response.http_status_code, 404)
+
+    def test_switched_off_page_sends_the_owners_message_filled_in(self):
+        """The owner's own message comes back with their name, first name and email filled in."""
+        frappe.db.set_value(
+            "User Appointment Availability",
+            self.user,
+            {
+                "enable_scheduling": 0,
+                "off_message": "{first_name} is away until Monday.\nFor anything urgent, email {email}. ({name})",
+            },
+        )
+        try:
+            result = get_meeting_windows("fa-pmwin")
+        finally:
+            frappe.db.set_value(
+                "User Appointment Availability", self.user, {"enable_scheduling": 1, "off_message": None}
+            )
+        self.assertTrue(result["not_accepting"])
+        self.assertEqual(
+            result["message"],
+            "test_fa_pmwin is away until Monday.\nFor anything urgent, email test_fa_pmwin@example.com. (test_fa_pmwin)",
+        )
+        self.assertEqual(frappe.local.response.http_status_code, 404)
+
+    def test_blank_off_message_falls_back_to_the_default(self):
+        """A message of only spaces counts as none, so the page shows its default text."""
+        frappe.db.set_value("User Appointment Availability", self.user, {"enable_scheduling": 0, "off_message": "   "})
+        try:
+            result = get_meeting_windows("fa-pmwin")
+        finally:
+            frappe.db.set_value(
+                "User Appointment Availability", self.user, {"enable_scheduling": 1, "off_message": None}
+            )
+        self.assertIsNone(result["message"])
+
+    def test_off_message_is_only_sent_while_the_page_is_off(self):
+        """With bookings on, the message stays private: the normal reply has no message in it."""
+        frappe.db.set_value("User Appointment Availability", self.user, "off_message", "Back on Monday.")
+        try:
+            result = get_meeting_windows("fa-pmwin")
+        finally:
+            frappe.db.set_value("User Appointment Availability", self.user, "off_message", None)
+        self.assertNotIn("message", result)
+        self.assertEqual(frappe.local.response.http_status_code, 200)
+
+
+class TestMeetingTypeOrder(IntegrationTestCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.user = "test_fa_pmorder@example.com"
+        make_user_availability(
+            cls.user,
+            slug="fa-pmorder",
+            enable_scheduling=1,
+            durations=[make_slot_duration(title=t) for t in ("First", "Second", "Third")],
+        )
+
+    def test_meeting_types_come_back_in_the_owners_order(self):
+        """The booking page lists meeting types in table order (idx), not by when they were last changed."""
+        rows = frappe.get_all(
+            "Appointment Slot Duration", filters={"parent": self.user}, fields=["name", "title"], order_by="idx asc"
+        )
+        # Reverse the rows, then touch "First" (now last) so a "last modified" order would put it on top.
+        for idx, row in enumerate(reversed(rows), start=1):
+            frappe.db.set_value("Appointment Slot Duration", row.name, "idx", idx, update_modified=False)
+        frappe.db.set_value("Appointment Slot Duration", rows[0].name, "title", "First")
+
+        result = get_meeting_windows("fa-pmorder")
+        self.assertEqual([d["label"] for d in result["durations"]], ["Third", "Second", "First"])
 
 
 class TestGetTimeSlots(IntegrationTestCase):

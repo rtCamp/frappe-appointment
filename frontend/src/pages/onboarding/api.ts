@@ -1,4 +1,4 @@
-import { getErrorMessages } from "@/lib/utils";
+import { getErrorMessages, lengthInWords } from "@/lib/utils";
 
 export const ONBOARDING_STATUS = "frappe_appointment.api.onboarding.get_onboarding_status";
 export const GOOGLE_SETUP = "frappe_appointment.api.onboarding.get_google_setup";
@@ -97,6 +97,8 @@ export interface Availability {
   appointment_time_slot: TimeSlot[];
   enable_scheduling: 0 | 1;
   slug: string | null;
+  /** Shown to guests while enable_scheduling is off; empty for the default message. */
+  off_message: string | null;
   meeting_provider: "None" | "Custom" | "Zoom" | "Google Meet" | "" | null;
   meeting_link: string | null;
   response_email_template: string | null;
@@ -142,11 +144,8 @@ export const slotsAsText = (availability: Availability) =>
     end_time: toServerTime(toInputTime(s.end_time)),
   }));
 
-/** A length in seconds, in words: "30 min", "1 hr", "1 hr 30 min". */
-export const durationLabel = (seconds: number) => {
-  const m = Math.round(seconds / 60);
-  return m < 60 ? `${m} min` : m % 60 === 0 ? `${m / 60} hr` : `${Math.floor(m / 60)} hr ${m % 60} min`;
-};
+/** A length in seconds, in words: "30 minutes", "1 hour", "1 hour 30 minutes". */
+export const durationLabel = (seconds: number) => lengthInWords(seconds / 60);
 
 /** What a booking page offers for video calls, in words. */
 export const providerLabel = (provider: Availability["meeting_provider"]) =>
@@ -302,6 +301,9 @@ export const isNotYours = (err: any) => err?.exc_type === "PermissionError" || e
 export interface SessionUser {
   name: string;
   fullName: string;
+  /** User.first_name and User.email, which the server fills into the off message. */
+  firstName: string;
+  email: string;
   timeZone: string;
   /** The site's time zone, which Datetime fields like Event.starts_on are written in. */
   siteTimeZone: string;
@@ -313,7 +315,7 @@ export interface SessionUser {
 }
 
 interface Boot {
-  user?: { name?: string; can_write?: string[]; can_create?: string[]; roles?: string[] };
+  user?: { name?: string; first_name?: string; email?: string; can_write?: string[]; can_create?: string[]; roles?: string[] };
   user_info?: Record<string, { fullname?: string }>;
   time_zone?: { system?: string; user?: string };
 }
@@ -327,6 +329,8 @@ export const getSessionUser = (): SessionUser | null => {
   return {
     name,
     fullName: boot.user_info?.[name]?.fullname || name,
+    firstName: boot.user?.first_name ?? "",
+    email: boot.user?.email ?? "",
     timeZone: boot.time_zone?.user || boot.time_zone?.system || Intl.DateTimeFormat().resolvedOptions().timeZone,
     siteTimeZone: boot.time_zone?.system || Intl.DateTimeFormat().resolvedOptions().timeZone,
     canWrite: boot.user?.can_write ?? [],

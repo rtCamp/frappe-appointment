@@ -23,6 +23,7 @@ import {
 } from "./api";
 import EmailEditor from "./email-editor";
 import GoogleConnectNotices from "./google-connect-notices";
+import OffMessage from "./off-message";
 import OtherCalendar from "./other-calendar";
 import SlugField from "./slug-field";
 import { DefaultEmailsTab, GoogleTab, ZoomTab } from "./settings-site";
@@ -109,7 +110,7 @@ const BookingTab = ({
 
   return (
     <>
-      <SettingRow title="Accept bookings" description="Turn off to hide your booking page. Group meetings you're part of still work.">
+      <SettingRow title="Accept bookings" last>
         <Switch
           checked={!!availability.enable_scheduling}
           onChange={(on) => save("accepting", { enable_scheduling: on ? 1 : 0 })}
@@ -117,6 +118,12 @@ const BookingTab = ({
           disabled={busy === "accepting"}
         />
       </SettingRow>
+      <OffMessage
+        user={user}
+        saved={availability.off_message ?? ""}
+        busy={busy === "message"}
+        onSave={(message) => save("message", { off_message: message })}
+      />
 
       <div className="flex flex-col gap-1.5 py-4 border-b border-outline-gray-1">
         <label htmlFor="settings-slug" className="text-es-base font-medium text-ink-gray-8">

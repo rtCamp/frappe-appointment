@@ -1,44 +1,44 @@
 /**
  * What a System Manager sees at /schedule while Google isn't set up on the site:
  * the Google Cloud guide, then the credentials screen. Afterwards they carry on with their own setup.
+ * Each has its own address: /schedule/admin/guide/<step> and /schedule/admin/credentials.
  */
-import { useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useFrappeGetCall } from "frappe-react-sdk";
 
 import { GOOGLE_SETUP, GoogleSetup, SessionUser } from "../api";
 import { Frame, FrameNav } from "../frame";
 import { LoadErrorGate } from "../gate";
+import { parsePath, paths } from "../routes";
 import Guide from "./guide";
+import { STEPS } from "./guide-steps";
 import Credentials from "./credentials";
 
-const AdminSetup = ({
-  user,
-  onDone,
-  startAt,
-  nav,
-}: {
-  user: SessionUser;
-  onDone: () => void;
-  /** Open on the guide even when credentials are saved (from Settings, Google). */
-  startAt?: "guide";
-  nav?: FrameNav;
-}) => {
+const AdminSetup = ({ user, onDone, nav }: { user: SessionUser; onDone: () => void; nav?: FrameNav }) => {
   const { data, error, isLoading, mutate } = useFrappeGetCall<{ message: GoogleSetup }>(GOOGLE_SETUP);
   const setup = data?.message;
-  // Credentials already saved (say, for Gmail) but Google turned off: go straight to them.
-  const [view, setView] = useState<"guide" | "credentials" | null>(startAt ?? null);
+  const route = parsePath(useLocation().pathname);
+  const navigate = useNavigate();
 
   if (isLoading) return null;
   if (error || !setup) return <LoadErrorGate onRetry={() => mutate()} />;
 
-  const current = view ?? (setup.client_id && setup.has_client_secret ? "credentials" : "guide");
+  // The address decides; anywhere else, credentials already saved (say, for Gmail) but Google turned off go straight
+  // to them.
+  const current =
+    route?.screen === "guide" || route?.screen === "credentials"
+      ? route.screen
+      : setup.client_id && setup.has_client_secret
+        ? "credentials"
+        : "guide";
+  const step = route?.screen === "guide" ? Math.min(route.step, STEPS.length - 1) : 0;
 
   return (
     <Frame user={user} title="Set up Appointments for your site" width={current === "guide" ? "wide" : "narrow"} {...nav}>
       {current === "guide" ? (
-        <Guide setup={setup} onCredentials={() => setView("credentials")} />
+        <Guide setup={setup} step={step} onStep={(n) => navigate(paths.guide(n))} onCredentials={() => navigate(paths.credentials)} />
       ) : (
-        <Credentials setup={setup} onBack={() => setView("guide")} onContinue={onDone} />
+        <Credentials setup={setup} onBack={() => navigate(paths.guide(STEPS.length - 1))} onContinue={onDone} />
       )}
     </Frame>
   );

@@ -5,8 +5,9 @@
 import { useMemo } from "react";
 import { ChevronDown, Copy } from "lucide-react";
 
-import { cn, getAllSupportedTimeZones } from "@/lib/utils";
+import { getAllSupportedTimeZones } from "@/lib/utils";
 import { Button, Switch } from "./ui";
+import TimeField from "./time-field";
 import { Hours } from "./use-hours";
 
 /** "GMT+5:30" for a time zone, or "" if the browser doesn't know it. */
@@ -21,9 +22,6 @@ const gmtOffset = (timeZone: string) => {
     return "";
   }
 };
-
-const timeInputClass =
-  "w-[124px] h-7 px-2 rounded-lg border border-transparent bg-surface-gray-2 text-es-base tabular-nums text-ink-gray-8 [color-scheme:light] dark:[color-scheme:dark] hover:bg-surface-gray-3 focus:outline-none focus:bg-surface-base focus:border-outline-gray-4 focus:shadow-es-focus";
 
 const HoursEditor = ({
   hours,
@@ -95,22 +93,19 @@ const HoursEditor = ({
                 </span>
                 {d.on ? (
                   <span className="flex items-center gap-2">
-                    <input
-                      type="time"
-                      aria-label={`${d.day} start time`}
+                    <TimeField
+                      label={`${d.day} start time`}
                       value={d.start}
-                      onChange={(e) => setDay(i, { start: e.target.value })}
-                      aria-invalid={bad}
-                      className={cn(timeInputClass, bad && "border-ink-red-7")}
+                      onChange={(start) => setDay(i, { start })}
+                      invalid={bad}
                     />
                     <span className="text-es-sm text-ink-gray-5">to</span>
-                    <input
-                      type="time"
-                      aria-label={`${d.day} end time`}
+                    <TimeField
+                      label={`${d.day} end time`}
                       value={d.end}
-                      onChange={(e) => setDay(i, { end: e.target.value })}
-                      aria-invalid={bad}
-                      className={cn(timeInputClass, bad && "border-ink-red-7")}
+                      after={d.start}
+                      onChange={(end) => setDay(i, { end })}
+                      invalid={bad}
                     />
                   </span>
                 ) : (

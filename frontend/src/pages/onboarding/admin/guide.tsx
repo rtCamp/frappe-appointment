@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import { GoogleSetup } from "../api";
 import { buttonClass } from "../styles";
 import { Button, CopyValue } from "../ui";
+import { STEPS } from "./guide-steps";
 
 const SCREENSHOTS = "/assets/frappe_appointment/images/google-setup";
 const CALENDAR_SCOPE = "https://www.googleapis.com/auth/calendar";
@@ -24,14 +25,6 @@ const NARROW_SCOPES = [
   "calendar.events.owned.readonly",
   "calendar.events.readonly",
 ].map((s) => `https://www.googleapis.com/auth/${s}`);
-
-const STEPS = [
-  { title: "Create a Google Cloud project", where: "Google Cloud console", link: "https://console.cloud.google.com/projectcreate", linkLabel: "Open Google Cloud" },
-  { title: "Set up the consent screen", where: "What people see when they connect", link: "https://console.cloud.google.com/apis/credentials/consent", linkLabel: "Open consent screen" },
-  { title: "Turn on the Calendar API", where: "One click in the API library", link: "https://console.cloud.google.com/apis/library/calendar-json.googleapis.com", linkLabel: "Open Calendar API" },
-  { title: "Create OAuth credentials", where: "Gives you a Client ID and secret", link: "https://console.cloud.google.com/apis/credentials", linkLabel: "Open Credentials" },
-  { title: "Copy the Client ID and secret", where: "You paste them here next", link: "", linkLabel: "" },
-];
 
 const SHOTS: Record<number, { file: string; maxWidth: string; alt: string; caption: string }[]> = {
   0: [{ file: "1-new-project.png", maxWidth: "583px", alt: "Google Cloud New Project form with project name, organization and location filled in", caption: "New project: a name, your organization, and the same organization as the location." }],
@@ -58,8 +51,18 @@ const Hint = ({ children }: { children: ReactNode }) => (
   </div>
 );
 
-const Guide = ({ setup, onCredentials }: { setup: GoogleSetup; onCredentials: () => void }) => {
-  const [current, setCurrent] = useState(0);
+/** step is the open Google Cloud step (0-based); it lives in the address, /schedule/admin/guide/<n>. */
+const Guide = ({
+  setup,
+  step: current,
+  onStep: setCurrent,
+  onCredentials,
+}: {
+  setup: GoogleSetup;
+  step: number;
+  onStep: (step: number) => void;
+  onCredentials: () => void;
+}) => {
   const [done, setDone] = useState<Set<number>>(new Set());
   const [narrowOpen, setNarrowOpen] = useState(false);
   const step = STEPS[current];
@@ -281,7 +284,7 @@ const Guide = ({ setup, onCredentials }: { setup: GoogleSetup; onCredentials: ()
           ))}
 
           <div className="flex items-center justify-between gap-2 pt-4 border-t border-outline-gray-1">
-            <Button size="md" onClick={() => setCurrent((c) => c - 1)} disabled={current === 0}>
+            <Button size="md" onClick={() => setCurrent(current - 1)} disabled={current === 0}>
               Back
             </Button>
             {current < STEPS.length - 1 ? (
@@ -290,7 +293,7 @@ const Guide = ({ setup, onCredentials }: { setup: GoogleSetup; onCredentials: ()
                 size="md"
                 onClick={() => {
                   setDone((d) => new Set(d).add(current));
-                  setCurrent((c) => c + 1);
+                  setCurrent(current + 1);
                 }}
               >
                 Done, next step

@@ -4,6 +4,7 @@
  */
 import { ReactNode, useContext, useEffect, useState } from "react";
 import { ChevronDown, Info, LoaderCircle } from "lucide-react";
+import { useLocation, useSearchParams } from "react-router-dom";
 import { FrappeConfig, FrappeContext, useFrappeGetCall } from "frappe-react-sdk";
 
 import { cn } from "@/lib/utils";
@@ -71,7 +72,11 @@ const organizerLabel = (detail: GroupDetail, me: string) => {
 };
 
 const Bookings = ({ user, group, people }: { user: SessionUser; group: string; people: GroupPerson[] }) => {
-  const [past, setPast] = useState(false);
+  // Past bookings are /schedule/groups/<name>?show=past, so a refresh stays on them.
+  const [params, setParams] = useSearchParams();
+  const { state } = useLocation();
+  const past = params.get("show") === "past";
+  const setPast = (on: boolean) => setParams(on ? { show: "past" } : {}, { replace: true, state });
   const { data, isLoading } = useFrappeGetCall<{ message: GroupBooking[] }>(GET_GROUP_BOOKINGS, { group, past: past ? 1 : 0 }, undefined, {
     revalidateOnFocus: false,
   });
@@ -122,7 +127,7 @@ const Bookings = ({ user, group, people }: { user: SessionUser; group: string; p
               <span className="truncate text-es-sm tabular-nums text-ink-gray-5">
                 {time(b.starts_on)}
                 {b.ends_on && ` – ${time(b.ends_on)}`} · {b.guests.length ? b.guests.join(", ") : "No guest details"}
-                {b.status === "Cancelled" && " · Cancelled"}
+                {b.status === "Cancelled" && " · Canceled"}
               </span>
             </span>
             <span className="flex pl-1.5">
@@ -202,7 +207,8 @@ const Alerts = ({ detail, canPickEmail, onSaved }: { detail: GroupDetail; canPic
               type="text"
               inputMode="numeric"
               value={threshold}
-              onChange={(e) => setThreshold(e.target.value)}
+              // Whole numbers, and a leading minus for -1.
+              onChange={(e) => setThreshold(e.target.value.replace(/[^\d-]/g, "").replace(/(?!^)-/g, ""))}
               aria-invalid={!thresholdOk}
               className={cn(fieldClass, "w-24 tabular-nums", !thresholdOk && "border-ink-red-7")}
             />
@@ -404,10 +410,13 @@ const GroupPage = ({
               <Section title="Details">
                 <dl className="m-0 grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-es-base">
                   <dt className="text-ink-gray-5">Length</dt>
-                  <dd className="m-0">
-                    {durationLabel(doc.duration_for_event)}
-                    {doc.minimum_buffer_time ? `, ${durationLabel(doc.minimum_buffer_time)} break` : ""}
-                  </dd>
+                  <dd className="m-0">{durationLabel(doc.duration_for_event)}</dd>
+                  {!!doc.minimum_buffer_time && (
+                    <>
+                      <dt className="text-ink-gray-5">Break</dt>
+                      <dd className="m-0">{durationLabel(doc.minimum_buffer_time)}</dd>
+                    </>
+                  )}
                   <dt className="text-ink-gray-5">Video</dt>
                   <dd className="m-0">{providerLabel(doc.meet_provider)}</dd>
                   <dt className="text-ink-gray-5">Bookable</dt>
@@ -424,7 +433,7 @@ const GroupPage = ({
                   </dd>
                   <dt className="text-ink-gray-5">Calendar</dt>
                   <dd className="m-0 break-all">{doc.event_creator}</dd>
-                  <dt className="text-ink-gray-5">Organiser</dt>
+                  <dt className="text-ink-gray-5">Organizer</dt>
                   <dd className="m-0 break-all">{organizerLabel(detail, user.name)}</dd>
                 </dl>
               </Section>

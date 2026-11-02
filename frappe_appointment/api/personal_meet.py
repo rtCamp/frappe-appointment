@@ -26,6 +26,20 @@ AVAILABILITY_FIELDS = [
 ]
 
 
+def fill_off_message(message: str | None, owner: dict) -> str | None:
+    """The owner's message for a switched-off booking page, with {name}, {first_name} and {email} filled in.
+    A plain text swap, not a template, so guests can't run anything through it. None when there's no message."""
+    message = (message or "").strip()
+    if not message:
+        return None
+    full_name = owner.get("full_name") or ""
+    return (
+        message.replace("{first_name}", owner.get("first_name") or full_name)
+        .replace("{name}", full_name)
+        .replace("{email}", owner.get("email") or "")
+    )
+
+
 @frappe.whitelist(allow_guest=True)  # nosemgrep
 @rate_limit(limit=100, seconds=60 * 60)
 @add_response_code
@@ -37,10 +51,17 @@ def get_meeting_windows(slug: str):
     )
     if not user_availability:
         # A page that exists but is switched off says so, with whose it is, instead of looking like a broken link.
-        paused_user = frappe.db.get_value("User Appointment Availability", {"slug": slug}, "user")
-        if paused_user:
-            full_name = frappe.db.get_value("User", paused_user, "full_name")
-            return {"error": "Not accepting bookings", "not_accepting": True, "full_name": full_name}, 404
+        paused = frappe.db.get_value(
+            "User Appointment Availability", {"slug": slug}, ["user", "off_message"], as_dict=True
+        )
+        if paused and paused.user:
+            owner = frappe.db.get_value("User", paused.user, ["full_name", "first_name", "email"], as_dict=True) or {}
+            return {
+                "error": "Not accepting bookings",
+                "not_accepting": True,
+                "full_name": owner.get("full_name"),
+                "message": fill_off_message(paused.off_message, owner),
+            }, 404
         return {"error": "No user found"}, 404
     user_availability = user_availability[0]
     user = user_availability.get("user")
@@ -67,10 +88,12 @@ def get_meeting_windows(slug: str):
 
     meeting_provider = user_availability.get("meeting_provider")
 
+    # In the order the owner arranged them in /schedule (the table's row order).
     all_durations = frappe.get_all(
         "Appointment Slot Duration",
         filters={"parent": user_availability.get("name")},
         fields=["name", "title", "duration"],
+        order_by="idx asc",
     )
 
     durations = [

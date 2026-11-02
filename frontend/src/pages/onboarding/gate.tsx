@@ -33,7 +33,8 @@ export const LoginGate = () => (
   >
     <div className="flex flex-col gap-2.5">
       <a
-        href={`/login?redirect-to=${encodeURIComponent(BASE_ROUTE)}`}
+        // Back to the page they asked for, like /schedule/meeting-types/intro-call.
+        href={`/login?redirect-to=${encodeURIComponent(window.location.pathname + window.location.search)}`}
         className={buttonClass("solid", "lg")}
       >
         Log in with your ERP account

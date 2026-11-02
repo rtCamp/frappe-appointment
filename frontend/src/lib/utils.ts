@@ -174,33 +174,29 @@ export const parseDateString = (dateString: string): Date => {
   }
 };
 
-// Converts Minute string to Hours and Minutes Format (HH:MM)
-export const convertMinutesToTimeFormat = (
-  minutes: number | string,
-  useAbbr: boolean = false
-): string => {
-  try {
-    const totalMinutes =
-      typeof minutes === "string" ? parseInt(minutes, 10) : minutes;
-      
-    if (isNaN(totalMinutes)) {
-      throw new Error("Invalid input: Cannot convert to number");
-    }
-
-    // If minutes less than 60, return as is with "Minute" suffix
-    if (totalMinutes < 60) {
-      return `${totalMinutes} ${useAbbr ? "min" : "Minute"}`;
-    }
-
-    const hours = Math.floor(totalMinutes / 60);
-    const mins = totalMinutes % 60;
-
-    const hoursStr = hours.toString().padStart(2, "0");
-    const minutesStr = mins.toString().padStart(2, "0");
-
-    return `${hoursStr}:${minutesStr} ${useAbbr ? "hr" : "Hour"}`;
-  } catch (error) {
-    console.log(error);
-    return "";
-  }
+/**
+ * A length in words, the way the server's duration_to_string writes it:
+ * "45 minutes", "1 hour", "1 hour 45 minutes".
+ */
+export const lengthInWords = (minutes: number): string => {
+  const total = Math.round(minutes);
+  const hours = Math.floor(total / 60);
+  const rest = total % 60;
+  const part = (n: number, unit: string) => `${n} ${unit}${n === 1 ? "" : "s"}`;
+  return [hours ? part(hours, "hour") : "", rest || !hours ? part(rest, "minute") : ""].filter(Boolean).join(" ");
 };
+
+/** What a switched-off booking page says when its owner hasn't written their own message. */
+export const DEFAULT_OFF_MESSAGE =
+  "{name} isn't accepting bookings at the moment. Please check back later, or get in touch with them directly.";
+
+/** Fills {name}, {first_name} and {email} in a switched-off page's message, as the server does. */
+export const fillOffMessage = (message: string, owner: { name: string; firstName: string; email: string }) =>
+  message.replace(/\{first_name\}/g, owner.firstName).replace(/\{name\}/g, owner.name).replace(/\{email\}/g, owner.email);
+
+/** Splits text around email addresses so they can be shown as mailto links. */
+export const splitEmails = (text: string): { text: string; email: boolean }[] =>
+  text
+    .split(/([\w.+-]+@[\w-]+(?:\.[\w-]+)+)/)
+    .filter(Boolean)
+    .map((part) => ({ text: part, email: /^[\w.+-]+@[\w-]+(?:\.[\w-]+)+$/.test(part) }));

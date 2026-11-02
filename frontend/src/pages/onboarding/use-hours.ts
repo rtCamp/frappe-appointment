@@ -71,7 +71,13 @@ export const useHours = (availability: Availability | null, savedTimeZone: strin
     }
   };
 
-  return { timeZone, setTimeZone, days, setDay, copyMonday, badDays, noDays, changed, save };
+  /** Puts back the saved time zone and hours. */
+  const discard = () => {
+    setTimeZone(savedTimeZone);
+    setDays(initialDays(availability));
+  };
+
+  return { timeZone, setTimeZone, days, setDay, copyMonday, badDays, noDays, changed, save, discard };
 };
 
 export type Hours = ReturnType<typeof useHours>;
