@@ -55,7 +55,8 @@ const read = (el: HTMLElement) => {
       if (n.nodeType === Node.TEXT_NODE) out += (n.nodeValue ?? "").replace(/\u00a0/g, " ");
       else if (n instanceof HTMLElement) {
         if (n.dataset.detail) out += `{${n.dataset.detail}}`;
-        else if (n.tagName === "BR") out += "\n";
+        // A <br> at the end of a line only holds an empty line open; the line itself already counts.
+        else if (n.tagName === "BR") out += n === n.parentNode?.lastChild ? "" : "\n";
         else {
           // Browsers wrap new lines in a <div> or <p> when Enter is pressed.
           if ((n.tagName === "DIV" || n.tagName === "P") && out) out += "\n";
