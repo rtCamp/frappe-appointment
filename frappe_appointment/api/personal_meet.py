@@ -88,10 +88,12 @@ def get_meeting_windows(slug: str):
 
     meeting_provider = user_availability.get("meeting_provider")
 
+    # In the order the owner arranged them in /schedule (the table's row order).
     all_durations = frappe.get_all(
         "Appointment Slot Duration",
         filters={"parent": user_availability.get("name")},
         fields=["name", "title", "duration"],
+        order_by="idx asc",
     )
 
     durations = [

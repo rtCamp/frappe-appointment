@@ -2,8 +2,8 @@
  * Meeting types: every choice on the booking page with all of its booking rules (the
  * available_durations rows of the user's availability), edited in a dialog.
  */
-import { useContext, useEffect, useRef, useState } from "react";
-import { ArrowRight, Check, Copy, ExternalLink, LoaderCircle, MoreHorizontal, Pencil, Plus, Trash2 } from "lucide-react";
+import { DragEvent, KeyboardEvent, useContext, useEffect, useRef, useState } from "react";
+import { ArrowRight, Check, Copy, ExternalLink, GripVertical, LoaderCircle, MoreHorizontal, Pencil, Plus, Trash2 } from "lucide-react";
 import { FrappeConfig, FrappeContext } from "frappe-react-sdk";
 import * as Popover from "@radix-ui/react-popover";
 
@@ -379,8 +379,21 @@ const MeetingTypes = ({
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const { copied, copy } = useCopied();
+  // Reordering: the row being dragged, where it would land, the order while it saves, and how that went.
+  const [dragging, setDragging] = useState<string | null>(null);
+  const [dropAt, setDropAt] = useState<{ name: string; after: boolean } | null>(null);
+  const [pendingOrder, setPendingOrder] = useState<string[] | null>(null);
+  const [orderSaved, setOrderSaved] = useState(false);
+  const [orderError, setOrderError] = useState<string | null>(null);
+  const [announce, setAnnounce] = useState("");
+  const savedTimer = useRef<ReturnType<typeof setTimeout>>();
 
-  const types = availability.available_durations;
+  useEffect(() => () => clearTimeout(savedTimer.current), []);
+
+  const savedTypes = availability.available_durations;
+  const types = pendingOrder
+    ? pendingOrder.map((name) => savedTypes.find((t) => t.name === name)).filter((t): t is MeetingType => !!t)
+    : savedTypes;
   const link = `${window.location.origin}/schedule/in/${availability.slug}`;
   const typeLink = (t: MeetingType) => `${link}?type=${encodeURIComponent(t.name ?? "")}`;
   const selected = editing && editing !== "new" ? types.find((t) => t.name === editing) : undefined;
@@ -391,6 +404,70 @@ const MeetingTypes = ({
       available_durations: list.map(asRow),
       appointment_time_slot: slotsAsText(availability),
     });
+
+  /** Saves a new order at once: the rows go back in this order and Frappe renumbers idx, which guests follow. */
+  const reorder = async (names: string[], moved: MeetingType) => {
+    if (names.join() === types.map((t) => t.name).join()) return;
+    setPendingOrder(names);
+    setOrderSaved(false);
+    setOrderError(null);
+    setAnnounce(`${moved.title} moved to position ${names.indexOf(moved.name ?? "") + 1} of ${names.length}.`);
+    try {
+      await saveTypes(names.map((name) => savedTypes.find((t) => t.name === name)).filter((t): t is MeetingType => !!t));
+      await onChanged();
+      setOrderSaved(true);
+      clearTimeout(savedTimer.current);
+      savedTimer.current = setTimeout(() => setOrderSaved(false), 2400);
+    } catch (err) {
+      setOrderError(errorText(err));
+    } finally {
+      setPendingOrder(null);
+    }
+  };
+
+  const names = types.map((t) => t.name ?? "");
+
+  const onDragStart = (e: DragEvent<HTMLButtonElement>, t: MeetingType) => {
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", t.name ?? "");
+    // Drag the whole row, not just the grip.
+    const row = e.currentTarget.closest("tr");
+    if (row) e.dataTransfer.setDragImage(row, 16, 22);
+    setDragging(t.name ?? null);
+    setOrderSaved(false);
+  };
+
+  const onDragOver = (e: DragEvent<HTMLTableRowElement>, t: MeetingType) => {
+    if (!dragging) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    const box = e.currentTarget.getBoundingClientRect();
+    const after = e.clientY > box.top + box.height / 2;
+    if (dropAt?.name !== t.name || dropAt?.after !== after) setDropAt({ name: t.name ?? "", after });
+  };
+
+  const onDrop = (e: DragEvent<HTMLTableRowElement>, t: MeetingType) => {
+    e.preventDefault();
+    const from = dragging;
+    const after = dropAt?.after ?? false;
+    setDragging(null);
+    setDropAt(null);
+    if (!from || from === t.name) return;
+    const rest = names.filter((n) => n !== from);
+    const at = rest.indexOf(t.name ?? "") + (after ? 1 : 0);
+    const moved = types.find((x) => x.name === from);
+    if (moved) reorder([...rest.slice(0, at), from, ...rest.slice(at)], moved);
+  };
+
+  const onGripKey = (e: KeyboardEvent<HTMLButtonElement>, t: MeetingType, i: number) => {
+    const step = e.key === "ArrowUp" ? -1 : e.key === "ArrowDown" ? 1 : 0;
+    if (!step || pendingOrder) return;
+    e.preventDefault();
+    const to = i + step;
+    if (to < 0 || to >= names.length) return;
+    const rest = names.filter((n) => n !== t.name);
+    reorder([...rest.slice(0, to), t.name ?? "", ...rest.slice(to)], t);
+  };
 
   const save = async (type: MeetingType) => {
     await saveTypes(type.name ? types.map((t) => (t.name === type.name ? type : t)) : [...types, type]);
@@ -440,16 +517,33 @@ const MeetingTypes = ({
       width="full"
       {...nav}
       headerAction={
-        <Button variant="solid" onClick={() => setEditing("new")}>
-          <Plus className="w-4 h-4" aria-hidden="true" />
-          New meeting type
-        </Button>
+        <span className="flex items-center gap-3">
+          {dragging && <span className="text-es-sm text-ink-gray-5">Guests see them in this order</span>}
+          {!dragging && orderSaved && (
+            <span className="inline-flex items-center gap-1 text-es-sm text-ink-gray-5">
+              <Check className="w-3.5 h-3.5" aria-hidden="true" />
+              Order saved
+            </span>
+          )}
+          <Button variant="solid" onClick={() => setEditing("new")}>
+            <Plus className="w-4 h-4" aria-hidden="true" />
+            New meeting type
+          </Button>
+        </span>
       }
     >
+      {orderError && (
+        <Notice tone="red" title="Couldn't save the new order">
+          {orderError}
+        </Notice>
+      )}
       <div className="relative overflow-x-auto">
         <table className="w-full min-w-[760px] border-collapse">
           <thead>
             <tr className="h-8 text-es-sm text-ink-gray-5 text-left border-b border-outline-gray-1">
+              <th scope="col" className="w-8 p-0">
+                <span className="sr-only">Order</span>
+              </th>
               <th scope="col" className="pr-3 font-[420]">Name</th>
               <th scope="col" className="px-3 font-[420]">Length</th>
               <th scope="col" className="px-3 font-[420]">Break</th>
@@ -463,15 +557,33 @@ const MeetingTypes = ({
             </tr>
           </thead>
           <tbody>
-            {types.map((t) => (
+            {types.map((t, i) => (
               <tr
                 key={t.name}
                 onClick={() => setEditing(t.name ?? null)}
+                onDragOver={(e) => onDragOver(e, t)}
+                onDrop={(e) => onDrop(e, t)}
                 className={cn(
                   "h-11 text-es-base border-b border-outline-gray-1 cursor-pointer",
-                  editing === t.name ? "bg-surface-gray-2" : "hover:bg-surface-gray-1"
+                  dragging === t.name ? "bg-surface-gray-2 opacity-40" : editing === t.name ? "bg-surface-gray-2" : "hover:bg-surface-gray-1",
+                  dropAt?.name === t.name && dragging !== t.name && (dropAt?.after ? "shadow-[inset_0_-2px_0_0_var(--ink-gray-8)]" : "shadow-[inset_0_2px_0_0_var(--ink-gray-8)]")
                 )}
               >
+                <td className="w-8 p-0" onClick={(e) => e.stopPropagation()}>
+                  <button
+                    type="button"
+                    draggable
+                    data-grip={t.name}
+                    onDragStart={(e) => onDragStart(e, t)}
+                    onDragEnd={() => (setDragging(null), setDropAt(null))}
+                    onKeyDown={(e) => onGripKey(e, t, i)}
+                    aria-label={`Move ${t.title}, position ${i + 1} of ${types.length}. Drag, or use the up and down arrow keys.`}
+                    title="Drag to reorder"
+                    className="grid place-items-center w-6 h-7 p-0 border-0 rounded-md bg-transparent text-ink-gray-4 cursor-grab hover:bg-surface-gray-3 hover:text-ink-gray-7 focus-visible:outline-none focus-visible:shadow-es-focus"
+                  >
+                    <GripVertical className="w-4 h-4" aria-hidden="true" />
+                  </button>
+                </td>
                 <td className="pr-3">
                   <button
                     type="button"
@@ -514,6 +626,9 @@ const MeetingTypes = ({
       </div>
       <span className="sr-only" aria-live="polite">
         {copied ? "Link copied" : ""}
+      </span>
+      <span className="sr-only" aria-live="polite">
+        {announce}
       </span>
 
       {editing && (editing === "new" || selected) && (

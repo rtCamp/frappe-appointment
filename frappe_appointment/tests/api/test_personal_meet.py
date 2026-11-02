@@ -99,6 +99,32 @@ class TestGetMeetingWindows(IntegrationTestCase):
         self.assertEqual(frappe.local.response.http_status_code, 200)
 
 
+class TestMeetingTypeOrder(IntegrationTestCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.user = "test_fa_pmorder@example.com"
+        make_user_availability(
+            cls.user,
+            slug="fa-pmorder",
+            enable_scheduling=1,
+            durations=[make_slot_duration(title=t) for t in ("First", "Second", "Third")],
+        )
+
+    def test_meeting_types_come_back_in_the_owners_order(self):
+        """The booking page lists meeting types in table order (idx), not by when they were last changed."""
+        rows = frappe.get_all(
+            "Appointment Slot Duration", filters={"parent": self.user}, fields=["name", "title"], order_by="idx asc"
+        )
+        # Reverse the rows, then touch "First" (now last) so a "last modified" order would put it on top.
+        for idx, row in enumerate(reversed(rows), start=1):
+            frappe.db.set_value("Appointment Slot Duration", row.name, "idx", idx, update_modified=False)
+        frappe.db.set_value("Appointment Slot Duration", rows[0].name, "title", "First")
+
+        result = get_meeting_windows("fa-pmorder")
+        self.assertEqual([d["label"] for d in result["durations"]], ["Third", "Second", "First"])
+
+
 class TestGetTimeSlots(IntegrationTestCase):
     @classmethod
     def setUpClass(cls):
