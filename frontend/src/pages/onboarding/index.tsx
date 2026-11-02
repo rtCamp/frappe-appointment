@@ -2,7 +2,7 @@
  * /schedule: where people set up their booking page. A gate card first decides whether they
  * can start; then the setup steps.
  */
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useFrappeGetCall } from "frappe-react-sdk";
 
 import MetaTags from "@/components/meta-tags";
@@ -10,19 +10,28 @@ import { ONBOARDING_STATUS, OnboardingStatus, SessionUser, getSessionUser } from
 import { LoadErrorGate, LoginGate, NotReadyGate, WebsiteUserGate } from "./gate";
 import Setup from "./setup";
 import AdminSetup from "./admin";
-import { parsePath } from "./routes";
+import { parsePath, paths } from "./routes";
 import NotFound from "@/pages/notFound";
 import "@/styles/espresso.css";
 
 const SignedIn = ({ user }: { user: SessionUser }) => {
   const { data, error, isLoading, mutate } = useFrappeGetCall<{ message: OnboardingStatus }>(ONBOARDING_STATUS);
+  const navigate = useNavigate();
 
   if (isLoading) return null;
   if (error || !data) return <LoadErrorGate onRetry={() => mutate()} />;
 
   const status = data.message;
   if (status.user_type !== "System User") return <WebsiteUserGate />;
-  if (!status.google_ready) return status.is_admin ? <AdminSetup user={user} onDone={() => mutate()} /> : <NotReadyGate />;
+  if (!status.google_ready) {
+    if (!status.is_admin) return <NotReadyGate />;
+    // Leave the credentials address first: once Google is ready, it would open the credentials screen again.
+    const done = () => {
+      navigate(paths.home, { replace: true });
+      mutate();
+    };
+    return <AdminSetup user={user} onDone={done} />;
+  }
   return <Setup
       user={user}
       zoomReady={!!status.zoom_ready}
