@@ -171,7 +171,7 @@ const OffMessage = ({
           Message while you're off
         </span>
         {effective(draft) !== DEFAULT_OFF_MESSAGE && (
-          <Button variant="ghost" onClick={reset} className="-mr-2">
+          <Button variant="ghost" onClick={reset} disabled={busy} className="-mr-2">
             <RotateCcw className="w-4 h-4" aria-hidden="true" />
             Reset to default
           </Button>
@@ -185,9 +185,10 @@ const OffMessage = ({
             <button
               key={d.key}
               type="button"
+              disabled={busy}
               onMouseDown={(e) => e.preventDefault()}
               onClick={() => insert(d.key)}
-              className="inline-flex items-center gap-1 h-6 px-2 rounded-full bg-surface-gray-3 text-es-sm text-ink-gray-8 cursor-pointer hover:bg-surface-gray-4 focus-visible:outline-none focus-visible:shadow-es-focus"
+              className="inline-flex items-center gap-1 h-6 px-2 rounded-full bg-surface-gray-3 text-es-sm text-ink-gray-8 cursor-pointer hover:bg-surface-gray-4 focus-visible:outline-none focus-visible:shadow-es-focus disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-surface-gray-3"
             >
               <Plus className="w-3 h-3" aria-hidden="true" />
               {d.label}
@@ -199,7 +200,9 @@ const OffMessage = ({
           role="textbox"
           aria-multiline="true"
           aria-labelledby="off-message-label"
-          contentEditable
+          aria-disabled={busy || undefined}
+          // Not while saving: the saved text is drawn back in afterwards, which would drop anything typed meanwhile.
+          contentEditable={!busy}
           suppressContentEditableWarning
           spellCheck
           onInput={changed}
