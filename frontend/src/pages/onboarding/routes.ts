@@ -37,9 +37,10 @@ export const parsePath = (pathname: string): AppRoute | null => {
   if (!first) return { screen: "home" };
   if (first === "meeting-types") return third ? null : { screen: "types", edit: second };
   if (first === "availability") return second ? null : { screen: "availability" };
+  // Not /groups/new: a group called "New" gets the id "new".
+  if (first === "new-group") return second ? null : { screen: "groups", isNew: true };
   if (first === "groups") {
     if (!second) return { screen: "groups", isNew: false };
-    if (second === "new") return third ? null : { screen: "groups", isNew: true };
     if (third && third !== "edit") return null;
     return { screen: "group", name: second, edit: third === "edit" };
   }
@@ -69,7 +70,7 @@ export const paths = {
   types: (edit?: string) => (edit ? `/meeting-types/${encodeURIComponent(edit)}` : "/meeting-types"),
   availability: "/availability",
   groups: "/groups",
-  newGroup: "/groups/new",
+  newGroup: "/new-group",
   group: (name: string, edit = false) => `/groups/${encodeURIComponent(name)}${edit ? "/edit" : ""}`,
   settings: (tab: SettingsTab) => `/settings/${tab}`,
   setup: (step: number) => `/setup/${SETUP_PATHS[step]}`,

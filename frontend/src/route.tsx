@@ -26,7 +26,7 @@ const Router = () => {
           the address changes, and leave anything else to Not found. */}
       <Route path="/" element={<Onboarding />} errorElement={<ErrorFallback />}>
         <Route index element={null} />
-        {["meeting-types/*", "availability", "groups/*", "settings/*", "setup/*", "admin/*"].map((path) => (
+        {["meeting-types/*", "availability", "groups/*", "new-group", "settings/*", "setup/*", "admin/*"].map((path) => (
           <Route key={path} path={path} element={null} />
         ))}
       </Route>
