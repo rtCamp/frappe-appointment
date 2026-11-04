@@ -6,7 +6,7 @@
   "scripts": {
     "copy-html-entry": "cp ../frappe_appointment/public/frontend/index.html ../frappe_appointment/www/schedule/index.html",
     "dev": "vite",
-    "build": "npm install && vite build --base=/assets/frappe_appointment/frontend/ && npm run copy-html-entry",
+    "build": "([ -d node_modules ] || npm ci) && vite build --base=/assets/frappe_appointment/frontend/ && npm run copy-html-entry",
     "lint": "eslint .  --report-unused-disable-directives --max-warnings 0",
     "lint:fix": "eslint .  --fix",
     "preview": "vite preview"
