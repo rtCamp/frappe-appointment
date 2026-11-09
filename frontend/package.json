@@ -58,6 +58,9 @@
     "vite": "^6.4.5"
   },
   "overrides": {
-    "ws": "^8.21.0"
+    "ws": "^8.21.0",
+    "@typescript-eslint/typescript-estree": {
+      "minimatch": "^11.0.1"
+    }
   }
 }
