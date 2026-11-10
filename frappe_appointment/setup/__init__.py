@@ -32,23 +32,11 @@ def install_property_setters() -> None:
     """
     data_file = Path(__file__).parent / "property_setters.json"
     property_setters: list[dict] = json.loads(data_file.read_text())
-    wanted = {_property_setter_name(ps): ps for ps in property_setters}
+    # Tag every property setter with the app's module, as the custom fields are.
+    for ps in property_setters:
+        ps["module"] = MODULE
 
-    # Only setters already tagged with the app's module count as installed: one with the same name but another
-    # module (or none) is rewritten below, which also gives it the module.
-    existing = {
-        row.name: row
-        for row in frappe.get_all(
-            "Property Setter",
-            filters={"module": MODULE},
-            fields=["name", "value", "property_type"],
-        )
-    }
-
-    for name, ps in wanted.items():
-        current = existing.get(name)
-        if current and (current.value or "", current.property_type) == (ps["value"], ps["property_type"]):
-            continue
+    for ps in property_setters:
         doc = frappe.get_doc(
             {
                 "doctype": "Property Setter",
@@ -58,16 +46,17 @@ def install_property_setters() -> None:
                 "property": ps["property"],
                 "value": ps["value"],
                 "property_type": ps["property_type"],
-                "module": MODULE,
+                "module": ps["module"],
+                # Created by the app's install code, not by a user: as make_property_setter() does by default.
+                "is_system_generated": True,
             }
         )
         # Runs from after_install / after_migrate, not from a user request: these are the app's own
         # customisations, so they are applied regardless of who runs the install or migrate.
         doc.flags.ignore_permissions = True
-        # A new Property Setter's validate() deletes the old one with the same name, so this also updates it.
-        doc.insert()
-
-
-def _property_setter_name(ps: dict) -> str:
-    """Return the name PropertySetter.autoname() gives this entry."""
-    return f"{ps['doctype']}-{ps.get('fieldname') or 'main'}-{ps['property']}"
+        # Same as make_property_setter(validate_fields_for_doctype=False): the target DocType is not re-validated
+        # for each setter.
+        doc.flags.validate_fields_for_doctype = False
+        # A new Property Setter's validate() deletes the existing one with the same name, so this replaces it
+        # with the value and module above.
+        doc.insert(ignore_if_duplicate=True)
