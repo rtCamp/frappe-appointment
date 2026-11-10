@@ -1,0 +1,37 @@
+[
+  {
+    "doctype": "Google Calendar",
+    "fieldname": "google_calendar_id",
+    "property": "read_only",
+    "value": "0",
+    "property_type": "Check"
+  },
+  {
+    "doctype": "Google Calendar",
+    "fieldname": "google_calendar_id",
+    "property": "depends_on",
+    "value": "",
+    "property_type": "Data"
+  },
+  {
+    "doctype": "Event Participants",
+    "fieldname": "reference_doctype",
+    "property": "reqd",
+    "value": "0",
+    "property_type": "Check"
+  },
+  {
+    "doctype": "Event Participants",
+    "fieldname": "reference_docname",
+    "property": "reqd",
+    "value": "0",
+    "property_type": "Check"
+  },
+  {
+    "doctype": "Event Participants",
+    "fieldname": "email",
+    "property": "in_list_view",
+    "value": "1",
+    "property_type": "Check"
+  }
+]
