@@ -34,22 +34,20 @@ def install_property_setters() -> None:
     property_setters: list[dict] = json.loads(data_file.read_text())
     wanted = {_property_setter_name(ps): ps for ps in property_setters}
 
+    # Only setters already tagged with the app's module count as installed: one with the same name but another
+    # module (or none) is rewritten below, which also gives it the module.
     existing = {
         row.name: row
         for row in frappe.get_all(
             "Property Setter",
-            filters={"name": ["in", list(wanted)]},
-            fields=["name", "value", "property_type", "module"],
+            filters={"module": MODULE},
+            fields=["name", "value", "property_type"],
         )
     }
 
     for name, ps in wanted.items():
         current = existing.get(name)
-        if current and (current.value or "", current.property_type, current.module) == (
-            ps["value"],
-            ps["property_type"],
-            MODULE,
-        ):
+        if current and (current.value or "", current.property_type) == (ps["value"], ps["property_type"]):
             continue
         doc = frappe.get_doc(
             {
