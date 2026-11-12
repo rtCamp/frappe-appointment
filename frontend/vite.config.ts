@@ -1,6 +1,7 @@
 import path from "path";
 import react from "@vitejs/plugin-react";
 import { defineConfig, loadEnv } from "vite";
+import motionPlugin from "./tools/vite-plugin-motion";
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
@@ -19,7 +20,7 @@ export default defineConfig(({ mode }) => {
     };
   }
   return {
-    plugins: [react()],
+    plugins: [react(), motionPlugin()],
     server: {
       port: 5173,
       proxy: proxyConfig,

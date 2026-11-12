@@ -1,0 +1,1 @@
+{"width":1920,"height":1080,"background":"#F4F4F5","fonts":{"sans":{"family":"Inter"}},"scenes":[{"id":"meeting-type-link","name":"Copy a meeting type's link","dur":3.8,"desc":"On Home, the cursor selects Copy link on the Product demo card. The button changes to Copied, so the link to that one meeting type is ready to paste."}]}

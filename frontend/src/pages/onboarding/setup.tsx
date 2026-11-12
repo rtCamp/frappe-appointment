@@ -31,6 +31,8 @@ import Home from "./home";
 import MeetingTypes from "./meeting-types";
 import AvailabilityPage from "./availability";
 import SettingsDialog, { SettingsTab } from "./settings";
+import HelpPanel from "./help-panel";
+import { helpTips } from "./help";
 import AdminSetup from "./admin";
 import GroupsPage from "./groups";
 import GroupPage from "./group-detail";
@@ -95,6 +97,7 @@ const Setup = ({
   const [loadError, setLoadError] = useState<string | null>(null);
   const [toggling, setToggling] = useState(false);
   const [homeError, setHomeError] = useState<string | null>(null);
+  const [helpOpen, setHelpOpen] = useState(false);
 
   const load = useCallback(async () => {
     setLoadError(null);
@@ -194,7 +197,9 @@ const Setup = ({
     if (unknownType) navigate(paths.types(), { replace: true });
   }, [unknownType, navigate]);
 
-  /** The sidebar and the Settings menu item, once setup is finished. */
+  /** Help, on every screen. */
+  const help: FrameNav = { helpOpen, onHelp: () => setHelpOpen((open) => !open) };
+  /** The sidebar and the Settings menu item, once setup is finished, and Help. */
   const appNav = (current?: string): FrameNav =>
     setUp
       ? {
@@ -202,8 +207,9 @@ const Setup = ({
           current,
           onOpen: (section) => location.pathname !== SECTION_PATHS[section] && navigate(SECTION_PATHS[section]),
           onSettings: () => openSettings("booking"),
+          ...help,
         }
-      : {};
+      : help;
 
   /** The Accepting bookings switch: the booking page's enable_scheduling. */
   const setAccepting = async (on: boolean) => {
@@ -305,6 +311,9 @@ const Setup = ({
 
   let page;
   const groupView = typeof view === "string" && view.startsWith("group");
+  // The sidebar section the page belongs to, whose tips Help lists first.
+  const helpSection =
+    view === "home" ? "Home" : view === "types" ? "Meeting types" : view === "availability" ? "Availability" : groupView ? "Group meetings" : undefined;
   if (setUp && (view === "groups" || view === "group-new")) {
     // A new group is made in a dialog over the list.
     page = (
@@ -417,6 +426,7 @@ const Setup = ({
   return (
     <>
       {page}
+      {helpOpen && <HelpPanel tips={helpTips(blocksTimeOff)} section={helpSection} onClose={() => setHelpOpen(false)} />}
       {settingsTab && setUp && availability && (
         <SettingsDialog
           user={user}
