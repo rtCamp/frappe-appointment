@@ -24,24 +24,18 @@ def install_custom_fields() -> None:
 
 
 def install_property_setters() -> None:
-    """Install / refresh property setters from property_setters.json (make_property_setter() can't set a module)."""
+    """Install / refresh property setters from property_setters.json."""
     data_file = Path(__file__).parent / "property_setters.json"
     for ps in json.loads(data_file.read_text()):
-        doc = frappe.get_doc(
+        frappe.make_property_setter(
             {
-                "doctype": "Property Setter",
+                "doctype": ps["doctype"],
                 "doctype_or_field": "DocType" if ps.get("for_doctype") else "DocField",
-                "doc_type": ps["doctype"],
-                "field_name": ps.get("fieldname"),
+                "fieldname": ps.get("fieldname"),
                 "property": ps["property"],
                 "value": ps["value"],
                 "property_type": ps["property_type"],
-                "module": MODULE,
-                "is_system_generated": True,
-            }
+            },
+            validate_fields_for_doctype=False,
+            module=MODULE,
         )
-        # The app's own customisations, applied from install / migrate rather than a user request.
-        doc.flags.ignore_permissions = True
-        doc.flags.validate_fields_for_doctype = False
-        # validate() deletes the existing setter with the same name, so this replaces it.
-        doc.insert(ignore_if_duplicate=True)
