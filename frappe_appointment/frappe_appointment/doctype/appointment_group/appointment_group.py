@@ -400,12 +400,12 @@ def get_time_slots_for_working_hours(
     if time_slot_cache_dict is not None and cache_key in time_slot_cache_dict:
         return time_slot_cache_dict[cache_key]
 
-    # The site's day the stretch starts on: bookings are counted, and calendars read, for that day.
+    # The site's day the stretch starts on, which calendars are read for.
     site_day = starttime.astimezone(get_time_zone()).replace(tzinfo=None, hour=0, minute=0, second=0, microsecond=0)
 
     time_slots = []
 
-    booking_frequency_reached_obj = get_booking_frequency_reached(site_day, appointment_group)
+    booking_frequency_reached_obj = get_booking_frequency_reached(starttime, endtime, appointment_group)
 
     if booking_frequency_reached_obj["is_slots_available"]:
         all_slots = get_all_unavailable_google_calendar_slots_for_day(
@@ -715,34 +715,38 @@ def get_response_body(
     }
 
 
-def get_booking_frequency_reached(datetime: datetime, appointment_group: object) -> bool:
+def get_booking_frequency_reached(starttime: datetime, endtime: datetime, appointment_group: object) -> object:
     """
-        Get a list of booked events from Frappe for a given date and Appointment Group.
+        Get the events already booked in a stretch of working hours, and whether more can be booked in it.
+
+        The limit on bookings is for one stretch of the members' shared working hours. That is a working
+        day, which for members in another time zone can run over two of the site's days.
 
         Args:
-    datetime (datetime): Datetime object of the time for which events need to be fetched.
+    starttime (datetime): Start of the working hours.
+    endtime (datetime): End of the working hours.
     appointment_group (object): Appointment Group
 
         Returns:
-        Object: List of events
+        Object: Whether slots are available, and the list of events
     """
     res = {
         "is_slots_available": int(appointment_group.limit_booking_frequency) < 0,
         "events": [],
     }
 
-    # Get today's data and the range for the next day to fetch events.
-    start_datetime, end_datetime = get_datetime_str(datetime), get_datetime_str(add_days(datetime, 1))
+    # Events hold their times in the site's time zone.
+    site_time_zone = get_time_zone()
+    start_datetime = get_datetime_str(starttime.astimezone(site_time_zone).replace(tzinfo=None))
+    end_datetime = get_datetime_str(endtime.astimezone(site_time_zone).replace(tzinfo=None))
 
     if appointment_group.get("is_personal_meeting", False):
         all_events = frappe.get_list(
             "Event",
             filters=[
                 ["custom_appointment_slot_duration", "=", appointment_group.duration_id],
-                ["starts_on", ">=", start_datetime],
                 ["starts_on", "<", end_datetime],
-                ["ends_on", ">=", start_datetime],
-                ["ends_on", "<", end_datetime],
+                ["ends_on", ">", start_datetime],
             ],
             fields=["starts_on", "ends_on", "google_calendar_event_id"],
             order_by="starts_on asc",
@@ -753,10 +757,8 @@ def get_booking_frequency_reached(datetime: datetime, appointment_group: object)
             "Event",
             filters=[
                 ["custom_appointment_group", "=", appointment_group.name],
-                ["starts_on", ">=", start_datetime],
                 ["starts_on", "<", end_datetime],
-                ["ends_on", ">=", start_datetime],
-                ["ends_on", "<", end_datetime],
+                ["ends_on", ">", start_datetime],
             ],
             fields=["starts_on", "ends_on", "google_calendar_event_id"],
             order_by="starts_on asc",

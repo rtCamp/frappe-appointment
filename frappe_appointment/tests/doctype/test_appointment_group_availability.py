@@ -23,7 +23,11 @@ from frappe_appointment.frappe_appointment.doctype.appointment_group.appointment
     update_cal_slots_with_events,
     vaild_date,
 )
-from frappe_appointment.helpers.utils import convert_timezone_to_utc, get_utc_datatime_with_time
+from frappe_appointment.helpers.utils import (
+    convert_datetime_to_utc,
+    convert_timezone_to_utc,
+    get_utc_datatime_with_time,
+)
 from frappe_appointment.tests import (
     google_slot,
     make_appointment_group,
@@ -220,16 +224,22 @@ class TestBookingFrequency(IntegrationTestCase):
                 account=self.gcal,
             )
 
+    def _reached(self, group, from_hour=9, to_hour=17):
+        """Whether the limit is reached for working hours from one hour to another on the FIXED day."""
+        starttime = convert_datetime_to_utc(add_to_date(FIXED, hours=from_hour))
+        endtime = convert_datetime_to_utc(add_to_date(FIXED, hours=to_hour))
+        return get_booking_frequency_reached(starttime, endtime, group)
+
     def test_negative_limit_always_available(self):
         """7.1 limit_booking_frequency < 0 keeps slots available regardless of existing events."""
         self._make_events(self.unlimited.name, 3)
-        res = get_booking_frequency_reached(FIXED, self.unlimited)
+        res = self._reached(self.unlimited)
         self.assertTrue(res["is_slots_available"])
 
     def test_under_limit_available_and_sorted(self):
-        """7.2 fewer same-day events than the limit stays available and returns events sorted by ends_on."""
+        """7.2 fewer events in the working hours than the limit stays available and returns the events."""
         self._make_events(self.limited.name, 1)
-        res = get_booking_frequency_reached(FIXED, self.limited)
+        res = self._reached(self.limited)
         self.assertTrue(res["is_slots_available"])
         self.assertEqual(len(res["events"]), 1)
 
@@ -239,8 +249,17 @@ class TestBookingFrequency(IntegrationTestCase):
             "FA BF Full", event_creator=self.gcal.name, members=[self.user], limit_booking_frequency=2
         )
         self._make_events(group.name, 2)
-        res = get_booking_frequency_reached(FIXED, group)
+        res = self._reached(group)
         self.assertFalse(res["is_slots_available"])
+
+    def test_events_outside_the_working_hours_are_not_counted(self):
+        """7.4 the limit is for one stretch of working hours: events before or after it don't use it up."""
+        group = make_appointment_group(
+            "FA BF Outside", event_creator=self.gcal.name, members=[self.user], limit_booking_frequency=2
+        )
+        self._make_events(group.name, 2)  # 10:00-10:30 and 11:00-11:30
+        self.assertTrue(self._reached(group, from_hour=12, to_hour=17)["is_slots_available"])
+        self.assertEqual(len(self._reached(group, from_hour=11, to_hour=17)["events"]), 1)
 
 
 class TestSlotGeneration(IntegrationTestCase):
@@ -727,6 +746,19 @@ class TestMemberTimeZones(IntegrationTestCase):
             res = _get_time_slots_for_day(group, self.MONDAY, "330")
         self.assertTrue(res["is_invalid_date"])
         self.assertEqual(res["total_slots_for_day"], 0)
+
+    def test_booking_limit_is_for_the_members_working_day(self):
+        """14.13 the limit counts bookings over the member's whole working day, though it runs over two site days."""
+        group = make_appointment_group("FA TZ Limited", members=[self.new_york_user], limit_booking_frequency=2)
+        calendar = make_google_calendar(self.new_york_user)
+
+        with patch("frappe_appointment.helpers.utils.get_system_timezone", return_value="Asia/Kolkata"):
+            # 09:00 and 15:00 on Monday in New York. In Kolkata the second is already Tuesday.
+            make_event("FA TZ Morning", "2027-03-01 19:30:00", "2027-03-01 20:00:00", group.name, account=calendar)
+            make_event("FA TZ Afternoon", "2027-03-02 01:30:00", "2027-03-02 02:00:00", group.name, account=calendar)
+
+            self.assertEqual(self._slots(group, self.MONDAY, "-300"), [])
+            self.assertEqual(len(self._slots(group, self.TUESDAY, "-300")), 19)
 
     def test_group_without_mandatory_members_has_no_slots(self):
         """14.12 a group left with no mandatory member offers nothing, not the whole day."""
