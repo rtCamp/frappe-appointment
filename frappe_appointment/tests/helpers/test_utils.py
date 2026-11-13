@@ -10,17 +10,14 @@ from frappe_appointment.helpers.utils import (
     compare_end_time_slots,
     convert_datetime_to_utc,
     convert_timezone_to_utc,
-    convert_utc_datetime_to_timezone,
     duration_to_string,
     get_calendar_fetch_range,
     get_date_start_end_time_for_given_timezone,
     get_day_range,
     get_time_slots_utc,
     get_time_zone,
-    get_utc_datatime_with_time,
     get_weekday,
     local_time_to_utc,
-    update_time_of_datetime,
     utc_to_given_time_zone,
     utc_to_sys_time,
 )
@@ -121,11 +118,6 @@ class TestUtilsDatetimeHelpers(IntegrationTestCase):
         self.assertEqual(duration_to_string(60), "1 minute")
         self.assertEqual(duration_to_string(3660), "1 hour 1 minute")
 
-    def test_update_time_of_datetime(self):
-        """update_time_of_datetime replaces H/M/S from the timedelta, keeping the date."""
-        result = update_time_of_datetime(datetime(2026, 7, 1, 8, 15, 30), timedelta(hours=14, minutes=30, seconds=45))
-        self.assertEqual(result, datetime(2026, 7, 1, 14, 30, 45))
-
     def test_get_date_start_end_time_for_given_timezone(self):
         """get_date_start_end_time_for_given_timezone returns 00:00:00 and 23:59:59 in a fixed-offset tz."""
         start, end = get_date_start_end_time_for_given_timezone("2026-07-01", "0")
@@ -169,14 +161,6 @@ class TestUtilsDatetimeHelpers(IntegrationTestCase):
             datetime(2026, 7, 1, 6, 30, 0, tzinfo=pytz.utc),
         )
 
-    def test_convert_utc_datetime_to_timezone(self):
-        """convert_utc_datetime_to_timezone returns the same instant in the target tz."""
-        utc_dt = datetime(2026, 7, 1, 12, 0, 0, tzinfo=pytz.utc)
-        result = convert_utc_datetime_to_timezone(utc_dt, "Asia/Kolkata")
-        self.assertEqual((result.hour, result.minute), (17, 30))
-        self.assertEqual(result.utcoffset(), timedelta(hours=5, minutes=30))
-        self.assertEqual(result.astimezone(pytz.utc), utc_dt)
-
     def test_utc_to_given_time_zone(self):
         """utc_to_given_time_zone converts a UTC datetime to a fixed minutes-offset tz."""
         utc_dt = datetime(2026, 7, 1, 12, 0, 0, tzinfo=pytz.utc)
@@ -188,15 +172,6 @@ class TestUtilsDatetimeHelpers(IntegrationTestCase):
         neg = utc_to_given_time_zone(utc_dt, "-300")
         self.assertEqual(neg.hour, 7)
         self.assertEqual(neg.utcoffset(), timedelta(minutes=-300))
-
-    def test_get_utc_datatime_with_time(self):
-        """get_utc_datatime_with_time builds a system-tz datetime at the clock time and returns UTC."""
-        result = get_utc_datatime_with_time(datetime(2026, 7, 1), "09:30:00")
-        self.assertEqual(result.utcoffset(), timedelta(0))
-        sys_tz = pytz.timezone(get_system_timezone())
-        back = result.astimezone(sys_tz)
-        self.assertEqual((back.year, back.month, back.day, back.hour, back.minute, back.second), (2026, 7, 1, 9, 30, 0))
-        self.assertEqual(result, sys_tz.localize(datetime(2026, 7, 1, 9, 30, 0)).astimezone(pytz.utc))
 
     def test_get_time_slots_utc(self):
         """get_time_slots_utc maps a Google slot to UTC start_time/end_time strings."""

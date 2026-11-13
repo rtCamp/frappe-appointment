@@ -965,26 +965,6 @@ def get_next_round_value(
     return min_start_time
 
 
-def is_member_on_leave_or_is_holiday(appointment_group, date):
-    """
-    Check if the given date is marked as invalid due to user leaves or holiday of mandatory members.
-
-    Args:
-    appointment_group (object): Appointment group containing members
-    date (datetime): Date to check
-
-    Returns:
-    bool: True if the date is invalid due to mandatory member leaves or holiday, False otherwise
-    """
-    date = getdate(date)
-
-    for member in appointment_group.members:
-        if member.is_mandatory and is_member_off(appointment_group, member.user, date):
-            return True
-
-    return False
-
-
 def is_member_off(appointment_group: object, member: str, date: datetime.date) -> bool:
     """Whether a mandatory member is on approved leave or has a holiday on a date."""
     # Leave and holidays come from HRMS, which needs ERPNext.

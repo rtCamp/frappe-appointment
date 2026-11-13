@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 import pytz
 from dateutil import parser
 from frappe.utils import convert_utc_to_system_timezone, get_datetime_str
-from frappe.utils.data import get_date_str, get_system_timezone, to_timedelta
+from frappe.utils.data import get_system_timezone, to_timedelta
 
 weekdays = [
     "Monday",
@@ -14,21 +14,6 @@ weekdays = [
     "Saturday",
     "Sunday",
 ]
-
-
-def get_utc_datatime_with_time(date: datetime, time: str) -> datetime:
-    """Function to generate a datetime object for a given date and time.
-
-    Args:
-    date (datetime): Date
-    time (str): Time
-
-    Returns:
-    datetime: Updated datetime object
-    """
-    system_timezone = pytz.timezone(get_system_timezone())
-    local_datetime = system_timezone.localize(datetime.strptime(f"{get_date_str(date)} {time}", "%Y-%m-%d %H:%M:%S"))
-    return local_datetime.astimezone(pytz.utc)
 
 
 def get_time_zone(time_zone: str | None = None):
@@ -110,11 +95,6 @@ def convert_datetime_to_utc(date_time: datetime) -> datetime:
     return local_datetime.astimezone(pytz.utc)
 
 
-def convert_utc_datetime_to_timezone(date_time: datetime, timezone: str) -> datetime:
-    """Converts the given datetime object to a UTC timezone datetime object."""
-    return date_time.astimezone(pytz.timezone(timezone))
-
-
 def get_weekday(date_time: datetime) -> str:
     date = date_time.date()
     return weekdays[date.weekday()]
@@ -164,15 +144,6 @@ def get_date_start_end_time_for_given_timezone(date_str: str, timezone_offset: s
     end_time = start_time + timedelta(days=1) - timedelta(seconds=1)
 
     return start_time, end_time
-
-
-def update_time_of_datetime(dt: datetime, new_time: timedelta):
-    total_seconds = new_time.total_seconds()
-    hours = int(total_seconds // 3600)
-    minutes = int((total_seconds % 3600) // 60)
-    seconds = int(total_seconds % 60)
-
-    return dt.replace(hour=hours, minute=minutes, second=seconds)
 
 
 def duration_to_string(duration):

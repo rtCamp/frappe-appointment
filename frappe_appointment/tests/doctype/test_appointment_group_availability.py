@@ -18,16 +18,12 @@ from frappe_appointment.frappe_appointment.doctype.appointment_group.appointment
     get_response_body,
     get_time_slots_for_given_date,
     hours_to_time_slot,
-    is_member_on_leave_or_is_holiday,
+    is_member_off,
     is_valid_buffer_time,
     update_cal_slots_with_events,
     vaild_date,
 )
-from frappe_appointment.helpers.utils import (
-    convert_datetime_to_utc,
-    convert_timezone_to_utc,
-    get_utc_datatime_with_time,
-)
+from frappe_appointment.helpers.utils import convert_datetime_to_utc, convert_timezone_to_utc
 from frappe_appointment.tests import (
     google_slot,
     make_appointment_group,
@@ -416,56 +412,57 @@ class TestMemberLeaveOrHoliday(IntegrationTestCase):
 
     def test_approved_leave_marks_unavailable(self):
         """10.1 an Approved leave covering the date returns True."""
-        self.assertTrue(is_member_on_leave_or_is_holiday(self.leave_group, datetime.date(2027, 2, 2)))
+        self.assertTrue(is_member_off(self.leave_group, self.leave_user, datetime.date(2027, 2, 2)))
 
     def test_holiday_marks_unavailable(self):
         """10.2 a date in the member's holiday list returns True."""
-        self.assertTrue(is_member_on_leave_or_is_holiday(self.holiday_group, datetime.date(2027, 2, 10)))
+        self.assertTrue(is_member_off(self.holiday_group, self.holiday_user, datetime.date(2027, 2, 10)))
 
     def test_no_leave_no_holiday_available(self):
         """10.3 no leave and no holiday returns False."""
-        self.assertFalse(is_member_on_leave_or_is_holiday(self.free_group, datetime.date(2027, 2, 20)))
+        self.assertFalse(is_member_off(self.free_group, self.free_user, datetime.date(2027, 2, 20)))
 
     def test_member_without_employee_available(self):
         """10.4 a member with no Employee record returns False."""
-        self.assertFalse(is_member_on_leave_or_is_holiday(self.no_emp_group, datetime.date(2027, 2, 2)))
+        self.assertFalse(is_member_off(self.no_emp_group, self.no_emp_user, datetime.date(2027, 2, 2)))
 
     def test_member_without_employee_does_not_hide_others_leave(self):
         """10.9 a member with no Employee record listed first doesn't stop the next member's leave counting."""
         group = make_appointment_group("FA NoEmp Then Leave Grp", members=[self.no_emp_user, self.leave_user])
-        self.assertTrue(is_member_on_leave_or_is_holiday(group, datetime.date(2027, 2, 2)))
+        self.assertFalse(is_member_off(group, self.no_emp_user, datetime.date(2027, 2, 2)))
+        self.assertTrue(is_member_off(group, self.leave_user, datetime.date(2027, 2, 2)))
 
     def test_leave_of_a_near_match_is_skipped(self):
         """10.10 leave whose employee only nearly matches a member's employee is skipped, not an error."""
         group = frappe.get_doc("Appointment Group", self.free_group.name)
         near_match = {"employee": "HR-EMP-NEAR-MATCH ", "from_date": getdate("2027-02-20")}
         with _with_extra_rows("Leave Application", near_match | {"to_date": getdate("2027-02-20")}):
-            self.assertFalse(is_member_on_leave_or_is_holiday(group, datetime.date(2027, 2, 20)))
+            self.assertFalse(is_member_off(group, self.free_user, datetime.date(2027, 2, 20)))
 
     def test_days_in_window_read_once(self):
         """10.5 leave and holidays are read once for the window; later days in it need no queries."""
         group = frappe.get_doc("Appointment Group", self.leave_group.name)
         # The leave started on 2027-02-01, before the window opens on 2027-02-02.
-        self.assertTrue(is_member_on_leave_or_is_holiday(group, datetime.date(2027, 2, 2)))
+        self.assertTrue(is_member_off(group, self.leave_user, datetime.date(2027, 2, 2)))
         with self.assertQueryCount(0):
-            self.assertTrue(is_member_on_leave_or_is_holiday(group, datetime.date(2027, 2, 3)))
-            self.assertFalse(is_member_on_leave_or_is_holiday(group, datetime.date(2027, 2, 4)))
+            self.assertTrue(is_member_off(group, self.leave_user, datetime.date(2027, 2, 3)))
+            self.assertFalse(is_member_off(group, self.leave_user, datetime.date(2027, 2, 4)))
 
     def test_day_past_window_reads_again(self):
         """10.6 a day past the window reads that day's leave and holidays instead of reusing the old window."""
         group = frappe.get_doc("Appointment Group", self.far_holiday_group.name)
-        self.assertTrue(is_member_on_leave_or_is_holiday(group, datetime.date(2027, 2, 10)))
-        self.assertTrue(is_member_on_leave_or_is_holiday(group, datetime.date(2027, 6, 15)))
+        self.assertTrue(is_member_off(group, self.far_holiday_user, datetime.date(2027, 2, 10)))
+        self.assertTrue(is_member_off(group, self.far_holiday_user, datetime.date(2027, 6, 15)))
 
     def test_day_before_window_reads_again(self):
-        """10.8 a day before the window (the day-before lookup) reads that day instead of reusing the window."""
+        """10.8 a day before the window reads that day instead of reusing the window."""
         group = frappe.get_doc("Appointment Group", self.far_holiday_group.name)
-        self.assertFalse(is_member_on_leave_or_is_holiday(group, datetime.date(2027, 2, 11)))
-        self.assertTrue(is_member_on_leave_or_is_holiday(group, datetime.date(2027, 2, 10)))
+        self.assertFalse(is_member_off(group, self.far_holiday_user, datetime.date(2027, 2, 11)))
+        self.assertTrue(is_member_off(group, self.far_holiday_user, datetime.date(2027, 2, 10)))
 
     def test_company_email_matches_case_insensitively(self):
         """10.7 an Employee whose company email differs from the member only in case still counts."""
-        self.assertTrue(is_member_on_leave_or_is_holiday(self.case_group, datetime.date(2027, 3, 1)))
+        self.assertTrue(is_member_off(self.case_group, self.case_user, datetime.date(2027, 3, 1)))
 
 
 class TestSlotCalculation(IntegrationTestCase):
@@ -503,8 +500,8 @@ class TestSlotCalculation(IntegrationTestCase):
     def test_shared_hours_set_the_day_window(self):
         """11.1 a day runs from the latest start to the earliest end of the mandatory members' hours."""
         res = self._slots(self._fresh_group(), self.MONDAY)
-        start = get_utc_datatime_with_time(get_datetime(self.MONDAY), "11:00:00")
-        end = get_utc_datatime_with_time(get_datetime(self.MONDAY), "15:00:00")
+        start = convert_datetime_to_utc(get_datetime(f"{self.MONDAY} 11:00:00"))
+        end = convert_datetime_to_utc(get_datetime(f"{self.MONDAY} 15:00:00"))
         self.assertFalse(res["is_invalid_date"])
         self.assertEqual((res["starttime"], res["endtime"]), (start, end))
         self.assertEqual(res["total_slots_for_day"], 8)
