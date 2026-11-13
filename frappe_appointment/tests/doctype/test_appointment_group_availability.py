@@ -644,6 +644,18 @@ class TestMemberTimeZones(IntegrationTestCase):
         first_read_from = read_calendars.call_args_list[0].args[1]
         self.assertEqual(first_read_from, pytz.utc.localize(get_datetime("2027-03-01 12:30:00")))
 
+    def test_days_asked_for_together_match_days_asked_for_alone(self):
+        """14.8 a day's slots are the same whether or not the day before was worked out first with a shared cache."""
+        # For a guest in Singapore (+480) the New York day runs from the evening into the next morning.
+        group = frappe.get_doc("Appointment Group", self.new_york_group.name)
+        cache = {}
+        with patch(f"{AG}.get_all_unavailable_google_calendar_slots_for_day", return_value=[]):
+            _get_time_slots_for_day(group, self.TUESDAY, "480", cache)
+            together = _get_time_slots_for_day(group, self.WEDNESDAY, "480", cache)["all_available_slots_for_data"]
+
+        self.assertEqual(together, self._slots(self.new_york_group, self.WEDNESDAY, "480"))
+        self.assertEqual(len(together), 19)
+
     def test_available_days_follow_the_site_calendar(self):
         """14.7 Friday afternoon in New York is already Saturday in Kolkata, so a site there offers Saturdays."""
         group = frappe.get_doc("Appointment Group", self.new_york_group.name)

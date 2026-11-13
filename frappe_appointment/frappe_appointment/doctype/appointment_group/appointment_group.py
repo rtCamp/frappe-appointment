@@ -276,10 +276,12 @@ def _get_time_slots_for_day(
 
             filtered_slots.append(slot)
 
-        time_slots_today_object["all_available_slots_for_data"] = filtered_slots
-        time_slots_today_object["total_slots_for_day"] = len(filtered_slots)
-
-        return time_slots_today_object
+        # A new object: the day's own may be in `time_slot_cache_dict`, where the next day asked for reads it.
+        return {
+            **time_slots_today_object,
+            "all_available_slots_for_data": filtered_slots,
+            "total_slots_for_day": len(filtered_slots),
+        }
     except GoogleBadRequest as e:
         frappe.log_error(e)
         frappe.throw(
