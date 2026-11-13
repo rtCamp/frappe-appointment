@@ -12,10 +12,8 @@ from frappe.share import remove as remove_share
 from frappe.utils import (
     add_days,
     add_to_date,
-    format_time,
     get_datetime,
     get_datetime_str,
-    get_time_str,
     getdate,
 )
 
@@ -25,12 +23,16 @@ from frappe_appointment.frappe_appointment.doctype.appointment_settings.appointm
 )
 from frappe_appointment.frappe_appointment.doctype.appointment_time_slot.appointment_time_slot import (
     GoogleBadRequest,
+    check_if_datetime_in_range,
     get_all_unavailable_google_calendar_slots_for_day,
 )
 from frappe_appointment.helpers.utils import (
     convert_timezone_to_utc,
-    get_utc_datatime_with_time,
+    get_site_day_range,
+    get_site_days_for_guest_day,
+    get_time_zone,
     get_weekday,
+    local_time_to_utc,
     utc_to_given_time_zone,
 )
 
@@ -247,21 +249,15 @@ def _get_time_slots_for_day(
 ) -> object:
     try:
         datetime_today = get_datetime(date)
-        datetime_tomorrow = add_days(datetime_today, 1)
-        datetime_yesterday = add_days(datetime_today, -1)
 
+        # Slots are worked out a site day at a time, and the guest's day can run over more than one of them.
         all_time_slots_global_object = {}
 
-        if int(user_timezone_offset) > 0:
-            all_time_slots_global_object = {
-                "yesterday": get_time_slots_for_given_date(appointment_group, datetime_yesterday, time_slot_cache_dict),
-                "today": get_time_slots_for_given_date(appointment_group, datetime_today, time_slot_cache_dict),
-            }
-        else:
-            all_time_slots_global_object = {
-                "today": get_time_slots_for_given_date(appointment_group, datetime_today, time_slot_cache_dict),
-                "tomorrow": get_time_slots_for_given_date(appointment_group, datetime_tomorrow, time_slot_cache_dict),
-            }
+        for site_day in get_site_days_for_guest_day(date, user_timezone_offset):
+            day = "today" if site_day == datetime_today else site_day.date().isoformat()
+            all_time_slots_global_object[day] = get_time_slots_for_given_date(
+                appointment_group, site_day, time_slot_cache_dict
+            )
 
         user_time_slots = get_user_time_slots(all_time_slots_global_object, date, user_timezone_offset)
 
@@ -374,18 +370,9 @@ def _get_time_slots_for_given_date(appointment_group: object, datetime: datetime
 
     date_validation_obj = vaild_date(datetime, appointment_group)
 
-    weekend_availability = check_availability(date_validation_obj, weekday, appointment_group)
+    weekend_availability = check_availability(date_validation_obj, weekday, appointment_group, date)
 
     date_validation_obj["available_days"] = weekend_availability["available_days"]
-
-    if is_member_on_leave_or_is_holiday(appointment_group, date):
-        return get_response_body(
-            avaiable_time_slot_for_day=[],
-            appointment_group=appointment_group,
-            date=date,
-            date_validation_obj=date_validation_obj,
-            is_invalid_date=weekend_availability["is_invalid_date"],
-        )
 
     if weekend_availability["is_invalid_date"]:
         return get_response_body(
@@ -394,6 +381,17 @@ def _get_time_slots_for_given_date(appointment_group: object, datetime: datetime
             date=date,
             date_validation_obj=weekend_availability["date_validation_obj"],
             is_invalid_date=True,
+        )
+
+    # The parts of this day when every mandatory member is working. Empty when one of them is off.
+    working_hours = get_shared_working_hours(appointment_group, date)
+
+    if not working_hours:
+        return get_response_body(
+            avaiable_time_slot_for_day=[],
+            appointment_group=appointment_group,
+            date=date,
+            date_validation_obj=date_validation_obj,
         )
 
     booking_frequency_reached_obj = get_booking_frequency_reached(datetime, appointment_group)
@@ -406,21 +404,10 @@ def _get_time_slots_for_given_date(appointment_group: object, datetime: datetime
             date_validation_obj=date_validation_obj,
         )
 
-    member_time_slots = {}
-    max_start_time, min_end_time = "00:00:00", "24:00:00"
-
-    for member, weekly_time_slots in get_mandatory_member_time_slots(appointment_group).items():
-        appointment_time_slots = [slot for slot in weekly_time_slots if slot.day == weekday]
-
-        max_start_time, min_end_time = get_max_min_time_slot(appointment_time_slots, max_start_time, min_end_time)
-
-        member_time_slots[member] = appointment_time_slots
-
-    starttime = get_utc_datatime_with_time(date, max_start_time)
-    endtime = get_utc_datatime_with_time(date, min_end_time)
+    starttime, endtime = working_hours[0][0], working_hours[-1][1]
 
     all_slots = get_all_unavailable_google_calendar_slots_for_day(
-        member_time_slots, starttime, endtime, date, appointment_group
+        get_mandatory_member_time_slots(appointment_group), starttime, endtime, date, appointment_group
     )
 
     if not all_slots and all_slots != []:
@@ -433,7 +420,17 @@ def _get_time_slots_for_given_date(appointment_group: object, datetime: datetime
 
     all_slots = update_cal_slots_with_events(all_slots, booking_frequency_reached_obj["events"])
 
-    avaiable_time_slot_for_day = get_avaiable_time_slot_for_day(all_slots, starttime, endtime, appointment_group)
+    avaiable_time_slot_for_day = []
+
+    for hours_start, hours_end in working_hours:
+        busy_slots = [
+            slot
+            for slot in all_slots
+            if check_if_datetime_in_range(slot["starts_on"], slot["ends_on"], hours_start, hours_end)
+        ]
+        avaiable_time_slot_for_day += get_avaiable_time_slot_for_day(
+            busy_slots, hours_start, hours_end, appointment_group
+        )
 
     return get_response_body(
         avaiable_time_slot_for_day=avaiable_time_slot_for_day,
@@ -471,13 +468,139 @@ def get_mandatory_member_time_slots(appointment_group: object) -> dict:
     return appointment_group.flags.member_time_slots
 
 
-def check_availability(date_validation_obj: object, weekday: str, appointment_group: object) -> object:
+def get_mandatory_member_time_zones(appointment_group: object) -> dict:
+    """Each mandatory member's time zone, as {member: time zone}.
+
+    A member's weekly hours are in the time zone set on their User; without one they are in the site's.
+    Read once and kept on the group's flags, like the weekly hours.
+    """
+    if appointment_group.flags.member_time_zones is None:
+        members = {member.user.lower(): member.user for member in appointment_group.members if member.is_mandatory}
+        member_time_zones = {member: get_time_zone() for member in members.values()}
+
+        if members:
+            users = {}
+            for availability in frappe.get_all(
+                USER_APPOINTMENT_AVAILABILITY,
+                filters={"name": ["in", list(members.values())]},
+                fields=["name", "user"],
+            ):
+                if availability.user and availability.name.lower() in members:
+                    users[availability.user.lower()] = members[availability.name.lower()]
+
+            if users:
+                for user in frappe.get_all("User", filters={"name": ["in", list(users)]}, fields=["name", "time_zone"]):
+                    if member := users.get(user.name.lower()):
+                        member_time_zones[member] = get_time_zone(user.time_zone)
+
+        appointment_group.flags.member_time_zones = member_time_zones
+
+    return appointment_group.flags.member_time_zones
+
+
+def get_member_working_hours(
+    appointment_group: object, member: str, range_start: datetime, range_end: datetime, skip_days_off: bool = True
+) -> list:
+    """A mandatory member's working hours between two moments, as (start, end) pairs in UTC.
+
+    Each of their weekly time slots is a weekday and clock times in their own time zone, so it is placed
+    on their own calendar days. With `skip_days_off`, days they are on leave or have a holiday are left out.
+    """
+    time_zone = get_mandatory_member_time_zones(appointment_group)[member]
+    weekly_time_slots = get_mandatory_member_time_slots(appointment_group)[member]
+
+    working_hours = []
+    day = range_start.astimezone(time_zone).date()
+    last_day = range_end.astimezone(time_zone).date()
+
+    while day <= last_day:
+        weekday = ALL_DAYS[day.weekday()]
+
+        for slot in weekly_time_slots:
+            if slot.day != weekday:
+                continue
+
+            start = max(local_time_to_utc(day, slot.start_time, time_zone), range_start)
+            end = min(local_time_to_utc(day, slot.end_time, time_zone), range_end)
+
+            if start >= end:
+                continue
+            if skip_days_off and is_member_off(appointment_group, member, day):
+                continue
+
+            working_hours.append((start, end))
+
+        day += datetime.timedelta(days=1)
+
+    return working_hours
+
+
+def get_shared_working_hours(appointment_group: object, date: datetime.date) -> list:
+    """The parts of a site day when every mandatory member is working, as (start, end) pairs in UTC, in order.
+
+    Members in other time zones can leave more than one part: the end of one of their days and the
+    start of the next.
+    """
+    day_start, day_end = get_site_day_range(date)
+    shared_hours = [(day_start, day_end)]
+
+    for member in get_mandatory_member_time_slots(appointment_group):
+        member_hours = get_member_working_hours(appointment_group, member, day_start, day_end)
+        shared_hours = get_overlapping_hours(shared_hours, member_hours)
+
+        if not shared_hours:
+            break
+
+    return shared_hours
+
+
+def get_overlapping_hours(hours: list, other_hours: list) -> list:
+    """The time that is in both lists of (start, end) pairs, as (start, end) pairs in order."""
+    overlapping_hours = []
+
+    for start, end in hours:
+        for other_start, other_end in other_hours:
+            overlap_start, overlap_end = max(start, other_start), min(end, other_end)
+            if overlap_start < overlap_end:
+                overlapping_hours.append((overlap_start, overlap_end))
+
+    return sorted(overlapping_hours)
+
+
+def get_available_days(appointment_group: object, date: datetime.date = None) -> set:
+    """The weekdays, on the site's calendar, on which every mandatory member has working hours.
+
+    Members' hours are in their own time zones, so each day of the week starting on `date` is checked.
+    """
+    members = get_mandatory_member_time_slots(appointment_group)
+    available_days = set()
+    day = getdate(date)
+
+    for _ in ALL_DAYS:
+        day_start, day_end = get_site_day_range(day)
+
+        for member in members:
+            if not get_member_working_hours(appointment_group, member, day_start, day_end, skip_days_off=False):
+                break
+        else:
+            available_days.add(ALL_DAYS[day.weekday()])
+
+        day += datetime.timedelta(days=1)
+
+    return available_days
+
+
+def check_availability(
+    date_validation_obj: object, weekday: str, appointment_group: object, date: datetime.date = None
+) -> object:
     """
     Check if data is valid based on weekdays in user availability.
 
     Args:
     date_validation_obj (object): Date Object
+    weekday (str): Weekday of the date being checked
     appointment_group (object): Appointment Group
+    date (date): Date being checked. Defaults to today.
 
     Returns:
     Object: Object with a valid start date
@@ -487,10 +610,7 @@ def check_availability(date_validation_obj: object, weekday: str, appointment_gr
         "date_validation_obj": date_validation_obj,
     }
 
-    available_days = set(ALL_DAYS)
-
-    for weekly_time_slots in get_mandatory_member_time_slots(appointment_group).values():
-        available_days = available_days.intersection(slot.day for slot in weekly_time_slots)
+    available_days = get_available_days(appointment_group, date)
 
     res["available_days"] = available_days
 
@@ -857,25 +977,6 @@ def get_next_round_value(
     return min_start_time
 
 
-def get_max_min_time_slot(appointmen_time_slots: list, max_start_time: str, min_end_time: str) -> list:
-    """Select the maximum between the given start time and appointment_time_slots start time, and the minimum between the given end time and appointment_time_slots end time.
-
-    Args:
-    appointment_time_slots (list): Appointment time slots
-    max_start_time (str): Max start time
-    min_end_time (str): Min end time
-
-    Returns:
-    list: Updated list of start time and min end time
-    """
-
-    for appointmen_time_slot in appointmen_time_slots:
-        max_start_time = max(max_start_time, format_time(get_time_str(appointmen_time_slot.start_time)))
-        min_end_time = min(min_end_time, format_time(get_time_str(appointmen_time_slot.end_time)))
-
-    return [max_start_time, min_end_time]
-
-
 def is_member_on_leave_or_is_holiday(appointment_group, date):
     """
     Check if the given date is marked as invalid due to user leaves or holiday of mandatory members.
@@ -887,27 +988,29 @@ def is_member_on_leave_or_is_holiday(appointment_group, date):
     Returns:
     bool: True if the date is invalid due to mandatory member leaves or holiday, False otherwise
     """
-
-    # check if erpnext and hrms are installed or not
-    installed_apps = frappe.get_installed_apps()
-    if "erpnext" not in installed_apps:
-        return False
-    if "hrms" not in installed_apps:
-        return False
-
     date = getdate(date)
-    time_off = get_mandatory_member_time_off(appointment_group, date)
 
     for member in appointment_group.members:
-        if member.is_mandatory:  # Only check for mandatory members
-            employee = time_off.employees.get(member.user.lower())
-            if not employee:
-                continue  # Without an Employee we can't check this member's leaves or holidays
-
-            if date in time_off.days_off[employee.name.lower()]:
-                return True
+        if member.is_mandatory and is_member_off(appointment_group, member.user, date):
+            return True
 
     return False
+
+
+def is_member_off(appointment_group: object, member: str, date: datetime.date) -> bool:
+    """Whether a mandatory member is on approved leave or has a holiday on a date."""
+    # Leave and holidays come from HRMS, which needs ERPNext.
+    installed_apps = frappe.get_installed_apps()
+    if "erpnext" not in installed_apps or "hrms" not in installed_apps:
+        return False
+
+    time_off = get_mandatory_member_time_off(appointment_group, date)
+
+    employee = time_off.employees.get(member.lower())
+    if not employee:
+        return False  # Without an Employee we can't check this member's leaves or holidays
+
+    return date in time_off.days_off[employee.name.lower()]
 
 
 def get_mandatory_member_time_off(appointment_group: object, date: datetime.date) -> frappe._dict:

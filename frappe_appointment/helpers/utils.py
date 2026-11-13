@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 import pytz
 from dateutil import parser
 from frappe.utils import convert_utc_to_system_timezone, get_datetime_str
-from frappe.utils.data import get_date_str, get_system_timezone
+from frappe.utils.data import get_date_str, get_system_timezone, to_timedelta
 
 weekdays = [
     "Monday",
@@ -14,24 +14,6 @@ weekdays = [
     "Saturday",
     "Sunday",
 ]
-
-
-def get_today_min_max_time(date: datetime):
-    """Retrieve the current day's start and end time in UTC format.
-
-    Args:
-    date (datetime): date
-
-    Returns:
-    list: Date start and end time
-    """
-    time_min = datetime(date.year, date.month, date.day, 0, 0, 0)
-    time_max = datetime(date.year, date.month, date.day, 23, 59, 59)
-
-    time_min_str = time_min.isoformat() + "Z"
-    time_max_str = time_max.isoformat() + "Z"
-
-    return [time_max_str, time_min_str]
 
 
 def get_utc_datatime_with_time(date: datetime, time: str) -> datetime:
@@ -47,6 +29,71 @@ def get_utc_datatime_with_time(date: datetime, time: str) -> datetime:
     system_timezone = pytz.timezone(get_system_timezone())
     local_datetime = system_timezone.localize(datetime.strptime(f"{get_date_str(date)} {time}", "%Y-%m-%d %H:%M:%S"))
     return local_datetime.astimezone(pytz.utc)
+
+
+def get_time_zone(time_zone: str | None = None):
+    """The named time zone, or the site's when there's no name or it isn't a known one."""
+    try:
+        return pytz.timezone(time_zone or get_system_timezone())
+    except pytz.UnknownTimeZoneError:
+        return pytz.timezone(get_system_timezone())
+
+
+def local_time_to_utc(date, time, time_zone) -> datetime:
+    """The UTC moment of a clock time on a calendar date in a time zone.
+
+    Args:
+    date (date): Calendar date in the time zone
+    time (timedelta | str): Time of day, as an Appointment Time Slot holds it
+    time_zone (tzinfo): pytz time zone the date and time are in
+    """
+    local_datetime = datetime(date.year, date.month, date.day) + to_timedelta(time)
+    return time_zone.localize(local_datetime).astimezone(pytz.utc)
+
+
+def get_site_day_range(date) -> tuple:
+    """The UTC moments a calendar day starts and ends in the site's time zone."""
+    site_time_zone = get_time_zone()
+    day_start = datetime(date.year, date.month, date.day)
+    day_end = day_start + timedelta(days=1)
+    return (
+        site_time_zone.localize(day_start).astimezone(pytz.utc),
+        site_time_zone.localize(day_end).astimezone(pytz.utc),
+    )
+
+
+def get_site_days_for_guest_day(date_str: str, timezone_offset: str) -> list:
+    """The site's calendar days that a guest's day runs over, as midnight datetimes in order.
+
+    The day with the guest's own date is always one of them: its details describe the day to the guest.
+    """
+    guest_day_start, guest_day_end = get_date_start_end_time_for_given_timezone(date_str, timezone_offset)
+    site_time_zone = get_time_zone()
+
+    day = guest_day_start.astimezone(site_time_zone).date()
+    last_day = guest_day_end.astimezone(site_time_zone).date()
+    days = {datetime.strptime(date_str, "%Y-%m-%d").date()}
+    while day <= last_day:
+        days.add(day)
+        day += timedelta(days=1)
+
+    return [datetime(day.year, day.month, day.day) for day in sorted(days)]
+
+
+def get_calendar_fetch_range(date: datetime, starttime: datetime = None, endtime: datetime = None) -> tuple:
+    """The time range to read calendar events for, as (time_min, time_max) strings in UTC.
+
+    It is the date's UTC day, made wider to take in all of [starttime, endtime]: working hours in another
+    time zone can fall outside that day.
+    """
+    time_min = pytz.utc.localize(datetime(date.year, date.month, date.day, 0, 0, 0))
+    time_max = pytz.utc.localize(datetime(date.year, date.month, date.day, 23, 59, 59))
+
+    if starttime and endtime:
+        time_min = min(time_min, starttime.astimezone(pytz.utc))
+        time_max = max(time_max, endtime.astimezone(pytz.utc))
+
+    return time_min.strftime("%Y-%m-%dT%H:%M:%SZ"), time_max.strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
 def convert_timezone_to_utc(date_time: str, time_zone: str) -> datetime:

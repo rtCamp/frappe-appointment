@@ -1,4 +1,5 @@
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
+from unittest.mock import patch
 
 import pytz
 from frappe.tests import IntegrationTestCase
@@ -11,26 +12,91 @@ from frappe_appointment.helpers.utils import (
     convert_timezone_to_utc,
     convert_utc_datetime_to_timezone,
     duration_to_string,
+    get_calendar_fetch_range,
     get_date_start_end_time_for_given_timezone,
+    get_site_day_range,
+    get_site_days_for_guest_day,
     get_time_slots_utc,
-    get_today_min_max_time,
+    get_time_zone,
     get_utc_datatime_with_time,
     get_weekday,
+    local_time_to_utc,
     update_time_of_datetime,
     utc_to_given_time_zone,
     utc_to_sys_time,
 )
 from frappe_appointment.tests import google_slot
 
+SYSTEM_TIMEZONE = "frappe_appointment.helpers.utils.get_system_timezone"
+
+
+def _utc(value):
+    return pytz.utc.localize(datetime.fromisoformat(value))
+
 
 class TestUtilsDatetimeHelpers(IntegrationTestCase):
     """Pure datetime, timezone and duration helpers."""
 
-    def test_get_today_min_max_time(self):
-        """get_today_min_max_time returns [day-end, day-start] as Z-suffixed ISO strings."""
-        # day-end 23:59:59 first, day-start 00:00:00 second; the input time-of-day is ignored
-        result = get_today_min_max_time(datetime(2026, 7, 1, 15, 30, 45))
-        self.assertEqual(result, ["2026-07-01T23:59:59Z", "2026-07-01T00:00:00Z"])
+    def test_calendar_fetch_range_is_the_utc_day(self):
+        """get_calendar_fetch_range is the date's UTC day when the working hours are inside it."""
+        # the input time-of-day is ignored
+        day = datetime(2026, 7, 1, 15, 30, 45)
+        self.assertEqual(get_calendar_fetch_range(day), ("2026-07-01T00:00:00Z", "2026-07-01T23:59:59Z"))
+        self.assertEqual(
+            get_calendar_fetch_range(day, _utc("2026-07-01T03:30:00"), _utc("2026-07-01T11:30:00")),
+            ("2026-07-01T00:00:00Z", "2026-07-01T23:59:59Z"),
+        )
+
+    def test_calendar_fetch_range_widens_to_the_working_hours(self):
+        """get_calendar_fetch_range reaches past the UTC day to take in working hours outside it."""
+        day = datetime(2026, 7, 1)
+        self.assertEqual(
+            get_calendar_fetch_range(day, _utc("2026-06-30T18:30:00"), _utc("2026-07-01T12:00:00")),
+            ("2026-06-30T18:30:00Z", "2026-07-01T23:59:59Z"),
+        )
+        self.assertEqual(
+            get_calendar_fetch_range(day, _utc("2026-07-01T17:00:00"), _utc("2026-07-02T02:00:00")),
+            ("2026-07-01T00:00:00Z", "2026-07-02T02:00:00Z"),
+        )
+
+    def test_get_time_zone(self):
+        """get_time_zone returns the named zone, and the site's for a missing or unknown name."""
+        site_time_zone = pytz.timezone(get_system_timezone())
+        self.assertEqual(get_time_zone("America/New_York"), pytz.timezone("America/New_York"))
+        self.assertEqual(get_time_zone(), site_time_zone)
+        self.assertEqual(get_time_zone(""), site_time_zone)
+        self.assertEqual(get_time_zone("Nowhere/Nothing"), site_time_zone)
+
+    def test_local_time_to_utc(self):
+        """local_time_to_utc reads a clock time in the given zone, following its daylight saving."""
+        new_york = pytz.timezone("America/New_York")
+        # Standard time is UTC-5, daylight time UTC-4.
+        self.assertEqual(local_time_to_utc(date(2027, 3, 1), "07:30:00", new_york), _utc("2027-03-01T12:30:00"))
+        self.assertEqual(
+            local_time_to_utc(date(2027, 7, 1), timedelta(hours=7, minutes=30), new_york),
+            _utc("2027-07-01T11:30:00"),
+        )
+
+    def test_get_site_day_range(self):
+        """get_site_day_range runs from midnight to the next midnight in the site's time zone."""
+        with patch(SYSTEM_TIMEZONE, return_value="Asia/Kolkata"):
+            self.assertEqual(
+                get_site_day_range(date(2027, 3, 1)), (_utc("2027-02-28T18:30:00"), _utc("2027-03-01T18:30:00"))
+            )
+
+    def test_get_site_days_for_guest_day(self):
+        """get_site_days_for_guest_day lists the site days a guest's day runs over."""
+        monday = datetime(2027, 3, 1)
+        cases = {
+            "330": [monday],  # the same offset as the site
+            "60": [monday, monday + timedelta(days=1)],  # behind the site, ahead of UTC
+            "-300": [monday, monday + timedelta(days=1)],
+            "540": [monday - timedelta(days=1), monday],  # ahead of the site
+        }
+        with patch(SYSTEM_TIMEZONE, return_value="Asia/Kolkata"):
+            for offset, days in cases.items():
+                with self.subTest(offset=offset):
+                    self.assertEqual(get_site_days_for_guest_day("2027-03-01", offset), days)
 
     def test_cmp_items(self):
         """cmp_items returns 1 / 0 / -1 for a>b / a==b / a<b."""
