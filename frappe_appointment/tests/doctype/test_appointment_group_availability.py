@@ -17,7 +17,6 @@ from frappe_appointment.frappe_appointment.doctype.appointment_group.appointment
     get_previous_available_day,
     get_response_body,
     get_time_slots_for_given_date,
-    get_user_time_slots,
     hours_to_time_slot,
     is_member_on_leave_or_is_holiday,
     is_valid_buffer_time,
@@ -304,14 +303,6 @@ class TestSlotGeneration(IntegrationTestCase):
         self.assertEqual(out[0]["starts_on"], convert_timezone_to_utc("2027-01-15T10:00:00", "UTC"))
         self.assertEqual(out[0]["ends_on"], convert_timezone_to_utc("2027-01-15T10:30:00", "UTC"))
 
-    def test_get_user_time_slots_filters_by_day(self):
-        """8.8 get_user_time_slots keeps only slots whose user-tz start day matches the date."""
-        keep = {"start_time": pytz.utc.localize(get_datetime("2027-01-15 10:00:00"))}
-        drop = {"start_time": pytz.utc.localize(get_datetime("2027-01-16 10:00:00"))}
-        obj = {"today": {"all_available_slots_for_data": [keep, drop]}}
-        result = get_user_time_slots(obj, "2027-01-15", "0")
-        self.assertEqual(result, [keep])
-
     def test_hours_to_time_slot(self):
         """8.9 hours_to_time_slot returns whole hours between current time and the slot start."""
         current = pytz.utc.localize(get_datetime("2027-01-15 10:00:00"))
@@ -573,6 +564,25 @@ class TestMemberTimeZones(IntegrationTestCase):
         )
         cls.next_day_group = make_appointment_group("FA TZ Next Day", members=[cls.evening_user, cls.morning_user])
 
+        cls.hourly_user = cls.make_member(
+            "test_fa_tz_hourly@example.com",
+            "fa-tz-hourly",
+            "America/New_York",
+            [(day, "08:00:00", "17:00:00") for day in weekdays],
+        )
+        cls.afternoon_user = cls.make_member(
+            "test_fa_tz_afternoon@example.com",
+            "fa-tz-afternoon",
+            "America/New_York",
+            [(day, "14:00:00", "17:00:00") for day in weekdays],
+        )
+        cls.day_user = cls.make_member(
+            "test_fa_tz_day@example.com",
+            "fa-tz-day",
+            "Asia/Kolkata",
+            [(day, "10:00:00", "17:00:00") for day in weekdays],
+        )
+
         leave_employee = make_employee(cls.new_york_user)
         make_approved_leave(leave_employee.name, cls.LEAVE_MONDAY, cls.LEAVE_MONDAY)
 
@@ -656,9 +666,76 @@ class TestMemberTimeZones(IntegrationTestCase):
         self.assertEqual(together, self._slots(self.new_york_group, self.WEDNESDAY, "480"))
         self.assertEqual(len(together), 19)
 
-    def test_available_days_follow_the_site_calendar(self):
-        """14.7 Friday afternoon in New York is already Saturday in Kolkata, so a site there offers Saturdays."""
-        group = frappe.get_doc("Appointment Group", self.new_york_group.name)
+    def test_slots_are_not_cut_where_another_day_starts(self):
+        """14.9 working hours that run over someone's midnight still give back-to-back slots, each offered once."""
+        # 08:00-17:00 in New York is 13:00-22:00 UTC: nine one-hour meetings, on the hour.
+        group = make_appointment_group("FA TZ Hourly", members=[self.hourly_user], duration_for_event=3600)
+        hours = [pytz.utc.localize(get_datetime(f"2027-03-01 {hour}:00:00")) for hour in range(13, 22)]
+
+        new_york = self._slots(group, self.MONDAY, "-300")
+        self.assertEqual([slot["start_time"] for slot in new_york], hours)
+
+        # A guest in Kolkata (+330) has their midnight at 18:30 UTC, in the middle of the 18:00 meeting.
+        kolkata = self._slots(group, self.MONDAY, "330") + self._slots(group, self.TUESDAY, "330")
+        self.assertEqual([slot["start_time"] for slot in kolkata[:9]], hours)
+        self.assertEqual(len(self._slots(group, self.MONDAY, "330")), 6)
+
+        # The site's own midnight doesn't cut them either.
         with patch("frappe_appointment.helpers.utils.get_system_timezone", return_value="Asia/Kolkata"):
-            available_days = get_available_days(group, getdate(self.MONDAY))
-        self.assertEqual(available_days, {"Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"})
+            self.assertEqual([slot["start_time"] for slot in self._slots(group, self.MONDAY, "-300")], hours)
+
+    def test_a_day_is_valid_on_the_guests_calendar(self):
+        """14.10 a day with slots for the guest is a valid day for them, whatever day it is on the site."""
+        # 14:00-17:00 Monday in New York is the small hours of Tuesday in Kolkata.
+        group = make_appointment_group("FA TZ Afternoon", members=[self.afternoon_user])
+
+        with (
+            patch(f"{AG}.get_all_unavailable_google_calendar_slots_for_day", return_value=[]),
+            patch("frappe_appointment.helpers.utils.get_system_timezone", return_value="Asia/Kolkata"),
+        ):
+            new_york = _get_time_slots_for_day(group, self.MONDAY, "-300")
+            kolkata = _get_time_slots_for_day(group, self.MONDAY, "330")
+
+        self.assertFalse(new_york["is_invalid_date"])
+        self.assertEqual(new_york["total_slots_for_day"], 6)
+        self.assertEqual(getdate(new_york["next_valid_date"]), getdate(self.MONDAY))
+
+        # In Kolkata those hours are on Tuesday to Saturday, so Monday is not a day to book.
+        self.assertTrue(kolkata["is_invalid_date"])
+        self.assertEqual(kolkata["total_slots_for_day"], 0)
+        self.assertEqual(getdate(kolkata["next_valid_date"]), getdate(self.TUESDAY))
+
+    def test_available_days_are_on_the_guests_calendar(self):
+        """14.7 the available weekdays are the guest's own: Friday afternoon in New York is Saturday in Kolkata."""
+        group = frappe.get_doc("Appointment Group", self.new_york_group.name)
+        weekdays = {"Monday", "Tuesday", "Wednesday", "Thursday", "Friday"}
+
+        self.assertEqual(get_available_days(group, getdate(self.MONDAY), "-300"), weekdays)
+        self.assertEqual(get_available_days(group, getdate(self.MONDAY), "330"), weekdays | {"Saturday"})
+
+        # Without a guest, the calendar is the site's.
+        with patch("frappe_appointment.helpers.utils.get_system_timezone", return_value="Asia/Kolkata"):
+            self.assertEqual(get_available_days(group, getdate(self.MONDAY)), weekdays | {"Saturday"})
+
+    def test_days_without_shared_hours_are_not_available(self):
+        """14.11 a weekday every member works is only available when their hours on it overlap."""
+        # New York 07:30-17:00 is 18:00-03:30 in Kolkata, after the Kolkata member's 10:00-17:00.
+        group = make_appointment_group("FA TZ Apart", members=[self.new_york_user, self.day_user])
+        self.assertEqual(get_available_days(group, getdate(self.MONDAY), "330"), set())
+
+        with patch(f"{AG}.get_all_unavailable_google_calendar_slots_for_day", return_value=[]):
+            res = _get_time_slots_for_day(group, self.MONDAY, "330")
+        self.assertTrue(res["is_invalid_date"])
+        self.assertEqual(res["total_slots_for_day"], 0)
+
+    def test_group_without_mandatory_members_has_no_slots(self):
+        """14.12 a group left with no mandatory member offers nothing, not the whole day."""
+        group = make_appointment_group("FA TZ Optional", members=[self.new_york_user])
+        frappe.db.set_value("Members", {"parent": group.name}, "is_mandatory", 0)
+        group = frappe.get_doc("Appointment Group", group.name)
+
+        self.assertEqual(get_available_days(group, getdate(self.MONDAY), "-300"), set())
+        with patch(f"{AG}.get_all_unavailable_google_calendar_slots_for_day", return_value=[]) as read_calendars:
+            res = _get_time_slots_for_day(group, self.MONDAY, "-300")
+        self.assertEqual(res["total_slots_for_day"], 0)
+        read_calendars.assert_not_called()

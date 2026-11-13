@@ -14,8 +14,7 @@ from frappe_appointment.helpers.utils import (
     duration_to_string,
     get_calendar_fetch_range,
     get_date_start_end_time_for_given_timezone,
-    get_site_day_range,
-    get_site_days_for_guest_day,
+    get_day_range,
     get_time_slots_utc,
     get_time_zone,
     get_utc_datatime_with_time,
@@ -77,26 +76,24 @@ class TestUtilsDatetimeHelpers(IntegrationTestCase):
             _utc("2027-07-01T11:30:00"),
         )
 
-    def test_get_site_day_range(self):
-        """get_site_day_range runs from midnight to the next midnight in the site's time zone."""
+    def test_get_day_range_in_the_site_time_zone(self):
+        """get_day_range runs from midnight to the next midnight in the site's time zone when there's no offset."""
         with patch(SYSTEM_TIMEZONE, return_value="Asia/Kolkata"):
             self.assertEqual(
-                get_site_day_range(date(2027, 3, 1)), (_utc("2027-02-28T18:30:00"), _utc("2027-03-01T18:30:00"))
+                get_day_range(date(2027, 3, 1)), (_utc("2027-02-28T18:30:00"), _utc("2027-03-01T18:30:00"))
             )
 
-    def test_get_site_days_for_guest_day(self):
-        """get_site_days_for_guest_day lists the site days a guest's day runs over."""
-        monday = datetime(2027, 3, 1)
+    def test_get_day_range_at_a_guest_offset(self):
+        """get_day_range runs from midnight to the next midnight at the guest's UTC offset, whatever the site's is."""
         cases = {
-            "330": [monday],  # the same offset as the site
-            "60": [monday, monday + timedelta(days=1)],  # behind the site, ahead of UTC
-            "-300": [monday, monday + timedelta(days=1)],
-            "540": [monday - timedelta(days=1), monday],  # ahead of the site
+            "0": (_utc("2027-03-01T00:00:00"), _utc("2027-03-02T00:00:00")),
+            "-300": (_utc("2027-03-01T05:00:00"), _utc("2027-03-02T05:00:00")),
+            "540": (_utc("2027-02-28T15:00:00"), _utc("2027-03-01T15:00:00")),
         }
         with patch(SYSTEM_TIMEZONE, return_value="Asia/Kolkata"):
-            for offset, days in cases.items():
+            for offset, day_range in cases.items():
                 with self.subTest(offset=offset):
-                    self.assertEqual(get_site_days_for_guest_day("2027-03-01", offset), days)
+                    self.assertEqual(get_day_range(date(2027, 3, 1), offset), day_range)
 
     def test_cmp_items(self):
         """cmp_items returns 1 / 0 / -1 for a>b / a==b / a<b."""

@@ -51,33 +51,19 @@ def local_time_to_utc(date, time, time_zone) -> datetime:
     return time_zone.localize(local_datetime).astimezone(pytz.utc)
 
 
-def get_site_day_range(date) -> tuple:
-    """The UTC moments a calendar day starts and ends in the site's time zone."""
-    site_time_zone = get_time_zone()
+def get_day_range(date, timezone_offset: str | None = None) -> tuple:
+    """The UTC moments a calendar day starts and ends.
+
+    The day is the one at a UTC offset in minutes, as a guest's browser gives it, or the one in the
+    site's time zone when there is no offset.
+    """
+    time_zone = get_time_zone() if timezone_offset is None else pytz.FixedOffset(int(timezone_offset))
     day_start = datetime(date.year, date.month, date.day)
     day_end = day_start + timedelta(days=1)
     return (
-        site_time_zone.localize(day_start).astimezone(pytz.utc),
-        site_time_zone.localize(day_end).astimezone(pytz.utc),
+        time_zone.localize(day_start).astimezone(pytz.utc),
+        time_zone.localize(day_end).astimezone(pytz.utc),
     )
-
-
-def get_site_days_for_guest_day(date_str: str, timezone_offset: str) -> list:
-    """The site's calendar days that a guest's day runs over, as midnight datetimes in order.
-
-    The day with the guest's own date is always one of them: its details describe the day to the guest.
-    """
-    guest_day_start, guest_day_end = get_date_start_end_time_for_given_timezone(date_str, timezone_offset)
-    site_time_zone = get_time_zone()
-
-    day = guest_day_start.astimezone(site_time_zone).date()
-    last_day = guest_day_end.astimezone(site_time_zone).date()
-    days = {datetime.strptime(date_str, "%Y-%m-%d").date()}
-    while day <= last_day:
-        days.add(day)
-        day += timedelta(days=1)
-
-    return [datetime(day.year, day.month, day.day) for day in sorted(days)]
 
 
 def get_calendar_fetch_range(date: datetime, starttime: datetime = None, endtime: datetime = None) -> tuple:
