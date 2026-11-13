@@ -12,10 +12,12 @@ from frappe_appointment.frappe_appointment.doctype.appointment_group.appointment
     get_avaiable_time_slot_for_day,
     get_available_days,
     get_booking_frequency_reached,
+    get_mandatory_member_time_zones,
     get_next_available_day,
     get_next_round_value,
     get_previous_available_day,
     get_response_body,
+    get_shared_working_hours,
     get_time_slots_for_given_date,
     hours_to_time_slot,
     is_member_off,
@@ -756,6 +758,28 @@ class TestMemberTimeZones(IntegrationTestCase):
 
             self.assertEqual(self._slots(group, self.MONDAY, "-300"), [])
             self.assertEqual(len(self._slots(group, self.TUESDAY, "-300")), 19)
+
+    def test_time_zones_are_read_in_one_query(self):
+        """14.14 the members' time zones take one query for the group, however many members it has."""
+        group = frappe.get_doc("Appointment Group", self.mixed_group.name)
+        with self.assertQueryCount(1):
+            time_zones = get_mandatory_member_time_zones(group)
+        self.assertEqual(
+            {member: str(time_zone) for member, time_zone in time_zones.items()},
+            {self.new_york_user: "America/New_York", self.kolkata_user: "Asia/Kolkata"},
+        )
+        with self.assertQueryCount(0):
+            get_mandatory_member_time_zones(group)
+
+    def test_available_days_work_out_each_day_once(self):
+        """14.15 the days after one already asked about need one more day worked out, not the whole week again."""
+        group = frappe.get_doc("Appointment Group", self.new_york_group.name)
+        with patch(f"{AG}.get_shared_working_hours", wraps=get_shared_working_hours) as shared_hours:
+            monday = get_available_days(group, getdate(self.MONDAY), "330")
+            self.assertEqual(shared_hours.call_count, 7)
+            tuesday = get_available_days(group, getdate(self.TUESDAY), "330")
+            self.assertEqual(shared_hours.call_count, 8)
+        self.assertEqual(monday, tuesday)
 
     def test_group_without_mandatory_members_has_no_slots(self):
         """14.12 a group left with no mandatory member offers nothing, not the whole day."""

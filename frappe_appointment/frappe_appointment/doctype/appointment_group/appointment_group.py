@@ -423,6 +423,16 @@ def get_time_slots_for_working_hours(
     return time_slots
 
 
+def get_mandatory_members(appointment_group: object) -> dict:
+    """The group's mandatory members, as {lowercased name: name}.
+
+    Rows read for them are matched through the lowercased name, as the database matches names
+    case-insensitively. It can also match a name that differs in accents or trailing spaces; those
+    rows aren't a member's, and looking them up here skips them.
+    """
+    return {member.user.lower(): member.user for member in appointment_group.members if member.is_mandatory}
+
+
 def get_mandatory_member_time_slots(appointment_group: object) -> dict:
     """Each mandatory member's weekly hours, as {member: [Appointment Time Slot rows]}.
 
@@ -430,9 +440,7 @@ def get_mandatory_member_time_slots(appointment_group: object) -> dict:
     group's flags for as long as that group object lives (one request or one availability job).
     """
     if appointment_group.flags.member_time_slots is None:
-        # Matched case-insensitively, as the database matches the names. The database can also match a
-        # name that differs in accents or trailing spaces; those rows aren't a member's, so they're skipped.
-        members = {member.user.lower(): member.user for member in appointment_group.members if member.is_mandatory}
+        members = get_mandatory_members(appointment_group)
         member_time_slots = {member: [] for member in members.values()}
 
         if members:
@@ -456,23 +464,22 @@ def get_mandatory_member_time_zones(appointment_group: object) -> dict:
     Read once and kept on the group's flags, like the weekly hours.
     """
     if appointment_group.flags.member_time_zones is None:
-        members = {member.user.lower(): member.user for member in appointment_group.members if member.is_mandatory}
+        members = get_mandatory_members(appointment_group)
         member_time_zones = {member: get_time_zone() for member in members.values()}
 
         if members:
-            users = {}
-            for availability in frappe.get_all(
-                USER_APPOINTMENT_AVAILABILITY,
-                filters={"name": ["in", list(members.values())]},
-                fields=["name", "user"],
-            ):
-                if availability.user and availability.name.lower() in members:
-                    users[availability.user.lower()] = members[availability.name.lower()]
+            availability = frappe.qb.DocType(USER_APPOINTMENT_AVAILABILITY)
+            user = frappe.qb.DocType("User")
 
-            if users:
-                for user in frappe.get_all("User", filters={"name": ["in", list(users)]}, fields=["name", "time_zone"]):
-                    if member := users.get(user.name.lower()):
-                        member_time_zones[member] = get_time_zone(user.time_zone)
+            for row in (
+                frappe.qb.from_(availability)
+                .join(user)
+                .on(user.name == availability.user)
+                .select(availability.name, user.time_zone)
+                .where(availability.name.isin(list(members.values())))
+            ).run(as_dict=True):
+                if member := members.get(row.name.lower()):
+                    member_time_zones[member] = get_time_zone(row.time_zone)
 
         appointment_group.flags.member_time_zones = member_time_zones
 
@@ -556,14 +563,26 @@ def get_available_days(appointment_group: object, date: datetime.date = None, ti
     That calendar is the one at their UTC offset in minutes, or the site's when there is no offset.
     Members' hours are in their own time zones, so each day of the week starting on `date` is checked.
     Leave and holidays don't count: a weekday is available when the members' weekly hours overlap on it.
+
+    Whether a day has shared hours is kept on the group's flags, so asking about the days that follow
+    works out one more day, not seven.
     """
+    if appointment_group.flags.days_with_shared_hours is None:
+        appointment_group.flags.days_with_shared_hours = {}
+
+    days_with_shared_hours = appointment_group.flags.days_with_shared_hours
+
     available_days = set()
     day = getdate(date)
 
     for _ in ALL_DAYS:
-        day_start, day_end = get_day_range(day, timezone_offset)
+        if (day, timezone_offset) not in days_with_shared_hours:
+            day_start, day_end = get_day_range(day, timezone_offset)
+            days_with_shared_hours[(day, timezone_offset)] = bool(
+                get_shared_working_hours(appointment_group, day_start, day_end, skip_days_off=False)
+            )
 
-        if get_shared_working_hours(appointment_group, day_start, day_end, skip_days_off=False):
+        if days_with_shared_hours[(day, timezone_offset)]:
             available_days.add(ALL_DAYS[day.weekday()])
 
         day += datetime.timedelta(days=1)
@@ -967,9 +986,12 @@ def get_next_round_value(
 
 def is_member_off(appointment_group: object, member: str, date: datetime.date) -> bool:
     """Whether a mandatory member is on approved leave or has a holiday on a date."""
-    # Leave and holidays come from HRMS, which needs ERPNext.
-    installed_apps = frappe.get_installed_apps()
-    if "erpnext" not in installed_apps or "hrms" not in installed_apps:
+    # Leave and holidays come from HRMS, which needs ERPNext. Checked once for the group object.
+    if appointment_group.flags.has_time_off is None:
+        installed_apps = frappe.get_installed_apps()
+        appointment_group.flags.has_time_off = "erpnext" in installed_apps and "hrms" in installed_apps
+
+    if not appointment_group.flags.has_time_off:
         return False
 
     time_off = get_mandatory_member_time_off(appointment_group, date)
