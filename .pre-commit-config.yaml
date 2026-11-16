@@ -50,14 +50,15 @@ repos:
       - id: prettier
         language_version: system
         types_or: [javascript, vue, scss]
-        # Ignore any files that might contain jinja / bundles
+        # Ignore any files that might contain jinja / bundles, and the help motions, which are kept compact on purpose
         exclude: |
             (?x)^(
                 frappe_appointment/public/dist/.*|
                 .*node_modules.*|
                 .*boilerplate.*|
                 frappe_appointment/templates/includes/.*|
-                frappe_appointment/public/js/lib/.*
+                frappe_appointment/public/js/lib/.*|
+                frontend/src/assets/motions/.*
             )$
 
 
