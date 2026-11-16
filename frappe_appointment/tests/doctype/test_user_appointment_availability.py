@@ -107,11 +107,6 @@ class TestSlugHelpers(IntegrationTestCase):
         self.assertEqual(result["suggested_slug"], "fa-slughelp1")
 
 
-# 13.9 (get_user_appointment_availability_slots) is not tested: the function has no callers and
-# always raises. It builds a tz-aware datetime (convert_utc_datetime_to_timezone) then passes it to
-# convert_datetime_to_utc, whose pytz.localize rejects an already-tz-aware datetime. SOURCE BUG.
-
-
 class TestConfirmationEmailChoice(IntegrationTestCase):
     USER = "test_fa_uaav_email@example.com"
 
