@@ -13,7 +13,7 @@ from frappe.model.document import Document
 from frappe_appointment.helpers.utils import (
     compare_end_time_slots,
     convert_timezone_to_utc,
-    get_today_min_max_time,
+    get_calendar_fetch_range,
 )
 
 
@@ -97,7 +97,7 @@ def get_google_calendar_slots_member(
     events = []
 
     try:
-        time_max, time_min = get_today_min_max_time(date)
+        time_min, time_max = get_calendar_fetch_range(date, starttime, endtime)
 
         events = (
             google_calendar_api_obj.events()

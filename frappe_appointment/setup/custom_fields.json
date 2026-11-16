@@ -1,0 +1,123 @@
+{
+  "Email Template": [
+    {
+      "default": "0",
+      "description": "The email will be sent after the specified time in the cycle has elapsed. Hour value range: [1-24]",
+      "fieldname": "custom_time_to_send_email",
+      "fieldtype": "Int",
+      "insert_after": "subject",
+      "label": "Time to send email"
+    }
+  ],
+  "Google Calendar": [
+    {
+      "default": "1",
+      "fieldname": "custom_ignore_all_day_events",
+      "fieldtype": "Check",
+      "insert_after": "authorize_google_calendar_access",
+      "label": "Ignore All Day Events"
+    },
+    {
+      "default": "0",
+      "fieldname": "custom_is_google_calendar_authorized",
+      "fieldtype": "Check",
+      "in_list_view": 1,
+      "insert_after": "next_sync_token",
+      "label": "Is Google Calendar Authorized",
+      "read_only": 1
+    },
+    {
+      "fieldname": "custom_zoom",
+      "fieldtype": "Section Break",
+      "insert_after": "custom_is_google_calendar_authorized",
+      "label": "Zoom"
+    },
+    {
+      "description": "Zoom meetings will be scheduled using the zoom account for this email address.",
+      "fetch_from": "user.email",
+      "fetch_if_empty": 1,
+      "fieldname": "custom_zoom_user_email",
+      "fieldtype": "Data",
+      "insert_after": "custom_zoom",
+      "label": "Zoom User Email"
+    }
+  ],
+  "Event": [
+    {
+      "default": "0",
+      "depends_on": "sync_with_google_calendar",
+      "fieldname": "custom_create_free_event",
+      "fieldtype": "Check",
+      "insert_after": "sync_with_google_calendar",
+      "label": "Create Free Event"
+    },
+    {
+      "fieldname": "custom_google_calendar_event_url",
+      "fieldtype": "Small Text",
+      "insert_after": "google_calendar_id",
+      "label": "Google Calendar Event URL"
+    },
+    {
+      "fieldname": "custom_section_break_ni5nf",
+      "fieldtype": "Section Break",
+      "insert_after": "event_participants",
+      "label": "Appointment Information"
+    },
+    {
+      "fieldname": "custom_appointment_group",
+      "fieldtype": "Link",
+      "insert_after": "custom_section_break_ni5nf",
+      "label": "Appointment Group",
+      "options": "Appointment Group"
+    },
+    {
+      "description": "For Personal Meetings",
+      "fieldname": "custom_user_calendar",
+      "fieldtype": "Link",
+      "insert_after": "custom_appointment_group",
+      "label": "User Calendar",
+      "options": "User Appointment Availability"
+    },
+    {
+      "depends_on": "custom_user_calendar",
+      "fieldname": "custom_appointment_slot_duration",
+      "fieldtype": "Link",
+      "insert_after": "custom_user_calendar",
+      "label": "Appointment Slot Duration",
+      "options": "Appointment Slot Duration"
+    },
+    {
+      "fieldname": "custom_sync_participants_google_calendars",
+      "fieldtype": "Check",
+      "insert_after": "custom_appointment_slot_duration",
+      "label": "Sync Participants Google Calendars"
+    },
+    {
+      "fieldname": "custom_doctype_link_with_event",
+      "fieldtype": "Table",
+      "insert_after": "custom_sync_participants_google_calendars",
+      "label": "DocType Link With Event",
+      "options": "Event DocType Link"
+    },
+    {
+      "fieldname": "custom_meeting_provider",
+      "fieldtype": "Select",
+      "insert_after": "custom_doctype_link_with_event",
+      "label": "Meeting Provider",
+      "options": "None\nCustom\nZoom\nGoogle Meet",
+      "translatable": 1
+    },
+    {
+      "fieldname": "custom_meet_link",
+      "fieldtype": "Data",
+      "insert_after": "custom_meeting_provider",
+      "label": "Meet Link"
+    },
+    {
+      "fieldname": "custom_meet_data",
+      "fieldtype": "JSON",
+      "insert_after": "custom_meet_link",
+      "label": "Meet Data"
+    }
+  ]
+}

@@ -32,14 +32,20 @@ app_include_js = [
     "/assets/frappe_appointment/js/duration_override.js",
 ]
 
-after_install = "frappe_appointment.tasks.import_email_templates.import_email_templates_and_set_default_settings"
+after_install = [
+    "frappe_appointment.install.after_install",
+    "frappe_appointment.tasks.import_email_templates.import_email_templates_and_set_default_settings",
+]
 
 after_sync = [
     "frappe_appointment.tasks.setup_erpnext_fields.setup_erpnext_fields",
     "frappe_appointment.tasks.import_form_tour_google_calendar.import_doc",
 ]
 
+# Custom fields and property setters live in setup/. create_custom_fields(..., update=True) and
+# install_property_setters() are idempotent, so they are safe to run on every migrate.
 after_migrate = [
+    "frappe_appointment.setup.install",
     "frappe_appointment.tasks.setup_erpnext_fields.setup_erpnext_fields",
     "frappe_appointment.tasks.import_form_tour_google_calendar.import_doc",
 ]
@@ -95,32 +101,8 @@ doctype_js = {
 # 	"filters": "frappe_appointment.utils.jinja_filters"
 # }
 
-fixtures = [
-    {
-        "dt": "Custom Field",
-        "filters": [
-            [
-                "module",
-                "in",
-                {
-                    "Frappe Appointment",
-                },
-            ]
-        ],
-    },
-    {
-        "dt": "Property Setter",
-        "filters": [
-            [
-                "module",
-                "in",
-                {
-                    "Frappe Appointment",
-                },
-            ]
-        ],
-    },
-]
+# Custom fields and property setters are installed from setup/ (see after_migrate).
+fixtures = []
 
 # Installation
 # ------------

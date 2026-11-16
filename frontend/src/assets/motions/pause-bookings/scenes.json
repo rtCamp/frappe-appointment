@@ -1,0 +1,1 @@
+{"width":1920,"height":1080,"background":"#F4F4F5","fonts":{"sans":{"family":"Inter"}},"scenes":[{"id":"pause-bookings","name":"Stop taking bookings","dur":5.4,"desc":"On Home, the cursor turns off the Accepting bookings switch. A notice says the booking page is off, and the booking link dims."}]}

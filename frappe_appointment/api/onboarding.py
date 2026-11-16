@@ -81,7 +81,7 @@ def is_zoom_ready() -> bool:
 def blocks_time_off(user: str) -> bool:
     """Approved leave and holidays block the user's booking days.
 
-    Same conditions as is_member_on_leave_or_is_holiday: ERPNext and HRMS installed, and an
+    Same conditions as is_member_off: ERPNext and HRMS installed, and an
     Employee whose company email is the user's.
     """
     installed_apps = frappe.get_installed_apps()
