@@ -2,6 +2,7 @@
  * /schedule: where people set up their booking page. A gate card first decides whether they
  * can start; then the setup steps.
  */
+import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useFrappeGetCall } from "frappe-react-sdk";
 
@@ -12,11 +13,14 @@ import Setup from "./setup";
 import AdminSetup from "./admin";
 import { parsePath, paths } from "./routes";
 import NotFound from "@/pages/notFound";
+import HelpPanel from "./help-panel";
+import { helpTips } from "./help";
 import "@/styles/espresso.css";
 
 const SignedIn = ({ user }: { user: SessionUser }) => {
   const { data, error, isLoading, mutate } = useFrappeGetCall<{ message: OnboardingStatus }>(ONBOARDING_STATUS);
   const navigate = useNavigate();
+  const [helpOpen, setHelpOpen] = useState(false);
 
   if (isLoading) return null;
   if (error || !data) return <LoadErrorGate onRetry={() => mutate()} />;
@@ -30,7 +34,12 @@ const SignedIn = ({ user }: { user: SessionUser }) => {
       navigate(paths.home, { replace: true });
       mutate();
     };
-    return <AdminSetup user={user} onDone={done} />;
+    return (
+      <>
+        <AdminSetup user={user} onDone={done} nav={{ helpOpen, onHelp: () => setHelpOpen((open) => !open) }} />
+        {helpOpen && <HelpPanel tips={helpTips(!!status.blocks_time_off)} onClose={() => setHelpOpen(false)} />}
+      </>
+    );
   }
   return <Setup
       user={user}

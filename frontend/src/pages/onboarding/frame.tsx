@@ -7,6 +7,7 @@ import {
   ArrowLeftRight,
   CalendarDays,
   ChevronDown,
+  CircleHelp,
   Clock,
   House,
   LayoutGrid,
@@ -157,13 +158,18 @@ const WIDTHS = {
   full: "pt-2 gap-4",
 };
 
-/** Which app sections the sidebar unlocks, the current one, and where Settings goes. */
+/** Which app sections the sidebar unlocks, the current one, where Settings goes, and the Help panel's button. */
 export interface FrameNav {
   openSections?: string[];
   current?: string;
   onOpen?: (section: string) => void;
   onSettings?: () => void;
+  helpOpen?: boolean;
+  onHelp?: () => void;
 }
+
+const footerItemClass =
+  "flex items-center gap-2 w-full h-7 px-2 rounded-lg border-0 text-es-base cursor-pointer focus-visible:outline-none focus-visible:shadow-es-focus";
 
 export const Frame = ({
   user,
@@ -175,6 +181,8 @@ export const Frame = ({
   current,
   onOpen,
   onSettings,
+  helpOpen,
+  onHelp,
   children,
 }: {
   user: SessionUser;
@@ -190,6 +198,9 @@ export const Frame = ({
   onOpen?: (section: string) => void;
   /** Shows Settings in the app menu and at the bottom of the sidebar. */
   onSettings?: () => void;
+  helpOpen?: boolean;
+  /** Shows Help at the bottom of the sidebar; opens and closes the Help panel. */
+  onHelp?: () => void;
   children: ReactNode;
 }) => (
   <div className="espresso font-espresso min-h-screen flex flex-wrap bg-surface-base text-ink-gray-8">
@@ -227,16 +238,28 @@ export const Frame = ({
           );
         })}
       </div>
-      {onSettings && (
-        <div className="mt-auto p-2">
-          <button
-            type="button"
-            onClick={onSettings}
-            className="flex items-center gap-2 w-full h-7 px-2 rounded-lg border-0 bg-transparent text-es-base text-ink-gray-6 cursor-pointer hover:bg-surface-gray-3 focus-visible:outline-none focus-visible:shadow-es-focus"
-          >
-            <Settings className="w-4 h-4" aria-hidden="true" />
-            <span className="flex-1 text-left">Settings</span>
-          </button>
+      {(onHelp || onSettings) && (
+        <div className="mt-auto p-2 flex flex-col gap-0.5">
+          {onHelp && (
+            <button
+              type="button"
+              aria-expanded={!!helpOpen}
+              onClick={onHelp}
+              className={cn(
+                footerItemClass,
+                helpOpen ? "bg-surface-elevation-3 shadow-es-sm text-ink-gray-8" : "bg-transparent text-ink-gray-6 hover:bg-surface-gray-3"
+              )}
+            >
+              <CircleHelp className="w-4 h-4" aria-hidden="true" />
+              <span className="flex-1 text-left">Help</span>
+            </button>
+          )}
+          {onSettings && (
+            <button type="button" onClick={onSettings} className={cn(footerItemClass, "bg-transparent text-ink-gray-6 hover:bg-surface-gray-3")}>
+              <Settings className="w-4 h-4" aria-hidden="true" />
+              <span className="flex-1 text-left">Settings</span>
+            </button>
+          )}
         </div>
       )}
     </nav>
