@@ -5,11 +5,11 @@
  */
 import { ReactNode, useEffect, useRef, useState } from "react";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
-import { ChevronDown, Lightbulb, Play, X } from "lucide-react";
+import { ArrowRight, ChevronDown, Lightbulb, Play, X } from "lucide-react";
 
 import MotionPlayer from "@/components/motion-player";
 import { cn } from "@/lib/utils";
-import { HelpTip } from "./help";
+import { HelpDestination, HelpTip } from "./help";
 import { Button } from "./ui";
 
 const OPEN_MS = 200;
@@ -81,19 +81,27 @@ const TipList = ({
   tips,
   open,
   onToggle,
+  section,
+  onGo,
 }: {
   label: string;
   tips: HelpTip[];
   open: string | null;
   onToggle: (id: string) => void;
+  section?: string;
+  onGo?: (to: HelpDestination) => void;
 }) => {
   if (!tips.length) return null;
+  // A link to the page that's already open goes nowhere.
+  const linksOf = (tip: HelpTip) =>
+    onGo ? (tip.links ?? []).filter(({ to }) => !("section" in to) || to.section !== section) : [];
   return (
     <div className="flex flex-col gap-1">
       <p className="m-0 px-2 pt-2 text-es-xs font-medium text-ink-gray-5">{label}</p>
       {tips.map((tip) => {
         const expanded = open === tip.id;
         const Icon = tip.motion ? Play : Lightbulb;
+        const links = linksOf(tip);
         return (
           <div key={tip.id}>
             <h3 className="m-0">
@@ -129,6 +137,16 @@ const TipList = ({
                     ))}
                   </ul>
                 )}
+                {links.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5">
+                    {links.map((link) => (
+                      <Button key={link.label} variant="subtle" onClick={() => onGo?.(link.to)}>
+                        {link.label}
+                        <ArrowRight className="w-3.5 h-3.5" aria-hidden="true" />
+                      </Button>
+                    ))}
+                  </div>
+                )}
                 {tip.motion && <TipMotion motion={tip.motion} title={tip.title} />}
               </div>
             </Collapse>
@@ -142,11 +160,14 @@ const TipList = ({
 const HelpPanel = ({
   tips,
   section,
+  onGo,
   onClose,
 }: {
   tips: HelpTip[];
   /** The sidebar section that's open, whose tips come first. */
   section?: string;
+  /** Follows a tip's link. Without it, tips show no links, e.g. before the app's sections and Settings are there. */
+  onGo?: (to: HelpDestination) => void;
   onClose: () => void;
 }) => {
   const [open, setOpen] = useState<string | null>(null);
@@ -185,8 +206,15 @@ const HelpPanel = ({
           </Button>
         </div>
         <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto px-2 pb-3">
-          <TipList label="On this page" tips={here} open={open} onToggle={toggle} />
-          <TipList label={here.length ? "More tips" : "Tips"} tips={rest} open={open} onToggle={toggle} />
+          <TipList label="On this page" tips={here} open={open} onToggle={toggle} section={section} onGo={onGo} />
+          <TipList
+            label={here.length ? "More tips" : "Tips"}
+            tips={rest}
+            open={open}
+            onToggle={toggle}
+            section={section}
+            onGo={onGo}
+          />
         </div>
       </DialogPrimitive.Content>
     </DialogPrimitive.Root>

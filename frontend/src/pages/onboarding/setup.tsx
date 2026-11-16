@@ -426,7 +426,24 @@ const Setup = ({
   return (
     <>
       {page}
-      {helpOpen && <HelpPanel tips={helpTips(blocksTimeOff)} section={helpSection} onClose={() => setHelpOpen(false)} />}
+      {helpOpen && (
+        <HelpPanel
+          tips={helpTips(blocksTimeOff)}
+          section={helpSection}
+          // The sections and Settings are there once setup is finished.
+          onGo={
+            setUp
+              ? (to) => {
+                  if ("section" in to) return navigate(SECTION_PATHS[to.section]);
+                  // Settings is a modal dialog, which would leave Help unusable behind it.
+                  setHelpOpen(false);
+                  openSettings(to.settings);
+                }
+              : undefined
+          }
+          onClose={() => setHelpOpen(false)}
+        />
+      )}
       {settingsTab && setUp && availability && (
         <SettingsDialog
           user={user}
