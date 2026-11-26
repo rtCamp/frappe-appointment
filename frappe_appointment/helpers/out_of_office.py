@@ -35,7 +35,17 @@ def create_out_of_office_google_calander_event(
 
         event = google_calendar.events().insert(calendarId="primary", body=event).execute()
 
-        frappe.db.set_value("Leave Application", leave_id, "custom_google_calendar_event_id", event.get("id"))
+        # The reads above opened a snapshot. Other jobs (e.g. Slack's) can write this leave
+        # while Google answers, and with innodb_snapshot_isolation an update on that snapshot
+        # then fails with 1020 "Record has changed since last read". End it before writing.
+        frappe.db.commit()  # nosemgrep
+        frappe.db.set_value(
+            "Leave Application",
+            leave_id,
+            "custom_google_calendar_event_id",
+            event.get("id"),
+            update_modified=False,
+        )
     except Exception as err:
         frappe.log_error(
             _("Google Calendar - Could not insert event in Google Calendar for leave req: {0}.").format(leave_id),
