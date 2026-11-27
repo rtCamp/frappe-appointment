@@ -21,6 +21,7 @@ def on_submit(doc, method=None):
             employee=doc.employee,
             start_date=doc.from_date,
             end_date=doc.to_date,
+            enqueue_after_commit=True,
         )
 
 
@@ -37,4 +38,5 @@ def on_cancel_and_on_trash(doc, method=None):
         leave_id=doc.name,
         employee=doc.employee,
         event_id=doc.custom_google_calendar_event_id,
+        enqueue_after_commit=True,
     )

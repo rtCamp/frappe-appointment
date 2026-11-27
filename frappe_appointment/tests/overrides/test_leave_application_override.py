@@ -28,6 +28,8 @@ class TestLeaveApplicationOverride(IntegrationTestCase):
         self.assertIs(mock_enqueue.call_args.args[0], create_out_of_office_google_calander_event)
         self.assertEqual(mock_enqueue.call_args.kwargs["leave_id"], "LV-1")
         self.assertEqual(mock_enqueue.call_args.kwargs["employee"], "EMP-1")
+        # A job started before the submit commits would read a stale row and could fail with 1020
+        self.assertTrue(mock_enqueue.call_args.kwargs["enqueue_after_commit"])
 
     def test_on_submit_non_approved_no_enqueue(self):
         """21.2 on_submit does not enqueue for a non-Approved leave."""
@@ -41,3 +43,4 @@ class TestLeaveApplicationOverride(IntegrationTestCase):
             on_cancel_and_on_trash(self._doc())
         self.assertIs(mock_enqueue.call_args.args[0], delete_out_of_office_google_calendar_event)
         self.assertEqual(mock_enqueue.call_args.kwargs["event_id"], "evt-1")
+        self.assertTrue(mock_enqueue.call_args.kwargs["enqueue_after_commit"])
